@@ -116,9 +116,10 @@ export async function GET() {
       }
 
       results.push({ email: u.email, status: 'success' })
-    } catch (err: any) {
-      console.error(`   ❌ Exception for ${u.email}:`, err.message)
-      results.push({ email: u.email, status: 'error', message: err.message })
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error(`   ❌ Exception for ${u.email}:`, message)
+      results.push({ email: u.email, status: 'error', message })
     }
   }
 

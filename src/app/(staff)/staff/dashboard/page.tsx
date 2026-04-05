@@ -6,8 +6,7 @@ import { SignOutButton } from '@/components/shared/SignOutButton'
 import {
   QrCode, Package, Clock, AlertTriangle, CheckCircle2,
   User, ChevronRight, Inbox, ArrowRight, Tag, Camera,
-  ShoppingBag, Timer, RefreshCw, CalendarDays,
-  Settings, BarChart3, History
+  ShoppingBag, Timer, RefreshCw
 } from 'lucide-react'
 import { format, isToday, isTomorrow, isPast, formatDistanceToNow } from 'date-fns'
 import { type BookingStatus, type BagType } from '@/types/database'

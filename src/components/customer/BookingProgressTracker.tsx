@@ -1,5 +1,4 @@
-'use client'
-
+import React from 'react'
 import { motion } from 'framer-motion'
 import { Package, MapPin, ShieldCheck, Warehouse, UserCheck } from 'lucide-react'
 import { type BookingStatus } from '@/types/database'
@@ -7,7 +6,7 @@ import { type BookingStatus } from '@/types/database'
 interface Step {
   id: string
   label: string
-  icon: any
+  icon: React.ElementType
   statuses: BookingStatus[]
 }
 

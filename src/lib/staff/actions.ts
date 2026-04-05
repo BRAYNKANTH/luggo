@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
+import { type PostgrestError } from '@supabase/supabase-js'
 
 // ─────────────────────────────────────────────
 // HELPER — get authenticated staff + their hub
@@ -20,7 +21,7 @@ async function requireStaff() {
     .eq('active', true)
     .single() as {
       data: { hub_id: string; hubs: { alias: string } | null } | null
-      error: unknown
+      error: PostgrestError | null
     }
 
   if (!staffRow) {
@@ -342,7 +343,7 @@ export async function getHubRevenue() {
     .from('payments')
     .select('amount, created_at, type, bookings!inner(hub_id)')
     .eq('bookings.hub_id', hubId)
-    .eq('status', 'paid') as { data: any[] | null, error: any }
+    .eq('status', 'paid') as { data: { amount: number; created_at: string; type: string }[] | null, error: { message: string } | null }
 
   if (error) return { error: error.message }
 
@@ -382,7 +383,7 @@ export async function getHubBookings(filters?: { status?: string }) {
     query = query.eq('status', filters.status)
   }
 
-  const { data, error } = await query as { data: any[] | null, error: any }
+  const { data, error } = await query as { data: { id: string; status: string; start_time: string; end_time: string; total_price: number; id_verified: boolean; created_at: string; users: { name: string; phone: string | null } | null }[] | null, error: { message: string } | null }
 
   if (error) return { error: error.message }
   return { bookings: data || [] }
@@ -429,6 +430,6 @@ export async function verifyIdentity(bookingId: string) {
     .eq('id', bookingId)
     .eq('hub_id', hubId)
 
-  if (error) return { error: (error as any).message }
+  if (error) return { error: (error as { message: string }).message }
   return { success: true }
 }
