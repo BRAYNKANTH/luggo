@@ -39,12 +39,13 @@ export async function POST(req: NextRequest) {
     .from('users' as never)
     .select('id, email')
     .eq('phone', phone)
-    .maybeSingle() as { data: { id: string; email: string } | null }
+    .maybeSingle() as { data: { id: string; email: string | null } | null }
 
   let accountEmail: string
 
   if (existingProfile) {
-    accountEmail = existingProfile.email
+    // email can be null for phone-only users — fall back to synthetic address
+    accountEmail = existingProfile.email || `${phone.replace(/\D/g, '')}@phone.luggo.lk`
   } else {
     const finalEmail = email?.trim() || `${phone.replace(/\+/g, '')}@phone.luggo.lk`
     const finalName  = name?.trim()  || phone

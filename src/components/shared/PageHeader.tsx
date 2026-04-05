@@ -21,9 +21,9 @@ export function PageHeader({ title, subtitle, backHref, action }: PageHeaderProp
           </Link>
         )}
         <div className="flex-1 min-w-0">
-          <h1 className="text-[15px] font-bold text-gray-900 leading-tight truncate">{title}</h1>
+          <h1 className="text-base font-bold text-gray-900 leading-tight truncate">{title}</h1>
           {subtitle && (
-            <p className="text-xs text-gray-400 leading-tight truncate">{subtitle}</p>
+            <p className="text-[11px] text-gray-400 leading-tight truncate mt-0.5">{subtitle}</p>
           )}
         </div>
         {action && <div className="shrink-0">{action}</div>}

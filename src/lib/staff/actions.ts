@@ -107,13 +107,14 @@ export async function confirmStickers(
 
   const { data: booking } = await svc
     .from('bookings' as never)
-    .select('id, status, booking_bags(id, sticker_number)')
+    .select('id, status, id_verified, booking_bags(id, sticker_number)')
     .eq('id', bookingId)
     .eq('hub_id', hubId)
     .single() as {
       data: {
         id: string
         status: string
+        id_verified: boolean
         booking_bags: { id: string; sticker_number: string | null }[]
       } | null
     }
@@ -122,7 +123,7 @@ export async function confirmStickers(
   if (booking.status !== 'arrived') {
     return { error: `Booking must be in "arrived" status. Current: ${booking.status}` }
   }
-  if (!(booking as unknown as { id_verified: boolean }).id_verified) {
+  if (!booking.id_verified) {
     return { error: 'Customer identity must be verified before applying stickers.' }
   }
 

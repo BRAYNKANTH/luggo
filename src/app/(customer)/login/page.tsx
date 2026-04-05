@@ -28,33 +28,71 @@ function isPhone(v: string)  { return v.replace(/\D/g, '').length >= 9 }
 // ── OTP boxes ─────────────────────────────────────────────────
 function OtpInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const refs = useRef<(HTMLInputElement | null)[]>([])
-  function handleChange(i: number, v: string) {
-    if (!/^\d*$/.test(v)) return
-    const chars = value.split('')
-    chars[i] = v.slice(-1)
-    const next = chars.join('').slice(0, OTP_LENGTH)
+
+  function handleChange(i: number, raw: string) {
+    const digit = raw.replace(/\D/g, '').slice(-1)
+    const chars = value.padEnd(OTP_LENGTH, '').split('')
+    chars[i] = digit
+    const next = chars.join('').trimEnd().slice(0, OTP_LENGTH)
     onChange(next)
-    if (v && i < OTP_LENGTH - 1) refs.current[i + 1]?.focus()
+    if (digit && i < OTP_LENGTH - 1) refs.current[i + 1]?.focus()
   }
-  function handleKeyDown(i: number, e: React.KeyboardEvent) {
-    if (e.key === 'Backspace' && !value[i] && i > 0) refs.current[i - 1]?.focus()
+
+  function handleKeyDown(i: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Backspace') {
+      if (value[i]) {
+        // clear current box
+        const chars = value.padEnd(OTP_LENGTH, '').split('')
+        chars[i] = ''
+        onChange(chars.join('').trimEnd())
+      } else if (i > 0) {
+        refs.current[i - 1]?.focus()
+      }
+    } else if (e.key === 'ArrowLeft' && i > 0) {
+      refs.current[i - 1]?.focus()
+    } else if (e.key === 'ArrowRight' && i < OTP_LENGTH - 1) {
+      refs.current[i + 1]?.focus()
+    }
   }
+
   function handlePaste(e: React.ClipboardEvent) {
     e.preventDefault()
     const p = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH)
     onChange(p)
-    refs.current[Math.min(p.length, OTP_LENGTH - 1)]?.focus()
+    const focusIdx = Math.min(p.length, OTP_LENGTH - 1)
+    setTimeout(() => refs.current[focusIdx]?.focus(), 0)
   }
+
+  function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
+    e.target.select()
+  }
+
   return (
     <div className="flex gap-2 justify-center">
-      {Array.from({ length: OTP_LENGTH }).map((_, i) => (
-        <input key={i} ref={el => { refs.current[i] = el }}
-          type="text" inputMode="numeric" maxLength={1}
-          value={value[i] ?? ''} onChange={e => handleChange(i, e.target.value)}
-          onKeyDown={e => handleKeyDown(i, e)} onPaste={handlePaste}
-          className="w-11 h-14 text-center text-xl font-extrabold text-ocean-900 border-2 border-gray-200 rounded-2xl focus:border-brand focus:outline-none focus:bg-brand/5 transition-all bg-gray-50"
-        />
-      ))}
+      {Array.from({ length: OTP_LENGTH }).map((_, i) => {
+        const filled = !!value[i]
+        return (
+          <input
+            key={i}
+            ref={el => { refs.current[i] = el }}
+            type="text"
+            inputMode="numeric"
+            autoComplete={i === 0 ? 'one-time-code' : 'off'}
+            maxLength={1}
+            value={value[i] ?? ''}
+            onChange={e => handleChange(i, e.target.value)}
+            onKeyDown={e => handleKeyDown(i, e)}
+            onPaste={handlePaste}
+            onFocus={handleFocus}
+            style={{ WebkitTextFillColor: '#011a2e' }}
+            className={`w-11 h-14 text-center text-xl font-extrabold border-2 rounded-2xl focus:outline-none transition-all duration-150 bg-gray-50
+              ${filled
+                ? 'border-brand bg-brand/5 text-ocean-900'
+                : 'border-gray-200 text-ocean-900 focus:border-brand focus:bg-brand/5'
+              }`}
+          />
+        )
+      })}
     </div>
   )
 }
@@ -146,11 +184,6 @@ function SignInFlow({ supabase, returnTo }: { supabase: ReturnType<typeof create
     const t = setTimeout(() => setCountdown(c => c - 1), 1000)
     return () => clearTimeout(t)
   }, [countdown])
-
-  useEffect(() => {
-    if (otp.length === OTP_LENGTH && step === 'otp' && !loading) verify()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [otp, loading])
 
   const detectedMethod: Method = isEmail(identifier) ? 'email' : 'phone'
 
@@ -257,11 +290,6 @@ function SignUpFlow({ supabase, returnTo }: { supabase: ReturnType<typeof create
     const t = setTimeout(() => setCountdown(c => c - 1), 1000)
     return () => clearTimeout(t)
   }, [countdown])
-
-  useEffect(() => {
-    if (otp.length === OTP_LENGTH && step === 'otp' && !loading) verify()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [otp, loading])
 
   const detailsValid = name.trim().length >= 2 && isEmail(email) && isPhone(phone) && nic.trim().length >= 5
 

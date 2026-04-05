@@ -334,11 +334,11 @@ export async function extendBooking(
       booking_bags ( bag_type )
     `)
     .eq('id', bookingId)
+    .eq('user_id', user.id)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .single() as { data: any | null }
 
   if (!booking) return { error: 'Booking not found.' }
-  if (booking.user_id !== user.id) return { error: 'Unauthorized.' }
   
   const allowedStatuses = ['confirmed', 'arrived', 'sealing_in_progress', 'sealed_waiting_user_confirmation', 'active_storage', 'overstayed']
   if (!allowedStatuses.includes(booking.status)) {

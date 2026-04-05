@@ -519,33 +519,41 @@ export function DashboardClient({ hubs, activeBookings, firstName, userId, notif
           </section>
         ) : (
           <>
-            {/* ── Featured / Closest hubs — horizontal scroll ── */}
+            {/* ── Horizontal snap scroll ── */}
             {hubsWithDist.length > 0 && (
               <section>
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-base font-bold text-gray-900">
-                    {userPos ? 'Closest to You' : 'Featured Hubs'}
+                    {userPos ? '📍 Closest to You' : '🏪 Storage Hubs'}
                   </h2>
                   <span className="text-xs text-gray-400">{hubs.length} locations</span>
                 </div>
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
+                <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide -mx-4 px-4">
                   {hubsWithDist.map(h => (
-                    <FeaturedHubCard key={h.id} hub={h} distanceKm={h.distanceKm} />
+                    <div key={h.id} className="snap-start">
+                      <FeaturedHubCard hub={h} distanceKm={h.distanceKm} />
+                    </div>
                   ))}
                 </div>
               </section>
             )}
 
-            {/* ── All hubs — vertical list ── */}
+            {/* ── List view — top 4 + see all ── */}
             <section>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-base font-bold text-gray-900">All Hubs</h2>
+                <Link href="/hubs" className="text-xs text-brand font-semibold">See all</Link>
               </div>
               <div className="space-y-3">
-                {hubsWithDist.map(h => (
+                {hubsWithDist.slice(0, 4).map(h => (
                   <HubListCard key={h.id} hub={h} distanceKm={h.distanceKm} />
                 ))}
               </div>
+              {hubsWithDist.length > 4 && (
+                <Link href="/hubs" className="mt-3 flex items-center justify-center gap-2 border border-gray-200 text-gray-600 text-xs font-bold py-3 rounded-2xl hover:border-brand/30 hover:text-brand transition-all">
+                  View all {hubsWithDist.length} hubs <ChevronRight size={14} />
+                </Link>
+              )}
             </section>
           </>
         )}

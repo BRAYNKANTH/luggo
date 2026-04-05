@@ -27,30 +27,39 @@ export async function autoAssignStickers(bookingId: string): Promise<void> {
   const unassigned = booking.booking_bags.filter((b) => !b.sticker_number)
   if (unassigned.length === 0) return // already assigned, nothing to do
 
-  // Find the highest sticker number currently in use at this hub
-  const { data: lastBag } = await (svc
+  // Fetch ALL sticker numbers currently in use at this hub to avoid collisions
+  // (querying all rather than just max prevents race conditions with concurrent assignments)
+  const { data: usedBags } = await (svc
     .from('booking_bags' as never)
     .select('sticker_number')
     .eq('hub_alias', hubAlias)
-    .not('sticker_number', 'is', null)
-    .order('sticker_number', { ascending: false })
-    .limit(1)) as { data: { sticker_number: string }[] | null }
+    .not('sticker_number', 'is', null)) as { data: { sticker_number: string }[] | null }
 
-  const lastNum = lastBag?.[0]?.sticker_number
-    ? parseInt(lastBag[0].sticker_number, 10)
-    : 0
+  const usedNumbers = new Set((usedBags ?? []).map(b => b.sticker_number))
 
-  // Assign sequential sticker numbers
+  // Find next available sequential numbers — skipping any already taken
+  let nextCandidate = 1
+  const assignedNums: string[] = []
   for (let i = 0; i < unassigned.length; i++) {
-    const stickerNum = String(lastNum + i + 1).padStart(3, '0')
+    while (usedNumbers.has(String(nextCandidate).padStart(3, '0'))) {
+      nextCandidate++
+    }
+    const stickerNum = String(nextCandidate).padStart(3, '0')
+    assignedNums.push(stickerNum)
+    usedNumbers.add(stickerNum) // reserve it for next iteration
+    nextCandidate++
+  }
+
+  // Write assignments
+  for (let i = 0; i < unassigned.length; i++) {
     await svc
       .from('booking_bags' as never)
-      .update({ sticker_number: stickerNum, hub_alias: hubAlias })
+      .update({ sticker_number: assignedNums[i], hub_alias: hubAlias })
       .eq('id', unassigned[i].id)
   }
 
   console.log(
-    `[Stickers] Auto-assigned ${unassigned.length} sticker(s) for booking ${bookingId} at hub ${hubAlias}`,
-    `(starting from ${String(lastNum + 1).padStart(3, '0')})`
+    `[Stickers] Auto-assigned ${unassigned.length} sticker(s) for booking ${bookingId} at hub ${hubAlias}:`,
+    assignedNums.join(', ')
   )
 }

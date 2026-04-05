@@ -23,7 +23,7 @@ export function CustomerShell({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-[100dvh] overflow-hidden bg-gray-50">
       {/* Sidebar — desktop only */}
       <Sidebar isLoggedIn={isLoggedIn} />
 

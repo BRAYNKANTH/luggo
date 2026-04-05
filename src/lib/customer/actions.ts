@@ -144,9 +144,13 @@ export async function createLateFeePayment(
   const { data: lateFee, error: rpcError } = await (supabase.rpc as any)(
     'calculate_late_fee',
     { p_booking_id: bookingId }
-  ) as { data: number | null; error: unknown }
+  ) as { data: number | null; error: { message: string } | null }
 
-  if (rpcError || lateFee == null || lateFee <= 0) {
+  if (rpcError) {
+    console.error('[createLateFeePayment] RPC error:', rpcError)
+    return { error: 'Failed to calculate late fee. Please try again.' }
+  }
+  if (lateFee == null || lateFee <= 0) {
     return { error: 'No late fee to pay' }
   }
 
@@ -206,7 +210,9 @@ export async function createLateFeePayment(
 // ---------------------------------------------------------------------------
 export async function requestPickupAction(bookingId: string): Promise<void> {
   const result = await requestPickup(bookingId)
-  if (!result.error) {
+  if (result.error) {
+    redirect(`/booking/${bookingId}?pickup_error=${encodeURIComponent(result.error)}`)
+  } else {
     redirect(`/booking/${bookingId}?pickup=requested`)
   }
 }

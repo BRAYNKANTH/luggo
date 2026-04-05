@@ -18,7 +18,7 @@ export function Sidebar({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
   const nav = NAV_ALL.filter(n => isLoggedIn || n.guestOk)
 
   return (
-    <aside className="hidden md:flex flex-col w-56 bg-white border-r border-gray-100 h-screen shrink-0">
+    <aside className="hidden md:flex flex-col w-56 bg-white border-r border-gray-100 h-[100dvh] shrink-0">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-gray-50">
         <Logo size="sm" />

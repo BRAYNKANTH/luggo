@@ -102,19 +102,25 @@ export async function POST(req: NextRequest) {
             (total, bag) => total + (BAG_RATES[bag.bag_type as keyof typeof BAG_RATES] || 0),
             0
           )
-          
+
           if (hourlyRate > 0) {
             const addedHours = Math.round(extPayment.amount / hourlyRate)
-            const oldEnd = new Date(booking.end_time)
-            const newEnd = new Date(oldEnd.getTime() + addedHours * 60 * 60 * 1000)
-            
-            await supabase
-              .from('bookings' as never)
-              .update({ end_time: newEnd.toISOString() })
-              .eq('id', bookingId)
-            
-            console.log(`[PayHere IPN] Booking ${bookingId} extended by ${addedHours}h to ${newEnd.toISOString()}`)
-            sendExtensionNotification(supabase, bookingId, extPayment.amount, addedHours).catch(console.error)
+            if (addedHours > 0) {
+              const oldEnd = new Date(booking.end_time)
+              const newEnd = new Date(oldEnd.getTime() + addedHours * 60 * 60 * 1000)
+
+              await supabase
+                .from('bookings' as never)
+                .update({ end_time: newEnd.toISOString() })
+                .eq('id', bookingId)
+
+              console.log(`[PayHere IPN] Booking ${bookingId} extended by ${addedHours}h to ${newEnd.toISOString()}`)
+              sendExtensionNotification(supabase, bookingId, extPayment.amount, addedHours).catch(console.error)
+            } else {
+              console.error(`[PayHere IPN] Extension amount LKR ${extPayment.amount} too small for hourly rate LKR ${hourlyRate}`, bookingId)
+            }
+          } else {
+            console.error(`[PayHere IPN] Cannot extend booking — hourlyRate is 0 (unknown bag types)`, bookingId, booking.booking_bags)
           }
         }
       }
@@ -192,7 +198,7 @@ async function sendBookingConfirmedNotification(supabase: any, bookingId: string
   if (userPhone) {
     const { sendSMS } = await import('@/lib/utils/sms')
     const start = new Date(booking.start_time)
-    const dateStr = start.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+    const dateStr = start.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })
     sendSMS(
       userPhone,
       `Luggo: Booking confirmed at ${hubName}! Drop-off: ${dateStr}. Total: LKR ${Number(booking.total_price).toLocaleString()}. View QR: ${appUrl}/booking/${bookingId}`

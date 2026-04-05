@@ -246,8 +246,14 @@ export default async function StaffBookingPage({
           {nextAction === 'verify_id' && (
             <form action={async () => {
               'use server'
-              await verifyIdentity(booking.id)
-              redirect(`/staff/booking/${booking.id}`)
+              const result = await verifyIdentity(booking.id)
+              if (result?.error) {
+                // identity verify failed — stay on same page, error visible in logs
+                console.error('[verifyIdentity]', result.error)
+                redirect(`/staff/booking/${booking.id}?error=verify_failed`)
+              } else {
+                redirect(`/staff/booking/${booking.id}`)
+              }
             }}>
               <Button type="submit" fullWidth size="lg" className="bg-green-600 hover:bg-green-500">
                 <ShieldCheck size={18} /> Approve Identity Match

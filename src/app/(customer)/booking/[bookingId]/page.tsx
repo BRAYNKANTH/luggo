@@ -38,7 +38,7 @@ export default async function BookingDetailPage({
   searchParams,
 }: {
   params: { bookingId: string }
-  searchParams: { payment?: string; sealed?: string; pickup?: string; ext?: string }
+  searchParams: { payment?: string; sealed?: string; pickup?: string; ext?: string; pickup_error?: string }
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -146,6 +146,17 @@ export default async function BookingDetailPage({
             <Link href={`/booking/${booking.id}/confirm-seal`}>
               <Button fullWidth size="sm">Review & Confirm Seal</Button>
             </Link>
+          </div>
+        )}
+
+        {/* ── Pickup error ── */}
+        {searchParams.pickup_error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl md:rounded-2xl p-4 flex items-start gap-3">
+            <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-red-700 text-sm leading-tight">Pickup request failed</p>
+              <p className="text-xs text-red-500 mt-0.5">{decodeURIComponent(searchParams.pickup_error)}</p>
+            </div>
           </div>
         )}
 
