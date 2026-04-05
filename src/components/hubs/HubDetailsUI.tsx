@@ -52,6 +52,7 @@ export function HubDetailsUI({
   grouped,
 }: HubDetailsUIProps) {
   const [estimateHours, setEstimateHours] = useState(2)
+  const [showAllNearby, setShowAllNearby] = useState(false)
 
   const availability = hub.capacity - activeCount
   const availabilityLabel =
@@ -86,15 +87,15 @@ export function HubDetailsUI({
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 md:py-10">
+      <main className="max-w-7xl mx-auto px-4 py-4 md:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
           {/* ── Left Column ── */}
-          <div className="lg:col-span-7 space-y-6">
+          <div className="lg:col-span-7 space-y-4 md:space-y-6">
 
             {/* Hero Image */}
             <div className="relative rounded-3xl overflow-hidden shadow-xl shadow-gray-200/80">
-              <div className="aspect-[16/10]">
+              <div className="aspect-[16/7] md:aspect-[16/10]">
                 {hub.image_url ? (
                   <Image
                     src={hub.image_url}
@@ -118,77 +119,86 @@ export function HubDetailsUI({
               </div>
 
               {/* Hub name overlay */}
-              <div className="absolute bottom-0 left-0 right-0 p-6">
-                <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+              <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
+                <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-0.5">
                   {hub.alias}
                 </span>
-                <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
+                <h1 className="text-2xl md:text-4xl font-bold text-white tracking-tight leading-tight">
                   {hub.name}
                 </h1>
               </div>
             </div>
 
             {/* Quick attributes */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {[
-                { icon: <Clock size={18} />, label: 'Open Hours', value: `${hub.open_time.slice(0, 5)}–${hub.close_time.slice(0, 5)}` },
-                { icon: <Package size={18} />, label: 'Capacity', value: `${hub.capacity} Units` },
-                { icon: <ShieldCheck size={18} />, label: 'Security', value: 'Vault Grade' },
+                { icon: <Clock size={16} />, label: 'Open Hours', value: `${hub.open_time.slice(0, 5)}–${hub.close_time.slice(0, 5)}` },
+                { icon: <Package size={16} />, label: 'Capacity', value: `${hub.capacity} Units` },
+                { icon: <ShieldCheck size={16} />, label: 'Security', value: 'Vault Grade' },
               ].map((attr, i) => (
-                <div key={i} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-3">
-                  <div className="w-9 h-9 bg-brand/8 rounded-xl flex items-center justify-center text-brand">
+                <div key={i} className="bg-white p-3 md:p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-2">
+                  <div className="w-8 h-8 bg-brand/8 rounded-xl flex items-center justify-center text-brand">
                     {attr.icon}
                   </div>
                   <div>
-                    <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">{attr.label}</p>
-                    <p className="font-bold text-gray-900 text-sm">{attr.value}</p>
+                    <p className="text-[9px] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">{attr.label}</p>
+                    <p className="font-bold text-gray-900 text-[11px] sm:text-xs">{attr.value}</p>
                   </div>
                 </div>
               ))}
             </div>
 
             {/* Location */}
-            <div className="bg-ocean-900 p-6 md:p-8 rounded-3xl text-white space-y-4 relative overflow-hidden">
-              <div className="absolute right-0 bottom-0 w-48 h-48 bg-brand/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="bg-ocean-900 p-5 md:p-8 rounded-3xl text-white space-y-3 relative overflow-hidden">
+              <div className="absolute right-0 bottom-0 w-32 h-32 bg-brand/15 rounded-full blur-3xl pointer-events-none" />
               <div className="flex items-center gap-3 relative z-10">
-                <div className="bg-white/10 p-2.5 rounded-xl">
-                  <MapPin size={18} className="text-brand-light" />
+                <div className="bg-white/10 p-2 rounded-xl">
+                  <MapPin size={16} className="text-brand-light" />
                 </div>
-                <h2 className="text-lg font-bold">Location</h2>
+                <h2 className="text-base font-bold">Location</h2>
               </div>
-              <p className="text-white/80 text-sm leading-relaxed relative z-10">
+              <p className="text-white/80 text-xs md:text-sm leading-relaxed relative z-10">
                 {hub.address}
               </p>
-              <div className="relative z-10">
-                <Link href="#" className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white text-xs font-semibold px-4 py-2.5 rounded-xl border border-white/10 transition-colors">
-                  Open in Maps <ArrowRight size={12} />
+              <div className="relative z-10 pt-1">
+                <Link href="#" className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white text-[10px] md:text-xs font-semibold px-3.5 py-2 rounded-xl border border-white/10 transition-colors">
+                  Open in Maps <ArrowRight size={10} />
                 </Link>
               </div>
             </div>
 
             {/* Full Nearby Explorer — desktop, visible below left column */}
-            {categories.length > 2 && (
-              <div className="space-y-5">
-                <h3 className="text-base font-bold text-gray-900">Explore the Neighbourhood</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {categories.slice(2).map((cat) => {
+            {categories.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm md:text-base font-bold text-gray-900">Explore the Neighbourhood</h3>
+                  <button 
+                    onClick={() => setShowAllNearby(!showAllNearby)}
+                    className="md:hidden text-brand text-xs font-bold bg-brand/5 px-3 py-1.5 rounded-lg active:scale-95 transition-transform"
+                  >
+                    {showAllNearby ? 'Show Less' : `Show All (${categories.length})`}
+                  </button>
+                </div>
+                
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${!showAllNearby ? 'hidden md:grid' : 'grid'}`}>
+                  {categories.map((cat) => {
                     const cfg = getConfig(cat)
                     return (
-                      <div key={cat} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                        <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${cfg.text}`}>
-                          <div className={`p-2 rounded-xl ${cfg.bg}`}>{cfg.icon}</div>
+                      <div key={cat} className="bg-white p-4 md:p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+                        <div className={`flex items-center gap-2 text-[10px] md:text-xs font-bold uppercase tracking-wider ${cfg.text}`}>
+                          <div className={`p-1.5 md:p-2 rounded-xl ${cfg.bg}`}>{cfg.icon}</div>
                           {cat}
                         </div>
-                        <div className="space-y-3">
+                        <div className="space-y-2.5 md:space-y-3">
                           {grouped[cat].map((place) => (
                             <div key={place.id} className="flex items-center justify-between">
-                              <div>
-                                <p className="font-semibold text-gray-900 text-sm">{place.name}</p>
-                                <p className="text-xs text-gray-400 mt-0.5">{place.distance_km} km away</p>
+                              <div className="min-w-0 pr-2">
+                                <p className="font-semibold text-gray-900 text-xs md:text-sm truncate">{place.name}</p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">{place.distance_km} km away</p>
                               </div>
                               {place.map_url && (
-                                <Link href={place.map_url} target="_blank" className="text-brand text-xs font-semibold flex items-center gap-1 hover:underline">
-                                  Directions <ArrowRight size={10} />
+                                <Link href={place.map_url} target="_blank" className="text-brand text-[10px] md:text-xs font-semibold flex items-center gap-1 hover:underline shrink-0">
+                                  Maps <ArrowRight size={10} />
                                 </Link>
                               )}
                             </div>

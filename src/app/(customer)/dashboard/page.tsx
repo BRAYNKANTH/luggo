@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { DashboardClient, type HubCard, type ActiveBooking } from './DashboardClient'
 
@@ -33,6 +34,9 @@ export default async function DashboardPage() {
       .single() as { data: { name: string; role: string } | null }
 
     if (profile) {
+      if (profile.role === 'hub_staff') {
+        redirect('/staff/dashboard')
+      }
       firstName = profile.name.split(' ')[0]
     }
 

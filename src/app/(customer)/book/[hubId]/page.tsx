@@ -49,22 +49,7 @@ export default async function BookPage({ params }: { params: { hubId: string } }
         }
       />
 
-      {/* Hub info strip */}
-      <div className="mx-4 md:mx-6 mt-4 bg-ocean-900 rounded-2xl px-5 py-4 flex items-center justify-between">
-        <div>
-          <p className="text-white font-semibold text-sm">{hub.name}</p>
-          <p className="text-white/50 text-xs mt-0.5 flex items-center gap-1">
-            <MapPin size={10} /> {hub.address}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-white/40 text-[10px] font-medium">Open hours</p>
-          <p className="text-white/80 text-xs font-semibold flex items-center gap-1 mt-0.5">
-            <Clock size={10} />
-            {hub.open_time.slice(0, 5)}–{hub.close_time.slice(0, 5)}
-          </p>
-        </div>
-      </div>
+
 
       <div className="px-4 md:px-6 py-4">
         <BookingForm hub={hub} initialProfile={profile} />

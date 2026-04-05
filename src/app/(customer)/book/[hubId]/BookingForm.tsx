@@ -106,7 +106,7 @@ function OtpInput({ value, onChange }: { value: string; onChange: (v: string) =>
 function StepProgress({ current }: { current: 1 | 2 | 3 }) {
   const steps = ['When?', 'Bags', 'Review']
   return (
-    <div className="flex items-center justify-center gap-0 mb-8">
+    <div className="flex items-center justify-center gap-0 mb-6">
       {steps.map((label, i) => {
         const n = i + 1
         const done = n < current
@@ -114,20 +114,20 @@ function StepProgress({ current }: { current: 1 | 2 | 3 }) {
         return (
           <div key={n} className="flex items-center">
             <div className="flex flex-col items-center gap-1">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+              <div className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center transition-all ${
                 done ? 'bg-emerald-500' : active ? 'bg-gray-900' : 'bg-gray-100'
               }`}>
                 {done
-                  ? <CheckCircle2 size={16} className="text-white" />
-                  : <span className={`text-xs font-bold ${active ? 'text-white' : 'text-gray-400'}`}>{n}</span>
+                  ? <CheckCircle2 size={14} className="text-white" />
+                  : <span className={`text-[10px] md:text-xs font-bold ${active ? 'text-white' : 'text-gray-400'}`}>{n}</span>
                 }
               </div>
-              <span className={`text-[10px] font-semibold ${active ? 'text-gray-900' : done ? 'text-emerald-600' : 'text-gray-300'}`}>
+              <span className={`text-[9px] md:text-[10px] font-semibold ${active ? 'text-gray-900' : done ? 'text-emerald-600' : 'text-gray-300'}`}>
                 {label}
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div className={`w-12 md:w-20 h-px mx-2 mb-4 transition-colors ${n < current ? 'bg-emerald-400' : 'bg-gray-200'}`} />
+              <div className={`w-8 md:w-20 h-px mx-1 md:mx-2 mb-3.5 transition-colors ${n < current ? 'bg-emerald-400' : 'bg-gray-200'}`} />
             )}
           </div>
         )
@@ -138,14 +138,14 @@ function StepProgress({ current }: { current: 1 | 2 | 3 }) {
 
 function FieldInput({ label, icon: Icon, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string; icon?: React.ElementType }) {
   return (
-    <div className="space-y-1.5">
-      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600">
-        {Icon && <Icon size={13} className="text-brand" />}
+    <div className="space-y-1">
+      <label className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+        {Icon && <Icon size={12} className="text-brand" />}
         {label}
       </label>
       <input
         {...props}
-        className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-2xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all"
+        className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all"
       />
     </div>
   )
@@ -396,9 +396,9 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                 </div>
 
                 {/* Drop-off */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
-                  <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    <CalendarDays size={13} className="text-brand" /> Drop-off
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2">
+                  <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                    <CalendarDays size={12} className="text-brand" /> Drop-off
                   </label>
                   <input
                     type="datetime-local"
@@ -409,33 +409,33 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                       if (endValue && e.target.value >= endValue)
                         setEndValue(toLocalDatetimeValue(addHours(new Date(e.target.value), 4)))
                     }}
-                    className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all"
                   />
                 </div>
 
                 {/* Pick-up */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
-                  <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    <Clock size={13} className="text-brand" /> Pick-up
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2">
+                  <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                    <Clock size={12} className="text-brand" /> Pick-up
                   </label>
                   <input
                     type="datetime-local"
                     value={endValue}
                     min={startValue || minDatetime}
                     onChange={e => setEndValue(e.target.value)}
-                    className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all"
                   />
                 </div>
 
                 {/* Duration pill */}
                 {timesValid && (
-                  <div className="flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-100 rounded-2xl py-3 px-4">
-                    <CheckCircle2 size={15} className="text-emerald-500" />
-                    <p className="text-sm font-semibold text-emerald-700">
-                      {hours} hour{hours !== 1 ? 's' : ''} of storage
+                  <div className="flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-100 rounded-2xl py-2 px-4 mx-4">
+                    <CheckCircle2 size={13} className="text-emerald-500" />
+                    <p className="text-[11px] font-semibold text-emerald-700">
+                      {hours} hr{hours !== 1 ? 's' : ''} storage
                     </p>
-                    <span className="text-emerald-400 mx-1">·</span>
-                    <p className="text-xs text-emerald-600 font-medium">
+                    <span className="text-emerald-400">·</span>
+                    <p className="text-[10px] text-emerald-600 font-medium">
                       {startDate && format(startDate, 'dd MMM')} → {endDate && format(endDate, 'dd MMM, HH:mm')}
                     </p>
                   </div>
@@ -458,12 +458,12 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                 {(Object.keys(BAG_LABELS) as BagType[]).map((type) => (
                   <div
                     key={type}
-                    className={`bg-white rounded-2xl border shadow-sm p-4 flex items-center gap-4 transition-all ${
-                      bags[type] > 0 ? 'border-brand/30 bg-brand/2' : 'border-gray-100'
+                    className={`bg-white rounded-2xl border shadow-sm p-3 flex items-center gap-3 transition-all ${
+                      bags[type] > 0 ? 'border-brand/30 bg-brand/[0.02]' : 'border-gray-100'
                     }`}
                   >
                     {/* Icon */}
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 transition-colors ${
+                    <div className={`w-11 h-11 md:w-14 md:h-14 rounded-xl flex items-center justify-center text-xl shrink-0 transition-colors ${
                       bags[type] > 0 ? 'bg-brand/10' : 'bg-gray-50'
                     }`}>
                       {BAG_EMOJIS[type]}
@@ -471,35 +471,35 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-gray-900 text-sm">{BAG_LABELS[type]}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{BAG_DESC[type]}</p>
-                      <p className="text-xs font-semibold text-brand mt-1">LKR {BAG_RATES[type].toLocaleString()}/hr</p>
+                      <p className="font-bold text-gray-900 text-[13px] md:text-sm">{BAG_LABELS[type]}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{BAG_DESC[type]}</p>
+                      <p className="text-[10px] md:text-xs font-semibold text-brand mt-0.5">LKR {BAG_RATES[type].toLocaleString()}/hr</p>
                     </div>
 
                     {/* Counter */}
-                    <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex items-center gap-2 md:gap-3 shrink-0">
                       <button
                         type="button"
                         onClick={() => bags[type] > 0 && setBags({ ...bags, [type]: bags[type] - 1 })}
                         disabled={bags[type] === 0}
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90 ${
+                        className={`w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center transition-all active:scale-90 ${
                           bags[type] > 0 ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-300 cursor-not-allowed'
                         }`}
                       >
-                        <Minus size={15} strokeWidth={2.5} />
+                        <Minus size={14} strokeWidth={2.5} />
                       </button>
-                      <span className="w-5 text-center font-bold text-gray-900 text-base tabular-nums">
+                      <span className="w-4 text-center font-bold text-gray-900 text-sm md:text-base tabular-nums">
                         {bags[type]}
                       </span>
                       <button
                         type="button"
                         onClick={() => totalBags < 10 && setBags({ ...bags, [type]: bags[type] + 1 })}
                         disabled={totalBags >= 10}
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90 ${
+                        className={`w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center transition-all active:scale-90 ${
                           totalBags < 10 ? 'bg-brand text-white' : 'bg-gray-100 text-gray-300 cursor-not-allowed'
                         }`}
                       >
-                        <Plus size={15} strokeWidth={2.5} />
+                        <Plus size={14} strokeWidth={2.5} />
                       </button>
                     </div>
                   </div>
@@ -515,7 +515,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
 
             {/* ── STEP 3: REVIEW & PAY ──────────────────────────────────── */}
             {wizardStep === 3 && (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <div>
                   <h2 className="text-xl font-bold text-gray-900 mb-1">Review your booking</h2>
                   <p className="text-sm text-gray-400">Confirm details before paying</p>
@@ -523,27 +523,27 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
 
                 {/* Summary card */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
-                  <div className="flex items-center gap-3 p-4">
-                    <div className="w-9 h-9 bg-brand/8 rounded-xl flex items-center justify-center shrink-0">
-                      <CalendarDays size={16} className="text-brand" />
+                  <div className="flex items-center gap-3 p-3">
+                    <div className="w-8 h-8 bg-brand/8 rounded-xl flex items-center justify-center shrink-0">
+                      <CalendarDays size={14} className="text-brand" />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-gray-400">Drop-off → Pick-up</p>
-                      <p className="text-sm font-bold text-gray-900 mt-0.5">
+                      <p className="text-[10px] font-semibold text-gray-400">Time Window</p>
+                      <p className="text-xs font-bold text-gray-900">
                         {startDate && format(startDate, 'dd MMM, HH:mm')} → {endDate && format(endDate, 'dd MMM, HH:mm')}
                       </p>
-                      <p className="text-xs text-brand font-medium">{hours}h storage</p>
+                      <p className="text-[10px] text-brand font-medium">{hours}h storage</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-4">
-                    <div className="w-9 h-9 bg-brand/8 rounded-xl flex items-center justify-center shrink-0">
-                      <Package size={16} className="text-brand" />
+                  <div className="flex items-center gap-3 p-3">
+                    <div className="w-8 h-8 bg-brand/8 rounded-xl flex items-center justify-center shrink-0">
+                      <Package size={14} className="text-brand" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs font-semibold text-gray-400">Bags</p>
-                      <div className="flex flex-wrap gap-1.5 mt-1">
+                      <p className="text-[10px] font-semibold text-gray-400">Bags</p>
+                      <div className="flex flex-wrap gap-1 mt-0.5">
                         {(Object.entries(bags) as [BagType, number][]).filter(([, q]) => q > 0).map(([type, qty]) => (
-                          <span key={type} className="text-xs bg-gray-100 text-gray-700 font-semibold px-2.5 py-1 rounded-full">
+                          <span key={type} className="text-[10px] bg-gray-100 text-gray-700 font-semibold px-2 py-0.5 rounded-full">
                             {BAG_EMOJIS[type]} {qty}× {BAG_LABELS[type]}
                           </span>
                         ))}
@@ -553,52 +553,48 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                 </div>
 
                 {/* Price breakdown */}
-                <div className="bg-gray-50 rounded-2xl border border-gray-100 p-5 space-y-3">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Price breakdown</p>
+                <div className="bg-gray-50 rounded-2xl border border-gray-100 p-4 space-y-2">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Price breakdown</p>
                   {(Object.entries(bags) as [BagType, number][]).filter(([, q]) => q > 0).map(([type, qty]) => (
-                    <div key={type} className="flex justify-between text-sm">
+                    <div key={type} className="flex justify-between text-xs">
                       <span className="text-gray-600">{qty}× {BAG_LABELS[type]} × {hours}h</span>
                       <span className="font-semibold text-gray-900">LKR {(BAG_RATES[type] * qty * hours).toLocaleString()}</span>
                     </div>
                   ))}
-                  <div className="pt-3 border-t border-gray-200 flex justify-between items-center">
-                    <span className="font-bold text-gray-900">Total</span>
-                    <span className="text-xl font-bold text-gray-900">LKR {totalPrice.toLocaleString()}</span>
+                  <div className="pt-2 border-t border-gray-200 flex justify-between items-center">
+                    <span className="font-bold text-gray-900 text-sm">Total</span>
+                    <span className="text-lg font-bold text-gray-900">LKR {totalPrice.toLocaleString()}</span>
                   </div>
-                  <p className="text-[10px] text-gray-400 text-center">All taxes included · No hidden fees</p>
                 </div>
 
                 {/* Identity — logged in */}
                 {isLoggedIn ? (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-                    <div className="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0">
-                      <User size={20} className="text-emerald-600" />
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0">
+                      <User size={18} className="text-emerald-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-gray-900 text-sm truncate">{initialProfile!.name}</p>
-                      <p className="text-xs text-gray-400 truncate">{initialProfile!.email}</p>
+                      <p className="font-bold text-gray-900 text-xs truncate">{initialProfile!.name}</p>
+                      <p className="text-[10px] text-gray-400 truncate">{initialProfile!.email}</p>
                     </div>
-                    <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-semibold bg-emerald-50 px-3 py-1.5 rounded-xl shrink-0">
-                      <ShieldCheck size={13} />
+                    <div className="flex items-center gap-1.5 text-emerald-600 text-[10px] font-semibold bg-emerald-50 px-2.5 py-1 rounded-lg shrink-0">
+                      <ShieldCheck size={12} />
                       Verified
                     </div>
                   </div>
                 ) : (
                   /* Guest identity form */
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Shield size={15} className="text-brand" />
-                      <p className="text-sm font-bold text-gray-900">Your Details</p>
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <Shield size={14} className="text-brand" />
+                      <p className="text-xs font-bold text-gray-900">Your Details</p>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <FieldInput label="Full Name" icon={User} value={name} onChange={e => setName(e.target.value)} placeholder="Amal Perera" />
                       <FieldInput label="Phone" icon={Smartphone} type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="07XXXXXXXX" />
                       <FieldInput label="Email" icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
                       <FieldInput label="NIC / Passport" icon={Fingerprint} value={nic} onChange={e => setNic(e.target.value)} placeholder="987654321V" />
                     </div>
-                    <p className="text-[10px] text-gray-400">
-                      We&apos;ll verify your identity via OTP before payment. Your info is used only for luggage security.
-                    </p>
                   </div>
                 )}
               </div>
