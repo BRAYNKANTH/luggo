@@ -165,9 +165,10 @@ function HeroSection() {
             </motion.div>
 
             <motion.h1 variants={fadeUp} className="text-5xl md:text-6xl xl:text-7xl font-extrabold text-ocean-900 leading-[1.05] tracking-tight mb-6">
-              Travel light.<br />
-              <span className="text-brand">Explore more.</span>
+              Sri Lanka&apos;s Safest<br />
+              <span className="text-brand">Luggage Storage.</span>
             </motion.h1>
+
 
             <motion.p variants={fadeUp} className="text-gray-500 text-lg md:text-xl max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed">
               Secure luggage storage at trusted hubs across Sri Lanka — airports, train stations, and tourist hotspots.
@@ -303,7 +304,8 @@ function HowItWorksSection() {
         <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true }}>
           <motion.div variants={fadeUp} className="text-center mb-16">
             <p className="text-brand font-bold text-sm uppercase tracking-widest mb-3">Simple as 1-2-3</p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-ocean-900 mb-4">How Luggo works</h2>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-ocean-900 mb-4">How Luggo Storage Works</h2>
+
             <p className="text-gray-400 max-w-lg mx-auto">Three steps between you and a hands-free adventure.</p>
           </motion.div>
 
@@ -339,7 +341,8 @@ function PricingSection() {
         <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true }}>
           <motion.div variants={fadeUp} className="text-center mb-14">
             <p className="text-brand font-bold text-sm uppercase tracking-widest mb-3">Transparent Pricing</p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-ocean-900 mb-4">Pay only for what you use</h2>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-ocean-900 mb-4">Luggo Pricing: Low Cost, No Hidden Fees</h2>
+
             <p className="text-gray-400 max-w-md mx-auto">Hourly rates per bag. No minimum, no subscription, no hidden fees.</p>
           </motion.div>
 
@@ -394,7 +397,8 @@ function TrustSection() {
         <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true }}>
           <motion.div variants={fadeUp} className="text-center mb-14">
             <p className="text-brand font-bold text-sm uppercase tracking-widest mb-3">Your Bags Are Safe</p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-ocean-900 mb-4">Security you can trust</h2>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-ocean-900 mb-4">Luggo Security: Safe & Verified Storage</h2>
+
             <p className="text-gray-400 max-w-md mx-auto">Every bag goes through a strict seal-and-photograph process.</p>
           </motion.div>
 
@@ -426,7 +430,8 @@ function LocationsSection() {
         <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true }}>
           <motion.div variants={fadeUp} className="text-center mb-14">
             <p className="text-brand font-bold text-sm uppercase tracking-widest mb-3">10+ Locations</p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-ocean-900 mb-4">Find a hub near you</h2>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-ocean-900 mb-4">Luggo Hubs: Storage in Colombo, BIA, Galle & Ella</h2>
+
             <p className="text-gray-400 max-w-md mx-auto">From Colombo to Ella — we&apos;re wherever your journey takes you.</p>
           </motion.div>
 
@@ -437,10 +442,11 @@ function LocationsSection() {
                   <div className="relative h-44 overflow-hidden">
                     <Image
                       src={hub.img}
-                      alt={hub.name}
+                      alt={`${hub.name} - Safe Luggage Storage in ${hub.location}, Sri Lanka`}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
+
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                     <span className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm text-gray-700 text-[10px] font-bold px-2.5 py-1 rounded-full">
                       {hub.open}
