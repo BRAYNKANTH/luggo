@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { Clock, MapPin, ShieldCheck } from 'lucide-react'
+import { ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { BookingForm } from './BookingForm'
