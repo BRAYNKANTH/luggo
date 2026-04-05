@@ -1,27 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --brand: #038cc9;
+    --brand-dark: #011a2e;
+    --brand-accent: #f0c040;
+    --brand-success: #22c98e;
+    --brand-danger: #e24b4a;
   }
+
+  * { @apply box-border; }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-sans text-gray-900 bg-gray-50 antialiased;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Cards */
+  .card {
+    @apply bg-white rounded-2xl border border-gray-100 shadow-sm p-5;
+  }
+
+  /* Status badges */
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+  }
+  .badge-success { @apply badge bg-green-50 text-green-700; }
+  .badge-warning { @apply badge bg-amber-50 text-amber-700; }
+  .badge-danger  { @apply badge bg-red-50 text-red-600; }
+  .badge-info    { @apply badge bg-blue-50 text-blue-700; }
+  .badge-neutral { @apply badge bg-gray-100 text-gray-600; }
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .pt-safe { padding-top: env(safe-area-inset-top); }
+  .pb-nav  { padding-bottom: calc(env(safe-area-inset-bottom) + 60px); }
+
+  .text-balance { text-wrap: balance; }
+
+  /* Hide scrollbar but keep scroll behaviour */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
 }

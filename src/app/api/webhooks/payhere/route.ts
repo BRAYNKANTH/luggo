@@ -1,0 +1,262 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createServiceClient } from '@/lib/supabase/service'
+import { verifyPayhereIPN } from '@/lib/utils/payhere'
+
+/**
+ * PayHere IPN (Instant Payment Notification) webhook.
+ * PayHere POSTs form-encoded data after every payment attempt.
+ * Must respond 200 OK quickly — PayHere retries on failure.
+ *
+ * order_id formats:
+ *   {bookingId}        → initial booking payment
+ *   lf-{paymentId}     → late fee payment
+ *
+ * NOTE: Uses service-role client — RLS must not block these updates.
+ */
+export async function POST(req: NextRequest) {
+  try {
+    const formData = await req.formData()
+
+    const merchant_id      = formData.get('merchant_id')?.toString() ?? ''
+    const order_id         = formData.get('order_id')?.toString() ?? ''
+    const payment_id       = formData.get('payment_id')?.toString() ?? ''
+    const payhere_amount   = formData.get('payhere_amount')?.toString() ?? ''
+    const payhere_currency = formData.get('payhere_currency')?.toString() ?? ''
+    const status_code      = formData.get('status_code')?.toString() ?? ''
+    const md5sig           = formData.get('md5sig')?.toString() ?? ''
+
+    const merchant_secret = process.env.PAYHERE_MERCHANT_SECRET!
+
+    console.log('[PayHere IPN] Received:', { order_id, status_code, payhere_amount })
+
+    const isValid = verifyPayhereIPN({
+      merchant_id, order_id, payhere_amount, payhere_currency,
+      status_code, md5sig, merchant_secret,
+    })
+
+    if (!isValid) {
+      console.warn('[PayHere IPN] Invalid signature or non-success status', { order_id, status_code })
+      return NextResponse.json({ received: true })
+    }
+
+    // Service client — bypasses RLS for trusted server-side updates
+    const supabase = createServiceClient()
+
+    // ── Late fee payment: order_id = "lf-{paymentId}" ────────────────────
+    if (order_id.startsWith('lf-')) {
+      const paymentId = order_id.slice(3)
+
+      const { data: lateFeePayment } = await supabase
+        .from('payments' as never)
+        .update({ status: 'paid', gateway_ref: payment_id })
+        .eq('id', paymentId)
+        .eq('type', 'late_fee')
+        .eq('status', 'pending')
+        .select('booking_id')
+        .maybeSingle() as { data: { booking_id: string } | null }
+
+      if (lateFeePayment?.booking_id) {
+        const bookingId = lateFeePayment.booking_id
+        const { error } = await supabase
+          .from('bookings' as never)
+          .update({ status: 'pickup_requested' })
+          .eq('id', bookingId)
+          .in('status', ['active_storage', 'overstayed'])
+
+        if (error) {
+          console.error('[PayHere IPN] Failed to advance booking after late fee', bookingId, error)
+        } else {
+          console.log('[PayHere IPN] Late fee paid, pickup_requested', bookingId)
+          sendLateFeeNotification(supabase, bookingId, Number(payhere_amount)).catch(console.error)
+        }
+      }
+
+      return NextResponse.json({ received: true })
+    }
+
+    // ── Extension payment: order_id = "ext-{paymentId}" ───────────────────
+    if (order_id.startsWith('ext-')) {
+      const paymentId = order_id.slice(4)
+
+      const { data: extPayment } = await supabase
+        .from('payments' as never)
+        .update({ status: 'paid', gateway_ref: payment_id })
+        .eq('id', paymentId)
+        .eq('type', 'extension')
+        .eq('status', 'pending')
+        .select('booking_id, amount')
+        .maybeSingle() as { data: { booking_id: string; amount: number } | null }
+
+      if (extPayment?.booking_id) {
+        const bookingId = extPayment.booking_id
+        
+        const { data: booking } = await supabase
+          .from('bookings' as never)
+          .select('end_time, booking_bags(bag_type)')
+          .eq('id', bookingId)
+          .single() as { data: { end_time: string; booking_bags: { bag_type: string }[] } | null }
+
+        if (booking) {
+          const { BAG_RATES } = await import('@/lib/utils/pricing')
+          const hourlyRate = booking.booking_bags.reduce(
+            (total, bag) => total + (BAG_RATES[bag.bag_type as keyof typeof BAG_RATES] || 0),
+            0
+          )
+          
+          if (hourlyRate > 0) {
+            const addedHours = Math.round(extPayment.amount / hourlyRate)
+            const oldEnd = new Date(booking.end_time)
+            const newEnd = new Date(oldEnd.getTime() + addedHours * 60 * 60 * 1000)
+            
+            await supabase
+              .from('bookings' as never)
+              .update({ end_time: newEnd.toISOString() })
+              .eq('id', bookingId)
+            
+            console.log(`[PayHere IPN] Booking ${bookingId} extended by ${addedHours}h to ${newEnd.toISOString()}`)
+            sendExtensionNotification(supabase, bookingId, extPayment.amount, addedHours).catch(console.error)
+          }
+        }
+      }
+
+      return NextResponse.json({ received: true })
+    }
+
+    // ── Initial booking payment: order_id = {bookingId} ──────────────────
+    await supabase
+      .from('payments' as never)
+      .update({ status: 'paid', gateway_ref: payment_id })
+      .eq('booking_id', order_id)
+      .eq('type', 'booking')
+
+    const { error } = await supabase
+      .from('bookings' as never)
+      .update({ status: 'confirmed' })
+      .eq('id', order_id)
+      .eq('status', 'pending_payment')
+
+    if (error) {
+      console.error('[PayHere IPN] Failed to update booking', order_id, error)
+    } else {
+      console.log('[PayHere IPN] Booking confirmed', order_id)
+      // Auto-assign sticker numbers to all bags at confirmation time
+      const { autoAssignStickers } = await import('@/lib/utils/stickerAssignment')
+      autoAssignStickers(order_id).catch(console.error)
+      sendBookingConfirmedNotification(supabase, order_id).catch(console.error)
+    }
+
+    return NextResponse.json({ received: true })
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[PayHere IPN] Error:', err)
+    return NextResponse.json({ received: true })
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function sendBookingConfirmedNotification(supabase: any, bookingId: string) {
+  const { data: booking } = await supabase
+    .from('bookings')
+    .select('user_id, start_time, end_time, total_price, hubs(name, address), users(name, email, phone)')
+    .eq('id', bookingId)
+    .single()
+
+  if (!booking) return
+
+  const hubName    = booking.hubs?.name ?? 'the hub'
+  const userName   = booking.users?.name ?? 'Customer'
+  const userEmail  = booking.users?.email
+  const userPhone  = booking.users?.phone
+  const appUrl     = process.env.NEXT_PUBLIC_APP_URL ?? ''
+
+  // In-app notification
+  await supabase.from('notifications').insert({
+    user_id: booking.user_id,
+    type: 'booking_confirmed',
+    message: `Your booking at ${hubName} is confirmed. Show your QR code when you arrive.`,
+    read: false,
+  })
+
+  // Email
+  if (userEmail) {
+    const { sendBookingConfirmedEmail } = await import('@/lib/utils/email')
+    sendBookingConfirmedEmail(userEmail, userName, hubName, bookingId, appUrl, {
+      startTime: booking.start_time,
+      endTime: booking.end_time,
+      totalPrice: booking.total_price,
+      address: booking.hubs?.address,
+    }, booking.qr_code).catch(console.error)
+  }
+
+  // SMS
+  if (userPhone) {
+    const { sendSMS } = await import('@/lib/utils/sms')
+    const start = new Date(booking.start_time)
+    const dateStr = start.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+    sendSMS(
+      userPhone,
+      `Luggo: Booking confirmed at ${hubName}! Drop-off: ${dateStr}. Total: LKR ${Number(booking.total_price).toLocaleString()}. View QR: ${appUrl}/booking/${bookingId}`
+    ).catch(console.error)
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function sendLateFeeNotification(supabase: any, bookingId: string, amount: number) {
+  const { data: booking } = await supabase
+    .from('bookings')
+    .select('user_id, hubs(name), users(name, email, phone)')
+    .eq('id', bookingId)
+    .single()
+
+  if (!booking) return
+
+  const hubName   = booking.hubs?.name ?? 'the hub'
+  const userName  = booking.users?.name ?? 'Customer'
+  const userEmail = booking.users?.email
+  const userPhone = booking.users?.phone
+
+  await supabase.from('notifications').insert({
+    user_id: booking.user_id,
+    type: 'late_fee',
+    message: `Late fee of LKR ${amount.toLocaleString()} paid. Your pickup at ${hubName} is confirmed.`,
+    read: false,
+  })
+
+  if (userPhone) {
+    const { sendSMS } = await import('@/lib/utils/sms')
+    sendSMS(userPhone, `Luggo: Late fee of LKR ${amount.toLocaleString()} received. Please collect your bags at ${hubName}.`).catch(console.error)
+  }
+
+  if (userEmail) {
+    const { sendLateFeeReceiptEmail } = await import('@/lib/utils/email')
+    sendLateFeeReceiptEmail(userEmail, userName, hubName, amount).catch(console.error)
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function sendExtensionNotification(supabase: any, bookingId: string, amount: number, hours: number) {
+  const { data: booking } = await supabase
+    .from('bookings')
+    .select('user_id, end_time, hubs(name), users(name, email, phone)')
+    .eq('id', bookingId)
+    .single()
+
+  if (!booking) return
+
+  const userPhone = booking.users?.phone
+  const newEnd    = new Date(booking.end_time)
+  const timeStr   = newEnd.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true })
+  const dateStr   = newEnd.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+
+  await supabase.from('notifications').insert({
+    user_id: booking.user_id,
+    type: 'general',
+    message: `Booking extended by ${hours} hours. Your new pickup time is ${dateStr}, ${timeStr}.`,
+    read: false,
+  })
+
+  if (userPhone) {
+    const { sendSMS } = await import('@/lib/utils/sms')
+    sendSMS(userPhone, `Luggo: Extension of ${hours}h confirmed! New pickup: ${dateStr} @ ${timeStr}. Paid: LKR ${amount.toLocaleString()}.`).catch(console.error)
+  }
+}
