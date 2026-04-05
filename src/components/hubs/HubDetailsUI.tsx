@@ -43,15 +43,12 @@ interface HubDetailsUIProps {
   grouped: Record<string, NearbyPlace[]>
 }
 
-const HOUR_OPTIONS = [1, 2, 4, 8]
-
 export function HubDetailsUI({
   hub,
   activeCount,
   categories,
   grouped,
 }: HubDetailsUIProps) {
-  const [estimateHours, setEstimateHours] = useState(2)
   const [showAllNearby, setShowAllNearby] = useState(false)
 
   const availability = hub.capacity - activeCount
@@ -243,33 +240,6 @@ export function HubDetailsUI({
                 ))}
               </div>
 
-              {/* Price estimator */}
-              <div className="border border-brand/15 bg-brand/4 rounded-2xl p-4 space-y-3">
-                <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Quick Estimate</p>
-                <div className="flex gap-2">
-                  {HOUR_OPTIONS.map((h) => (
-                    <button
-                      key={h}
-                      onClick={() => setEstimateHours(h)}
-                      className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                        estimateHours === h
-                          ? 'bg-brand text-white shadow-sm'
-                          : 'bg-white border border-gray-200 text-gray-600 hover:border-brand/40'
-                      }`}
-                    >
-                      {h}h
-                    </button>
-                  ))}
-                </div>
-                <div className="space-y-1">
-                  {(Object.entries(BAG_LABELS) as [BagType, string][]).map(([type, label]) => (
-                    <div key={type} className="flex justify-between text-xs">
-                      <span className="text-gray-500">{label} × {estimateHours}h</span>
-                      <span className="font-bold text-gray-800">LKR {(BAG_RATES[type] * estimateHours).toLocaleString()}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
 
               {/* Desktop CTA */}
               <div className="space-y-3 hidden md:block">

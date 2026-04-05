@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { isPast } from 'date-fns'
 import {
-  Search, X, MapPin, Clock, Package, ChevronRight,
+  Search, X, MapPin, Clock, Package, ChevronRight, ChevronLeft,
   QrCode, Navigation, SlidersHorizontal
 } from 'lucide-react'
 import { BookingStatusBadge } from '@/components/customer/BookingStatusBadge'
@@ -107,47 +107,49 @@ function FeaturedHubCard({ hub, distanceKm }: { hub: HubCard; distanceKm: number
 
   return (
     <Link href={`/hubs/${hub.id}`} className="block shrink-0 w-52">
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md hover:border-brand/20 transition-all group">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md hover:border-brand/20 hover:-translate-y-0.5 transition-all group">
+        {/* Image */}
         <div className="relative h-32 bg-ocean-900">
           {hub.image_url ? (
-            <Image
-              src={hub.image_url}
-              alt={hub.name}
-              fill
-              sizes="208px"
+            <Image src={hub.image_url} alt={hub.name} fill sizes="208px"
               className="object-cover group-hover:scale-105 transition-transform duration-500"
-              unoptimized={hub.image_url.includes('?t=')}
-            />
+              unoptimized={hub.image_url.includes('?t=')} />
           ) : (
             <HubImagePlaceholder />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
-          {/* Availability dot */}
-          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 bg-black/30 backdrop-blur-sm px-2 py-1 rounded-full">
+          {/* Status badge */}
+          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 bg-black/35 backdrop-blur-sm px-2 py-1 rounded-full">
             <div className={`w-1.5 h-1.5 rounded-full ${avail.color} ${avail.spots > 0 ? 'animate-pulse' : ''}`} />
             <span className="text-white text-[10px] font-semibold">{avail.label}</span>
           </div>
 
-          {/* Distance */}
+          {/* Distance pill */}
           {distanceKm !== null && (
-            <div className="absolute top-2.5 right-2.5 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full">
+            <div className="absolute top-2.5 right-2.5 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full flex items-center gap-1">
+              <Navigation size={8} className="text-brand" />
               <span className="text-[10px] font-bold text-gray-700">{fmtDist(distanceKm)}</span>
             </div>
           )}
 
           <div className="absolute bottom-0 left-0 right-0 p-3">
-            <p className="text-white font-bold text-sm leading-tight truncate">{hub.name}</p>
+            <p className="text-white font-bold text-sm leading-tight truncate drop-shadow">{hub.name}</p>
           </div>
         </div>
 
+        {/* Info */}
         <div className="px-3 py-2.5 space-y-2">
-          <div className="flex items-center gap-1 text-[10px] text-gray-400">
-            <Clock size={10} />
-            <span>{hub.open_time.slice(0, 5)}–{hub.close_time.slice(0, 5)}</span>
-            {!open && <span className="text-red-400 font-semibold ml-1">· Closed</span>}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1 text-[10px] text-gray-400">
+              <Clock size={10} />
+              <span>{hub.open_time.slice(0, 5)}–{hub.close_time.slice(0, 5)}</span>
+            </div>
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${open ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
+              {open ? 'Open' : 'Closed'}
+            </span>
           </div>
-          
+
           {/* Capacity bar */}
           <div className="space-y-1">
             <div className="flex justify-between text-[9px] font-bold uppercase tracking-tighter">
@@ -155,16 +157,19 @@ function FeaturedHubCard({ hub, distanceKm }: { hub: HubCard; distanceKm: number
               <span className={avail.textColor}>{avail.percent}%</span>
             </div>
             <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-              <div 
-                className={`h-full transition-all duration-1000 ${avail.color}`} 
-                style={{ width: `${avail.percent}%` }} 
-              />
+              <div className={`h-full transition-all duration-1000 ${avail.color}`} style={{ width: `${avail.percent}%` }} />
             </div>
           </div>
 
-          <p className="text-xs font-bold text-gray-900">
-            From LKR {minRate.toLocaleString()}<span className="text-gray-400 font-normal">/hr</span>
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-brand">
+              From LKR {minRate.toLocaleString()}<span className="text-gray-400 font-normal text-[10px]">/hr</span>
+            </p>
+            <span className="text-[10px] text-gray-400 font-medium flex items-center gap-0.5">
+              <MapPin size={9} />
+              {hub.alias}
+            </span>
+          </div>
         </div>
       </div>
     </Link>
@@ -394,6 +399,21 @@ export function DashboardClient({ hubs, activeBookings, firstName, userId, notif
     { key: 'open',      label: '🕐 Open Now' },
   ]
 
+  const hubScrollRef = useRef<HTMLDivElement>(null)
+  const [hubCanLeft,  setHubCanLeft]  = useState(false)
+  const [hubCanRight, setHubCanRight] = useState(true)
+
+  function updateHubArrows() {
+    const el = hubScrollRef.current
+    if (!el) return
+    setHubCanLeft(el.scrollLeft > 8)
+    setHubCanRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 8)
+  }
+
+  function scrollHubs(dir: 'left' | 'right') {
+    hubScrollRef.current?.scrollBy({ left: dir === 'right' ? 220 : -220, behavior: 'smooth' })
+  }
+
   return (
     <div className="max-w-5xl mx-auto">
       {/* ── Sticky header ── */}
@@ -519,21 +539,49 @@ export function DashboardClient({ hubs, activeBookings, firstName, userId, notif
           </section>
         ) : (
           <>
-            {/* ── Horizontal snap scroll ── */}
+            {/* ── Nearest hubs — horizontal snap scroll ── */}
             {hubsWithDist.length > 0 && (
               <section>
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-base font-bold text-gray-900">
-                    {userPos ? '📍 Closest to You' : '🏪 Storage Hubs'}
-                  </h2>
-                  <span className="text-xs text-gray-400">{hubs.length} locations</span>
+                  <div>
+                    <h2 className="text-base font-bold text-gray-900">
+                      {userPos ? '📍 Nearest Hubs' : '🏪 Storage Hubs'}
+                    </h2>
+                    {userPos && (
+                      <p className="text-[10px] text-gray-400 mt-0.5">Sorted by distance from your location</p>
+                    )}
+                  </div>
+                  <span className="text-xs bg-gray-100 text-gray-500 font-semibold px-2.5 py-1 rounded-full">{hubs.length} locations</span>
                 </div>
-                <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide -mx-4 px-4">
-                  {hubsWithDist.map(h => (
-                    <div key={h.id} className="snap-start">
-                      <FeaturedHubCard hub={h} distanceKm={h.distanceKm} />
-                    </div>
-                  ))}
+                <div className="relative">
+                  {/* Left arrow */}
+                  {hubCanLeft && (
+                    <button
+                      onClick={() => scrollHubs('left')}
+                      className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all"
+                    >
+                      <ChevronLeft size={15} className="text-gray-600" />
+                    </button>
+                  )}
+                  {/* Right arrow */}
+                  {hubCanRight && (
+                    <button
+                      onClick={() => scrollHubs('right')}
+                      className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all"
+                    >
+                      <ChevronRight size={15} className="text-gray-600" />
+                    </button>
+                  )}
+                  <div
+                    ref={hubScrollRef}
+                    onScroll={updateHubArrows}
+                    className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide -mx-4 px-4">
+                    {hubsWithDist.map(h => (
+                      <div key={h.id} className="snap-start">
+                        <FeaturedHubCard hub={h} distanceKm={h.distanceKm} />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </section>
             )}
