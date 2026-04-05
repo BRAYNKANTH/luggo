@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { TrendingUp, DollarSign, Calendar, BarChart3, PieChart } from 'lucide-react'
+import { TrendingUp, DollarSign, Calendar, BarChart3 } from 'lucide-react'
 
 interface RevenueData {
   total: number

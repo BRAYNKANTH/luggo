@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { format, isPast } from 'date-fns'
+import { isPast } from 'date-fns'
 import {
   Search, X, MapPin, Clock, Package, ChevronRight,
   QrCode, Navigation, SlidersHorizontal

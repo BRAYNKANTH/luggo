@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Save, Clock, Calendar, MapPin, Building2, Power } from 'lucide-react'
+import { Save, Clock, Calendar, Building2, Power } from 'lucide-react'
 import { updateHubProfile } from '@/lib/staff/actions'
 import { useRouter } from 'next/navigation'
 

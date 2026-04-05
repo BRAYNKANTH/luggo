@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Logo } from '@/components/ui/Logo'
 import { SignOutButton } from '@/components/shared/SignOutButton'
 import { ChevronLeft, Calendar, Package, ArrowDown, ArrowUp, Clock, User, Tag, CheckCircle2 } from 'lucide-react'
-import { format, isToday, isTomorrow, startOfDay, endOfDay, addDays } from 'date-fns'
+import { format, startOfDay, endOfDay, addDays } from 'date-fns'
 import { BAG_LABELS } from '@/lib/utils/pricing'
 import { type BagType, type BookingStatus } from '@/types/database'
 

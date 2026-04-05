@@ -45,10 +45,6 @@ export function StickerEntry({ bookingId, bags, hubAlias, nextStickerHint }: Sti
     setError(null)
     setLoading(true)
 
-    const stickers = unassigned.map((bag) => ({
-      bagId: bag.id,
-      stickerNumber: values[bag.id].trim(),
-    }))
 
     const result = await confirmStickers(bookingId)
     setLoading(false)

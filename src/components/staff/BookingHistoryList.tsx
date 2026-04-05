@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { Search, Filter, ChevronRight, User, Calendar, Tag, Package, Clock } from 'lucide-react'
+import { Search, User, Calendar, Tag } from 'lucide-react'
 import { format } from 'date-fns'
 
 interface Booking {
