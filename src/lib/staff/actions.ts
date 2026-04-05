@@ -122,6 +122,9 @@ export async function confirmStickers(
   if (booking.status !== 'arrived') {
     return { error: `Booking must be in "arrived" status. Current: ${booking.status}` }
   }
+  if (!(booking as unknown as { id_verified: boolean }).id_verified) {
+    return { error: 'Customer identity must be verified before applying stickers.' }
+  }
 
   // Record sticker assignments in audit table
   const hubAlias = await svc

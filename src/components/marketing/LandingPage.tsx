@@ -36,27 +36,67 @@ const HUBS_PREVIEW = [
   { name: 'Ella Highlands Hub', location: 'Ella', open: '06:00–20:00', img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80', capacity: 15 },
 ]
 
+const CITY_LOCATIONS = [
+  {
+    city: 'Colombo',
+    img: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80',
+    desc: 'Store your bags near Colombo Fort, Pettah, Galle Face, and major hotels while you explore the capital city.',
+  },
+  {
+    city: 'Kandy',
+    img: 'https://images.unsplash.com/photo-1569384370146-66a8f9734e1e?w=600&q=80',
+    desc: 'Visit the Temple of the Tooth and Kandy Lake without your suitcase. Drop off your bags and roam freely.',
+  },
+  {
+    city: 'Galle',
+    img: 'https://images.unsplash.com/photo-1588598198321-9735fd5f2aad?w=600&q=80',
+    desc: 'Walk the famous Galle Fort and enjoy the southern coast hands-free with convenient bag storage nearby.',
+  },
+  {
+    city: 'Ella',
+    img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80',
+    desc: 'Hike Little Adam\'s Peak or take the scenic train without your luggage. Luggo keeps it safe in Ella.',
+  },
+  {
+    city: 'near Colombo Airport',
+    img: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&q=80',
+    desc: 'Arriving early or departing late? Store your bags near BIA and make the most of your extra time.',
+  },
+  {
+    city: 'Negombo',
+    img: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=600&q=80',
+    desc: 'Spend your last day on Negombo\'s beach without dragging your bags. Our storage partners have you covered.',
+  },
+]
+
 const HOW_IT_WORKS = [
   {
     step: '01',
     icon: MapPin,
-    title: 'Find a Hub',
-    desc: 'Browse hubs at airports, train stations, and popular spots. Filter by location or availability.',
+    title: 'Find a Spot',
+    desc: 'Search by city or landmark. Browse verified luggage storage locations near you in Colombo, Kandy, Ella, Galle, and Negombo.',
     color: 'bg-blue-50 text-brand',
   },
   {
     step: '02',
     icon: Package,
     title: 'Drop Off Your Bags',
-    desc: 'Arrive at the hub. Staff seals and tags your luggage. You get a photo proof and a unique QR code.',
+    desc: 'Head to your chosen spot, drop off your luggage, and enjoy Sri Lanka completely hands-free. No heavy bags. No stress.',
     color: 'bg-emerald-50 text-emerald-600',
   },
   {
     step: '03',
     icon: Zap,
     title: 'Explore Freely',
-    desc: 'Go sightseeing, shopping, or to your next destination — completely hands-free.',
+    desc: 'Wander through temples, beaches, and markets without dragging your suitcase. Your bags are safe while you make memories.',
     color: 'bg-amber-50 text-amber-600',
+  },
+  {
+    step: '04',
+    icon: ArrowRight,
+    title: 'Pick Up and Go',
+    desc: 'Return to collect your luggage whenever you\'re ready. Our storage partners are flexible, so you travel on your schedule.',
+    color: 'bg-purple-50 text-purple-600',
   },
 ]
 
@@ -67,10 +107,12 @@ const PRICING = [
 ]
 
 const TRUST_FEATURES = [
-  { icon: Lock, title: 'Tamper-Proof Seals', desc: 'Every bag is sealed and documented with photos before storage.' },
-  { icon: QrCode, title: 'QR Retrieval', desc: 'Unique QR code per booking — only you can reclaim your bags.' },
-  { icon: Shield, title: 'Staff Verified', desc: 'All hub staff are background-checked and trained.' },
-  { icon: Smartphone, title: 'Live Notifications', desc: 'Instant alerts when your bags are sealed, secured, and ready.' },
+  { icon: Shield, title: 'Verified storage locations', desc: 'Every Luggo partner is reviewed and approved before joining our network.' },
+  { icon: Zap, title: 'Flexible short-term storage', desc: 'Store your bags for a few hours or a few days. You choose — no minimum booking.' },
+  { icon: MapPin, title: 'Locations island-wide', desc: 'Luggage storage in Colombo, Kandy, Galle, Ella, Negombo, and more.' },
+  { icon: CreditCard, title: 'Affordable pricing', desc: 'Transparent hourly and daily rates with no hidden fees. Pay only for what you use.' },
+  { icon: Lock, title: 'Tamper-proof seals', desc: 'Every bag is sealed and photographed. Only your QR code unlocks retrieval.' },
+  { icon: Smartphone, title: 'Local and reliable', desc: 'Luggo is a Sri Lankan platform built for Sri Lanka\'s travellers — not a global generic service.' },
 ]
 
 const STATS = [
@@ -165,19 +207,21 @@ function HeroSection() {
             </motion.div>
 
             <motion.h1 variants={fadeUp} className="text-5xl md:text-6xl xl:text-7xl font-extrabold text-ocean-900 leading-[1.05] tracking-tight mb-6">
-              Sri Lanka&apos;s Safest<br />
-              <span className="text-brand">Luggage Storage.</span>
+              Sri Lanka&apos;s Trusted<br />
+              <span className="text-brand">Luggage Storage Network.</span>
             </motion.h1>
 
+            <motion.p variants={fadeUp} className="text-gray-500 text-lg md:text-xl max-w-xl mx-auto lg:mx-0 mb-3 leading-relaxed">
+              Luggo connects travellers with verified storage spots across Sri Lanka — so you can explore Colombo, Kandy, Galle, and beyond completely hands-free.
+            </motion.p>
 
-            <motion.p variants={fadeUp} className="text-gray-500 text-lg md:text-xl max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed">
-              Secure luggage storage at trusted hubs across Sri Lanka — airports, train stations, and tourist hotspots.
-              Book in seconds, no account needed.
+            <motion.p variants={fadeUp} className="text-gray-400 text-base max-w-lg mx-auto lg:mx-0 mb-8 leading-relaxed">
+              Store your bags safely. Pay by the hour. Pick up whenever you&apos;re ready.
             </motion.p>
 
             <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-10">
               <Link href="/dashboard" className="flex items-center justify-center gap-2 bg-gray-900 text-white font-bold px-8 py-4 rounded-2xl hover:bg-brand transition-all duration-200 text-base">
-                Find a Hub Near Me <ArrowRight size={18} />
+                Find Storage Near Me <ArrowRight size={18} />
               </Link>
               <a href="#how-it-works" className="flex items-center justify-center gap-2 border border-gray-200 text-gray-700 font-bold px-8 py-4 rounded-2xl hover:border-brand/40 hover:bg-brand/4 transition-all text-base">
                 How It Works <ChevronDown size={16} />
@@ -303,26 +347,24 @@ function HowItWorksSection() {
       <div className="max-w-6xl mx-auto">
         <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true }}>
           <motion.div variants={fadeUp} className="text-center mb-16">
-            <p className="text-brand font-bold text-sm uppercase tracking-widest mb-3">Simple as 1-2-3</p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-ocean-900 mb-4">How Luggo Storage Works</h2>
-
-            <p className="text-gray-400 max-w-lg mx-auto">Three steps between you and a hands-free adventure.</p>
+            <p className="text-brand font-bold text-sm uppercase tracking-widest mb-3">Simple Process</p>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-ocean-900 mb-4">How Luggo Works</h2>
+            <p className="text-gray-400 max-w-lg mx-auto">Finding short-term luggage storage in Sri Lanka has never been easier. Luggo partners with trusted shops, hotels, and businesses island-wide.</p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8 relative">
-            {/* Connecting line on desktop */}
-            <div className="hidden md:block absolute top-10 left-[calc(16.66%+1.5rem)] right-[calc(16.66%+1.5rem)] h-px bg-gradient-to-r from-brand/20 via-brand/40 to-brand/20" />
-
+          <div className="grid sm:grid-cols-2 gap-6">
             {HOW_IT_WORKS.map((step, i) => (
-              <motion.div key={i} variants={fadeUp} className="relative flex flex-col items-center text-center">
-                <div className={`w-20 h-20 rounded-3xl ${step.color} flex items-center justify-center mb-6 relative z-10`}>
-                  <step.icon size={34} strokeWidth={1.5} />
-                  <span className="absolute -top-2 -right-2 w-6 h-6 bg-white border border-gray-200 rounded-full text-[10px] font-black text-gray-600 flex items-center justify-center shadow-sm">
+              <motion.div key={i} variants={fadeUp} className="flex gap-5 bg-gray-50/60 border border-gray-100 rounded-3xl p-6">
+                <div className={`w-14 h-14 rounded-2xl ${step.color} flex items-center justify-center shrink-0 relative`}>
+                  <step.icon size={26} strokeWidth={1.5} />
+                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-white border border-gray-200 rounded-full text-[9px] font-black text-gray-600 flex items-center justify-center shadow-sm">
                     {step.step}
                   </span>
                 </div>
-                <h3 className="text-lg font-bold text-ocean-900 mb-3">{step.title}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed max-w-xs">{step.desc}</p>
+                <div>
+                  <h3 className="text-base font-bold text-ocean-900 mb-1.5">{step.title}</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">{step.desc}</p>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -396,10 +438,11 @@ function TrustSection() {
       <div className="max-w-6xl mx-auto">
         <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true }}>
           <motion.div variants={fadeUp} className="text-center mb-14">
-            <p className="text-brand font-bold text-sm uppercase tracking-widest mb-3">Your Bags Are Safe</p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-ocean-900 mb-4">Luggo Security: Safe & Verified Storage</h2>
-
-            <p className="text-gray-400 max-w-md mx-auto">Every bag goes through a strict seal-and-photograph process.</p>
+            <p className="text-brand font-bold text-sm uppercase tracking-widest mb-3">Why Travellers Choose Luggo</p>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-ocean-900 mb-4">Why Travellers Choose Luggo for Luggage Storage in Sri Lanka</h2>
+            <p className="text-gray-500 max-w-2xl mx-auto leading-relaxed">
+              Whether you&apos;ve just landed at Bandaranaike Airport and can&apos;t check in yet, or you&apos;re spending your last afternoon exploring the city before a flight, Luggo has a bag storage solution for you.
+            </p>
           </motion.div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -429,40 +472,27 @@ function LocationsSection() {
       <div className="max-w-7xl mx-auto">
         <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true }}>
           <motion.div variants={fadeUp} className="text-center mb-14">
-            <p className="text-brand font-bold text-sm uppercase tracking-widest mb-3">10+ Locations</p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-ocean-900 mb-4">Luggo Hubs: Storage in Colombo, BIA, Galle & Ella</h2>
-
-            <p className="text-gray-400 max-w-md mx-auto">From Colombo to Ella — we&apos;re wherever your journey takes you.</p>
+            <p className="text-brand font-bold text-sm uppercase tracking-widest mb-3">Island-Wide Network</p>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-ocean-900 mb-4">Luggage Storage Across Sri Lanka</h2>
+            <p className="text-gray-400 max-w-md mx-auto">Find safe, affordable bag storage in all major tourist destinations and transit hubs across Sri Lanka.</p>
           </motion.div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {HUBS_PREVIEW.map((hub, i) => (
+            {CITY_LOCATIONS.map((city, i) => (
               <motion.div key={i} variants={fadeUp}>
                 <Link href="/dashboard" className="group block bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300">
-                  <div className="relative h-44 overflow-hidden">
+                  <div className="relative h-40 overflow-hidden">
                     <Image
-                      src={hub.img}
-                      alt={`${hub.name} - Safe Luggage Storage in ${hub.location}, Sri Lanka`}
+                      src={city.img}
+                      alt={`Luggage Storage ${city.city} — Safe bag storage in ${city.city}, Sri Lanka`}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                    <span className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm text-gray-700 text-[10px] font-bold px-2.5 py-1 rounded-full">
-                      {hub.open}
-                    </span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                    <p className="absolute bottom-3 left-4 text-white font-bold text-sm">Luggage Storage {city.city}</p>
                   </div>
-                  <div className="p-4 flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-gray-900 text-sm">{hub.name}</p>
-                      <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-                        <MapPin size={10} /> {hub.location}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] text-gray-400">capacity</p>
-                      <p className="text-sm font-bold text-ocean-900">{hub.capacity} bags</p>
-                    </div>
+                  <div className="p-4">
+                    <p className="text-xs text-gray-500 leading-relaxed">{city.desc}</p>
                   </div>
                 </Link>
               </motion.div>
@@ -474,6 +504,63 @@ function LocationsSection() {
               View All Hubs <ArrowRight size={15} />
             </Link>
           </motion.div>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
+
+// ── FAQ ────────────────────────────────────────────────────────────────────────
+
+const FAQS = [
+  {
+    q: 'Is there luggage storage in Colombo?',
+    a: 'Yes! Luggo offers luggage storage at multiple verified locations across Colombo, including near Colombo Fort, major hotels, and tourist areas. Book online and drop off your bags in minutes.',
+  },
+  {
+    q: 'How much does luggage storage cost in Sri Lanka?',
+    a: 'Luggo offers flexible pricing with affordable hourly and daily rates. Pricing varies by location — check the Luggo app or website for exact rates near you.',
+  },
+  {
+    q: 'Is my luggage safe with Luggo?',
+    a: 'Absolutely. Every Luggo storage partner is carefully verified before joining our network. Your bags are stored securely so you can explore with peace of mind.',
+  },
+  {
+    q: 'Can I store luggage for just a few hours?',
+    a: 'Yes — Luggo is designed for short-term luggage storage. Whether you need to store your bags for 2 hours or 2 days, Luggo has flexible options to suit your travel plans.',
+  },
+  {
+    q: 'Where can I find luggage storage near me in Sri Lanka?',
+    a: 'Use the Luggo map to find the nearest verified storage location in your city — Colombo, Kandy, Ella, Negombo, and more. New locations are added regularly across the island.',
+  },
+]
+
+function FaqSection() {
+  return (
+    <section className="py-24 px-4 bg-white">
+      <div className="max-w-3xl mx-auto">
+        <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true }}>
+          <motion.div variants={fadeUp} className="text-center mb-14">
+            <p className="text-brand font-bold text-sm uppercase tracking-widest mb-3">Got Questions?</p>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-ocean-900 mb-4">Frequently Asked Questions</h2>
+            <p className="text-gray-400 max-w-md mx-auto">Everything you need to know about luggage storage in Sri Lanka.</p>
+          </motion.div>
+
+          <div className="space-y-3">
+            {FAQS.map((faq, i) => (
+              <motion.div key={i} variants={fadeUp} className="border border-gray-100 rounded-2xl overflow-hidden">
+                <details className="group">
+                  <summary className="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer list-none select-none hover:bg-gray-50 transition-colors">
+                    <h3 className="font-bold text-gray-900 text-sm md:text-base">{faq.q}</h3>
+                    <ChevronDown size={16} className="text-gray-400 shrink-0 group-open:rotate-180 transition-transform" />
+                  </summary>
+                  <div className="px-6 pb-5">
+                    <p className="text-gray-500 text-sm leading-relaxed">{faq.a}</p>
+                  </div>
+                </details>
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
       </div>
     </section>
@@ -504,18 +591,18 @@ function GuestCtaSection() {
                 No account required
               </div>
               <h2 className="text-3xl md:text-5xl font-extrabold text-white leading-tight mb-5">
-                Book in under<br />60 seconds.
+                Ready to Explore Sri Lanka<br />Hands-Free?
               </h2>
               <p className="text-white/60 text-lg max-w-md mx-auto lg:mx-0 mb-8">
-                Just enter your name, email, and phone — we verify with OTP and create your account automatically. Then pay and you&apos;re done.
+                Join thousands of travellers who use Luggo for safe, convenient luggage storage across Sri Lanka. Find a storage spot near you and start your adventure — without the bags.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
                 <Link href="/dashboard" className="flex items-center justify-center gap-2 bg-brand text-white font-bold px-8 py-4 rounded-2xl hover:bg-brand/90 transition-all text-base">
-                  Find a Hub <ArrowRight size={18} />
+                  Find Luggage Storage Near Me <ArrowRight size={18} />
                 </Link>
                 <Link href="/login" className="flex items-center justify-center gap-2 bg-white/10 text-white font-bold px-8 py-4 rounded-2xl backdrop-blur-sm hover:bg-white/20 transition-all text-base">
-                  Already have an account
+                  Partner with Luggo
                 </Link>
               </div>
             </div>
@@ -609,6 +696,7 @@ export function LandingPage() {
       <PricingSection />
       <TrustSection />
       <LocationsSection />
+      <FaqSection />
       <GuestCtaSection />
       <Footer />
     </div>
