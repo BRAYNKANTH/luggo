@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { type EmailOtpType, type MobileOtpType } from '@supabase/supabase-js'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -22,8 +23,7 @@ export async function GET(request: NextRequest) {
     console.log('[Auth Callback] Verifying token_hash...', { type })
     const { error } = await supabase.auth.verifyOtp({ 
       token_hash, 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      type: type as any 
+      type: type as EmailOtpType
     })
     if (!error) {
       console.log('[Auth Callback] Token verification success')
