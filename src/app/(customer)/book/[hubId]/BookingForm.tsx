@@ -184,6 +184,9 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
   const [phone, setPhone] = useState('')
   const [nic, setNic] = useState('')
 
+  // Declarations
+  const [noIllegalItems, setNoIllegalItems] = useState(false)
+
   // OTP flow
   const [showVerify, setShowVerify] = useState(false)
   const [verifyMethod, setVerifyMethod] = useState<'email' | 'phone' | null>(null)
@@ -567,6 +570,50 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                   </div>
                 </div>
 
+                {/* Illegal items declaration */}
+                <label className={`flex items-start gap-3 rounded-2xl border p-4 cursor-pointer transition-all ${
+                  noIllegalItems
+                    ? 'border-emerald-200 bg-emerald-50/60'
+                    : 'border-gray-200 bg-white hover:border-brand/30'
+                }`}>
+                  <div className="relative shrink-0 mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={noIllegalItems}
+                      onChange={e => setNoIllegalItems(e.target.checked)}
+                      className="sr-only"
+                    />
+                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                      noIllegalItems ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 bg-white'
+                    }`}>
+                      {noIllegalItems && (
+                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={2.5}>
+                          <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 leading-snug">
+                      I confirm I will not store any illegal items
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">
+                      No weapons, controlled substances, perishables, hazardous materials, or items prohibited under
+                      Sri Lankan law. See{' '}
+                      <a
+                        href="/terms#prohibited"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={e => e.stopPropagation()}
+                        className="text-brand font-semibold hover:underline"
+                      >
+                        Section 3 of our Terms
+                      </a>
+                      {' '}for the full list.
+                    </p>
+                  </div>
+                </label>
+
                 {/* Identity — logged in */}
                 {isLoggedIn ? (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 flex items-center gap-3">
@@ -646,7 +693,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
               onClick={handlePayClick}
               loading={loading}
               className="flex-1 h-12 rounded-2xl font-bold text-sm"
-              disabled={!isLoggedIn && !detailsValid}
+              disabled={(!isLoggedIn && !detailsValid) || !noIllegalItems}
             >
               {totalPrice > 0 ? `Pay LKR ${totalPrice.toLocaleString()}` : 'Confirm & Pay'}
             </Button>

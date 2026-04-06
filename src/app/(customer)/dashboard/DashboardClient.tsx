@@ -6,8 +6,9 @@ import Image from 'next/image'
 import { isPast } from 'date-fns'
 import {
   Search, X, MapPin, Clock, Package, ChevronRight, ChevronLeft,
-  QrCode, Navigation, SlidersHorizontal
+  QrCode, Navigation, SlidersHorizontal, ShieldCheck
 } from 'lucide-react'
+import { HubMap } from '@/components/hubs/HubMap'
 import { BookingStatusBadge } from '@/components/customer/BookingStatusBadge'
 import { NotificationBell } from '@/components/dashboard/NotificationBell'
 import { type BookingStatus } from '@/types/database'
@@ -119,10 +120,15 @@ function FeaturedHubCard({ hub, distanceKm }: { hub: HubCard; distanceKm: number
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
-          {/* Status badge */}
-          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 bg-black/35 backdrop-blur-sm px-2 py-1 rounded-full">
+          {/* Vetted badge */}
+          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 bg-brand-accent backdrop-blur-sm px-2 py-1 rounded-full shadow-sm">
+            <ShieldCheck size={10} className="text-brand font-bold" strokeWidth={3} />
+            <span className="text-brand text-[9px] font-black uppercase tracking-tight">Vetted Hub</span>
+          </div>
+
+          <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full">
             <div className={`w-1.5 h-1.5 rounded-full ${avail.color} ${avail.spots > 0 ? 'animate-pulse' : ''}`} />
-            <span className="text-white text-[10px] font-semibold">{avail.label}</span>
+            <span className="text-white text-[9px] font-semibold">{avail.label}</span>
           </div>
 
           {/* Distance pill */}
@@ -210,6 +216,10 @@ function HubListCard({ hub, distanceKm }: { hub: HubCard; distanceKm: number | n
             {hub.address}
           </p>
           <div className="flex items-center gap-3 mt-1 underline-offset-4">
+            <div className="flex items-center gap-1 bg-brand-accent/30 px-1.5 py-0.5 rounded-md">
+              <ShieldCheck size={9} className="text-brand font-bold" />
+              <span className="text-[9px] font-black text-brand uppercase tracking-tighter">Vetted</span>
+            </div>
             <div className="flex items-center gap-1">
               <div className={`w-1.5 h-1.5 rounded-full ${avail.color}`} />
               <span className={`text-[10px] font-semibold ${avail.textColor}`}>{avail.label}</span>
@@ -416,6 +426,15 @@ export function DashboardClient({ hubs, activeBookings, firstName, userId, notif
 
   return (
     <div className="max-w-5xl mx-auto">
+      {/* ── Map First ── */}
+      {!isSearching && (
+        <div className="px-4 pt-4">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden p-1">
+            <HubMap hubs={hubs} className="h-60" />
+          </div>
+        </div>
+      )}
+
       {/* ── Sticky header ── */}
       <div className="sticky top-0 z-40 bg-white border-b border-gray-100">
         {/* Top bar */}

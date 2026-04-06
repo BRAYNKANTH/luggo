@@ -56,20 +56,37 @@ export function HubMap({ hubs, onHubClick, className }: HubMapProps) {
         attribution: '© OpenStreetMap contributors',
       }).addTo(map)
 
-      // Custom brand marker
+      // Custom brand marker with price
       const brandIcon = L.divIcon({
         className: '',
-        html: `<div style="
-          width:36px;height:36px;
-          background:#038cc9;
-          border:3px solid #fff;
-          border-radius:50% 50% 50% 0;
-          transform:rotate(-45deg);
-          box-shadow:0 2px 8px rgba(0,0,0,0.3);
-        "></div>`,
-        iconSize: [36, 36],
-        iconAnchor: [18, 36],
-        popupAnchor: [0, -38],
+        html: `
+          <div style="position:relative; display:flex; flex-direction:column; align-items:center;">
+            <div style="
+              background:#038cc9;
+              color:#fff;
+              font-family:sans-serif;
+              font-weight:800;
+              font-size:11px;
+              padding:4px 8px;
+              border-radius:12px;
+              border:2px solid #fff;
+              box-shadow:0 3px 10px rgba(0,0,0,0.2);
+              white-space:nowrap;
+            ">
+              LKR 200
+            </div>
+            <div style="
+              width:0; height:0;
+              border-left:6px solid transparent;
+              border-right:6px solid transparent;
+              border-top:6px solid #fff;
+              margin-top:-1px;
+            "></div>
+          </div>
+        `,
+        iconSize: [60, 34],
+        iconAnchor: [30, 34],
+        popupAnchor: [0, -36],
       })
 
       hubs.forEach((hub) => {

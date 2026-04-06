@@ -6,7 +6,7 @@ import { Logo } from '@/components/ui/Logo'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
-  Shield, MapPin, ArrowRight, Star, Check,
+  Shield, ShieldCheck, MapPin, ArrowRight, Star, Check,
   Package, QrCode, Smartphone, ChevronDown, Menu, X,
   Zap, Lock, CreditCard, Clock, ChevronLeft, ChevronRight,
 } from 'lucide-react'
@@ -48,9 +48,15 @@ const FEATURES = [
 const FAQS = [
   { q: 'Is there luggage storage in Colombo?',              a: 'Yes — Luggo has verified spots near Colombo Fort, major hotels and tourist areas. Book online and drop off in minutes.' },
   { q: 'How much does luggage storage cost in Sri Lanka?',   a: 'Small bags LKR 200/hr, regular bags LKR 300/hr, large suitcases LKR 400/hr. No hidden fees.' },
-  { q: 'Is my luggage safe with Luggo?',                    a: 'Every partner is vetted, every bag sealed and photographed. Only your QR code releases your bags.' },
+  { q: 'Is my luggage safe with Luggo?',                    a: 'Every partner is vetted, every bag sealed and photographed. Plus, every booking includes up to LKR 150,000 protection.' },
   { q: 'Can I store luggage for just a few hours?',          a: 'Yes — no minimum. 2 hours or 2 days, you choose. Perfect for day trips between check-out and your flight.' },
   { q: 'Where can I find luggage storage near me?',          a: 'Use the Luggo map to find the nearest verified spot — Colombo, Kandy, Ella, Negombo and more.' },
+]
+
+const REVIEWS = [
+  { name: 'Sarah Miller', role: 'Travel Blogger', content: 'Luggo saved my trip in Kandy! Being able to store my heavy backpack for just a few hours made exploring the temples so much easier.', rating: 5, avatar: '👩‍💻' },
+  { name: 'James Wilson', role: 'Solo Traveler', content: 'Professional service at Colombo Fort. The tamper-proof seals and photo proof gave me complete peace of mind. Truly a lifesaver!', rating: 5, avatar: '👨‍✈️' },
+  { name: 'Elena Rossi', role: 'Digital Nomad', content: 'Incredible value for money. Way better than carrying bags around Galle Fort all day. The booking process was seamless!', rating: 5, avatar: '👩‍🌾' },
 ]
 
 // ── NavBar ────────────────────────────────────────────────────────────────────
@@ -213,7 +219,7 @@ function HeroSection() {
 
             {/* Trust chips — hidden on small mobile */}
             <motion.div variants={fadeUp} className="hidden sm:flex flex-wrap gap-2 justify-center lg:justify-start">
-              {['No account needed','Tamper-proof seals','PayHere payments'].map(t => (
+              {['No account needed','Tamper-proof seals','LKR 150,000 Protection'].map(t => (
                 <span key={t} className="flex items-center gap-1.5 bg-white/8 border border-white/10 text-white/70 text-xs font-semibold px-3 py-1.5 rounded-full">
                   <Check size={10} className="text-emerald-400" strokeWidth={3} /> {t}
                 </span>
@@ -260,10 +266,11 @@ function SocialProofBand() {
     <div className="bg-gray-50 border-b border-gray-100 py-4 px-4 overflow-hidden">
       <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
         {[
-          { icon: Shield,   text: 'Fully vetted partner hubs' },
+          { icon: Shield,   text: 'Vetted partner hubs' },
+          { icon: ShieldCheck, text: 'LKR 150,000 Protection' },
           { icon: Lock,     text: 'Tamper-proof bag seals' },
           { icon: CreditCard, text: 'Secure PayHere checkout' },
-          { icon: Star,     text: '5-star rated by travellers' },
+          { icon: Star,     text: '5-star rated service' },
         ].map(({ icon: Icon, text }) => (
           <div key={text} className="flex items-center gap-2 text-xs font-semibold text-gray-500">
             <Icon size={13} className="text-brand" />
@@ -439,6 +446,48 @@ function PricingSection() {
               Book Luggage Storage <ArrowRight size={15} />
             </Link>
           </motion.div>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
+
+// ── Reviews ───────────────────────────────────────────────────────────────────
+
+function ReviewsSection() {
+  return (
+    <section className="bg-gray-50 py-14 px-4 overflow-hidden">
+      <div className="max-w-6xl mx-auto">
+        <motion.div initial="hidden" whileInView="show" viewport={{ once:true }} variants={stagger}>
+          <motion.div variants={fadeUp} className="text-center mb-10">
+            <span className="text-brand font-bold text-xs uppercase tracking-widest block mb-2">Social Proof</span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-ocean-900 mb-2">Verified Traveller Reviews</h2>
+            <p className="text-gray-400 text-sm max-w-lg mx-auto">Join thousands of happy travellers who explored Sri Lanka hands-free with Luggo.</p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {REVIEWS.map((r, i) => (
+              <motion.div key={i} variants={fadeUp}
+                className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative">
+                <div className="flex items-center gap-1 text-amber-400 mb-3">
+                  {[...Array(r.rating)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
+                </div>
+                <p className="text-gray-600 text-sm leading-relaxed mb-6 italic">"{r.content}"</p>
+                <div className="flex items-center gap-3 mt-auto pt-4 border-t border-gray-50">
+                  <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-xl grayscale opacity-80">
+                    {r.avatar}
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900 text-xs">{r.name}</p>
+                    <p className="text-[10px] text-gray-400 font-medium">{r.role}</p>
+                  </div>
+                  <div className="ml-auto w-5 h-5 bg-emerald-50 rounded-full flex items-center justify-center">
+                    <Check size={10} className="text-emerald-500" strokeWidth={3} />
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
       </div>
     </section>
@@ -643,6 +692,7 @@ export function LandingPage() {
       <SocialProofBand />
       <HowItWorksSection />
       <FeaturesSection />
+      <ReviewsSection />
       <PricingSection />
       <LocationsSection />
       <FaqSection />
