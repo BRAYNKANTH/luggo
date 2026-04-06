@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion'
+import { motion, AnimatePresence, useSpring, useMotionValue } from 'framer-motion'
 import { Logo } from '@/components/ui/Logo'
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher'
 import { useTranslations } from 'next-intl'
@@ -527,7 +527,7 @@ function ReviewsSection() {
             <motion.div key={i} 
               initial={{ opacity:0, y:40 }} whileInView={{ opacity:1, y:0 }} viewport={{ once: true }} transition={{ delay: i*0.2, duration: 0.8, ease: "easeOut" }}
               className="bg-gray-50 rounded-[3rem] p-12 flex flex-col items-center text-center group hover:bg-white hover:shadow-3xl transition-all duration-700 relative">
-              <div className="absolute top-8 right-8 text-6xl text-brand/5 font-black uppercase pointer-events-none select-none">"</div>
+              <div className="absolute top-8 right-8 text-6xl text-brand/5 font-black uppercase pointer-events-none select-none">&quot;</div>
               <span className="text-6xl mb-8 grayscale group-hover:grayscale-0 transition-all duration-700 scale-110 group-hover:scale-125">{rev.avatar}</span>
               <div className="flex gap-2 mb-8">
                 {[1,2,3,4,5].map(s => <Star key={s} size={16} fill="#f59e0b" className="text-amber-500" />)}
@@ -707,7 +707,7 @@ function Footer() {
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white font-sans text-ocean-900 antialiased selection:bg-brand selection:text-white">
-      <NavBar theme="light" />
+      <NavBar />
       <HeroSection />
       <SocialProofBand />
       <HowItWorksSection />
