@@ -14,21 +14,20 @@ export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || ''
 
   // 1. Handle locale routing
-  await intlMiddleware(request)
+  const response = await intlMiddleware(request)
 
   // 2. Handle subdomain routing for staff
   if (hostname.startsWith('staff.')) {
     if (url.pathname === '/') {
       return NextResponse.rewrite(new URL('/staff/dashboard', request.url))
     }
-    // If not already in /staff, rewrite to /staff/*
     if (!url.pathname.startsWith('/staff')) {
       return NextResponse.rewrite(new URL(`/staff${url.pathname}`, request.url))
     }
   }
 
-  // 3. Update session
-  return await updateSession(request)
+  // 3. Update session while preserving the response from intlMiddleware
+  return await updateSession(request, response)
 }
 
 export const config = {
