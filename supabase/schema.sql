@@ -651,8 +651,8 @@ create policy "nearby_places: ops admin manage" on public.nearby_places
 create policy "audit_logs: admins read" on public.audit_logs
   for select using (public.is_admin());
 
-create policy "audit_logs: service insert" on public.audit_logs
-  for insert with check (true);   -- insert guarded by helper function + service role
+create policy "audit_logs: service only" on public.audit_logs
+  for insert with check (false);
 
 -- =============================================================
 -- REALTIME
@@ -678,12 +678,31 @@ on conflict (id) do nothing;
 -- Seal proofs: only authenticated staff can upload; only owner/staff/admin can view
 create policy "seal-proofs: staff upload" on storage.objects
   for insert with check (
-    bucket_id = 'seal-proofs' and auth.role() = 'authenticated'
+    bucket_id = 'seal-proofs' 
+    and auth.role() = 'authenticated'
+    and (public.current_user_role() in ('hub_staff', 'support_admin', 'ops_admin', 'master_admin'))
   );
 
-create policy "seal-proofs: authenticated read" on storage.objects
+create policy "seal-proofs: access control" on storage.objects
   for select using (
-    bucket_id = 'seal-proofs' and auth.role() = 'authenticated'
+    bucket_id = 'seal-proofs' 
+    and auth.role() = 'authenticated'
+    and (
+      -- Is admin
+      public.is_admin()
+      -- Is the customer who owns the booking
+      or exists (
+        select 1 from public.bookings b
+        where b.id = (storage.foldername(name))[1]::uuid
+          and b.user_id = auth.uid()
+      )
+      -- Is staff at the hub where booking is stored
+      or exists (
+        select 1 from public.bookings b
+        where b.id = (storage.foldername(name))[1]::uuid
+          and public.is_staff_at_hub(b.hub_id)
+      )
+    )
   );
 
 -- Hub photos: public read, admin write

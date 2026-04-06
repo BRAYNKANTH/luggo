@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { type PostgrestError } from '@supabase/supabase-js'
+import { uuidSchema } from '@/lib/validators/common'
+import { z } from 'zod'
 
 // ─────────────────────────────────────────────
 // HELPER — get authenticated staff + their hub
@@ -40,6 +42,7 @@ async function requireStaff() {
 export async function resolveQRCode(
   qrCode: string
 ): Promise<{ bookingId?: string; error?: string }> {
+  if (!qrCode.trim()) return { error: 'Empty QR code' }
   const { supabase, hubId } = await requireStaff()
 
   const { data: booking } = await supabase
@@ -76,7 +79,10 @@ export async function markArrivedAction(bookingId: string): Promise<void> {
 export async function markArrived(
   bookingId: string
 ): Promise<{ error?: string }> {
-  const { svc, hubId } = await requireStaff()
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+  
+  const { svc, hubId, userId } = await requireStaff()
 
   const { error } = await svc
     .from('bookings' as never)
@@ -86,6 +92,16 @@ export async function markArrived(
     .eq('status', 'confirmed')
 
   if (error) return { error: (error as { message: string }).message }
+
+  // Audit
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'customer_arrived',
+    p_entity: 'bookings',
+    p_entity_id: bookingId
+  })
+
   return {}
 }
 
@@ -103,6 +119,9 @@ export async function confirmStickersApplied(bookingId: string): Promise<void> {
 export async function confirmStickers(
   bookingId: string
 ): Promise<{ error?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
   const { svc, userId, hubId } = await requireStaff()
 
   const { data: booking } = await svc
@@ -127,7 +146,7 @@ export async function confirmStickers(
     return { error: 'Customer identity must be verified before applying stickers.' }
   }
 
-  // Record sticker assignments in audit table
+  // Record sticker assignments
   const hubAlias = await svc
     .from('hub_staff' as never)
     .select('hubs(alias)')
@@ -138,14 +157,24 @@ export async function confirmStickers(
 
   for (const bag of booking.booking_bags) {
     if (bag.sticker_number) {
+      const stickerCode = `${alias}-${bag.sticker_number}`
       await svc
         .from('sticker_assignments' as never)
         .insert({
           booking_bag_id: bag.id,
-          sticker_number: `${alias}-${bag.sticker_number}`,
+          sticker_number: stickerCode,
           assigned_by_staff_id: userId,
         })
-        .then(() => {}) // fire-and-forget, table may not exist yet
+      
+      // Audit each sticker
+      await svc.rpc('write_audit_log', {
+        p_actor_id: userId,
+        p_actor_role: 'hub_staff',
+        p_action: 'sticker_assigned',
+        p_entity: 'booking_bags',
+        p_entity_id: bag.id,
+        p_metadata: { sticker: stickerCode }
+      })
     }
   }
 
@@ -165,6 +194,10 @@ export async function saveSealProof(
   bookingId: string,
   photoPath: string
 ): Promise<{ error?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+  if (!photoPath) return { error: 'Photo path is required' }
+
   const { svc, userId, hubId } = await requireStaff()
 
   // Verify booking
@@ -191,6 +224,16 @@ export async function saveSealProof(
 
   // Advance booking status
   await svc.from('bookings' as never).update({ status: 'sealed_waiting_user_confirmation' }).eq('id', bookingId)
+
+  // Audit
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'seal_proof_uploaded',
+    p_entity: 'bookings',
+    p_entity_id: bookingId,
+    p_metadata: { photo: photoPath }
+  })
 
   const hubName = booking.hubs?.name ?? 'the hub'
   const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? ''
@@ -227,7 +270,10 @@ export async function waiveAndCompletePickupAction(bookingId: string): Promise<v
 export async function waiveAndCompletePickup(
   bookingId: string
 ): Promise<{ error?: string }> {
-  const { svc, hubId } = await requireStaff()
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, hubId, userId } = await requireStaff()
 
   const { data: booking } = await svc
     .from('bookings' as never)
@@ -253,6 +299,15 @@ export async function waiveAndCompletePickup(
 
   // Complete the booking
   await svc.from('bookings' as never).update({ status: 'completed' }).eq('id', bookingId)
+
+  // Audit
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'waive_late_fee_and_complete',
+    p_entity: 'bookings',
+    p_entity_id: bookingId
+  })
 
   const hubName = booking.hubs?.name ?? 'the hub'
 
@@ -288,7 +343,10 @@ export async function completePickupAction(bookingId: string): Promise<void> {
 export async function completePickup(
   bookingId: string
 ): Promise<{ error?: string }> {
-  const { svc, hubId } = await requireStaff()
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, hubId, userId } = await requireStaff()
 
   const { data: booking } = await svc
     .from('bookings' as never)
@@ -312,6 +370,15 @@ export async function completePickup(
 
   // Complete the booking
   await svc.from('bookings' as never).update({ status: 'completed' }).eq('id', bookingId)
+
+  // Audit
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'pickup_completed',
+    p_entity: 'bookings',
+    p_entity_id: bookingId
+  })
 
   const hubName = booking.hubs?.name ?? 'the hub'
 
@@ -426,7 +493,10 @@ export async function getHubProfile() {
 }
 
 export async function verifyIdentity(bookingId: string) {
-  const { svc, hubId } = await requireStaff()
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.errors[0].message }
+  
+  const { svc, hubId, userId } = await requireStaff()
 
   const { error } = await svc
     .from('bookings' as never)
@@ -435,5 +505,15 @@ export async function verifyIdentity(bookingId: string) {
     .eq('hub_id', hubId)
 
   if (error) return { error: (error as { message: string }).message }
+
+  // Audit
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'identity_verified',
+    p_entity: 'bookings',
+    p_entity_id: bookingId
+  })
+
   return { success: true }
 }

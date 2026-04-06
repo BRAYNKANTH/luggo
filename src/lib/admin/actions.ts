@@ -2,7 +2,9 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { type ComplaintStatus, type UserRole } from '@/types/database'
+import { uuidSchema, capacitySchema } from '@/lib/validators/common'
 
 // ---------------------------------------------------------------------------
 // Guard: caller must be an admin role
@@ -10,7 +12,7 @@ import { type ComplaintStatus, type UserRole } from '@/types/database'
 async function requireAdmin() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { supabase: null, error: 'Not authenticated' as string }
+  if (!user) return { supabase: null, error: 'Not authenticated' }
 
   const { data } = await supabase
     .from('users')
@@ -20,9 +22,11 @@ async function requireAdmin() {
 
   const adminRoles: UserRole[] = ['support_admin', 'ops_admin', 'master_admin']
   if (!data || !adminRoles.includes(data.role)) {
-    return { supabase: null, error: 'Forbidden' as string }
+    return { supabase: null, error: 'Forbidden' }
   }
-  return { supabase, error: null }
+
+  const svc = createServiceClient()
+  return { supabase, svc, userId: user.id, role: data.role, error: null }
 }
 
 // ---------------------------------------------------------------------------
@@ -32,15 +36,29 @@ export async function updateComplaintStatus(
   complaintId: string,
   status: ComplaintStatus
 ): Promise<{ error?: string }> {
-  const { supabase, error: authError } = await requireAdmin()
-  if (authError || !supabase) return { error: authError ?? 'Auth error' }
+  const validId = uuidSchema.safeParse(complaintId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from('complaints') as any)
+  const { svc, userId, role, error: authError } = await requireAdmin()
+  if (authError || !svc) return { error: authError ?? 'Auth error' }
+
+  const { error } = await svc
+    .from('complaints' as never)
     .update({ status })
     .eq('id', complaintId)
 
   if (error) return { error: 'Failed to update complaint' }
+
+  // Audit
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: role,
+    p_action: 'complaint_status_updated',
+    p_entity: 'complaints',
+    p_entity_id: complaintId,
+    p_metadata: { status }
+  })
+
   revalidatePath('/admin/complaints')
   return {}
 }
@@ -121,17 +139,32 @@ export async function updateHubCapacity(
   hubId: string,
   capacity: number
 ): Promise<{ error?: string }> {
-  const { supabase, error: authError } = await requireAdmin()
-  if (authError || !supabase) return { error: authError ?? 'Auth error' }
+  const validId = uuidSchema.safeParse(hubId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
 
-  if (capacity < 1 || capacity > 500) return { error: 'Capacity must be between 1 and 500' }
+  const validCap = capacitySchema.safeParse(capacity)
+  if (!validCap.success) return { error: validCap.error.issues[0].message }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from('hubs') as any)
+  const { svc, userId, role, error: authError } = await requireAdmin()
+  if (authError || !svc) return { error: authError ?? 'Auth error' }
+
+  const { error } = await svc
+    .from('hubs' as never)
     .update({ capacity })
     .eq('id', hubId)
 
   if (error) return { error: 'Failed to update capacity' }
+
+  // Audit
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: role,
+    p_action: 'hub_capacity_updated',
+    p_entity: 'hubs',
+    p_entity_id: hubId,
+    p_metadata: { capacity }
+  })
+
   revalidatePath('/admin/hubs')
   return {}
 }
@@ -219,15 +252,29 @@ export async function adminUpdateBookingStatus(
   bookingId: string,
   status: string
 ): Promise<{ error?: string }> {
-  const { supabase, error: authError } = await requireAdmin()
-  if (authError || !supabase) return { error: authError ?? 'Auth error' }
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from('bookings') as any)
+  const { svc, userId, role, error: authError } = await requireAdmin()
+  if (authError || !svc) return { error: authError ?? 'Auth error' }
+
+  const { error } = await svc
+    .from('bookings' as never)
     .update({ status })
     .eq('id', bookingId)
 
   if (error) return { error: 'Failed to update booking' }
+
+  // Audit
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: role,
+    p_action: 'admin_status_override',
+    p_entity: 'bookings',
+    p_entity_id: bookingId,
+    p_metadata: { status }
+  })
+
   revalidatePath('/admin/bookings')
   return {}
 }

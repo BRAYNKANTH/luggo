@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { generatePayhereHash, PAYHERE_ENDPOINT, type PayhereFormData } from '@/lib/utils/payhere'
 import { sendSMS } from '@/lib/utils/sms'
 import { sendPickupRequestedEmail } from '@/lib/utils/email'
+import { uuidSchema } from '@/lib/validators/common'
 
 // ---------------------------------------------------------------------------
 // requestPickup
@@ -12,6 +13,9 @@ import { sendPickupRequestedEmail } from '@/lib/utils/email'
 // Also notifies hub staff via in-app notification + SMS
 // ---------------------------------------------------------------------------
 export async function requestPickup(bookingId: string): Promise<{ error?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -110,6 +114,9 @@ export async function requestPickup(bookingId: string): Promise<{ error?: string
 export async function createLateFeePayment(
   bookingId: string
 ): Promise<{ error?: string; formData?: PayhereFormData }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
