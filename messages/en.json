@@ -79,5 +79,39 @@
     "expired": "Expired",
     "overstayed": "Time Exceeded",
     "disputed": "Under Review"
+  },
+  "Sections": {
+    "how": {
+      "tag": "How It Works",
+      "title": "Four simple steps to freedom",
+      "step1": "Find a Hub",
+      "step1Desc": "Locate a verified storage partner near you in Colombo, Galle, or Ella.",
+      "step2": "Book Online",
+      "step2Desc": "Reserve your space in seconds with a few taps on your phone.",
+      "step3": "Drop & Secure",
+      "step3Desc": "Check in your bags and get them sealed with our tamper-proof tags.",
+      "step4": "Pick Up & Go",
+      "step4Desc": "Show your booking ID to pick up your bags whenever you're ready."
+    },
+    "features": {
+      "tag": "Why Luggo?",
+      "title": "Designed for the modern traveller",
+      "feature1": "Vetted Locations",
+      "feature1Desc": "Every hub is manually verified for security and service quality.",
+      "feature2": "Insured & Secured",
+      "feature2Desc": "Your bags are protected by LKR 150,000 insurance and unique seals.",
+      "feature3": "No App Required",
+      "feature3Desc": "Book directly from your browser. No downloads or accounts needed.",
+      "feature4": "Flexible Booking",
+      "feature4Desc": "Change of plans? Extend your storage time easily online.",
+      "feature5": "24/7 Support",
+      "feature5Desc": "Our team is always ready to help you with your storage needs.",
+      "feature6": "Local Insights",
+      "feature6Desc": "Our hub partners are locals who can give you the best travel tips."
+    },
+    "reviews": {
+      "tag": "Testimonials",
+      "title": "Loved by travellers worldwide"
+    }
   }
 }

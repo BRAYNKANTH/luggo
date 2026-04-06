@@ -386,8 +386,8 @@ function FeaturesSection() {
                   <f.icon size={20} strokeWidth={2.5} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-ocean-900 text-base mb-1.5">Feature {i+1}</h3>
-                  <p className="text-gray-500 text-xs leading-relaxed opacity-70">Securing your journey with verified local partners and island-wide support.</p>
+                  <h3 className="font-bold text-ocean-900 text-base mb-1.5">{t(`feature${i+1}`)}</h3>
+                  <p className="text-gray-500 text-xs leading-relaxed opacity-70">{t(`feature${i+1}Desc`)}</p>
                 </div>
               </motion.div>
             ))}
