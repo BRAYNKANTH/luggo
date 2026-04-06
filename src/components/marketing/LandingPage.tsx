@@ -67,7 +67,7 @@ function NavBar() {
   }, [])
 
   return (
-    <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm' : 'bg-transparent'}`}>
+    <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-md' : 'bg-white/90 backdrop-blur-md border-b border-gray-100'}`}>
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         <Logo size="md" />
         <div className="hidden md:flex items-center gap-6 text-sm font-semibold text-ocean-900">
@@ -81,7 +81,7 @@ function NavBar() {
           <Link href="/dashboard" className="bg-brand text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-brand/90 transition-colors">{t('findStorage')}</Link>
         </div>
         <button className="md:hidden p-2 rounded-lg" onClick={() => setOpen(!open)}>
-          {open ? <X size={22} className="text-ocean-900" /> : <Menu size={22} className={scrolled ? 'text-ocean-900' : 'text-white'} />}
+          {open ? <X size={22} className="text-ocean-900" /> : <Menu size={22} className="text-ocean-900" />}
         </button>
       </div>
       <AnimatePresence>
@@ -169,14 +169,15 @@ function HeroSection() {
     <section className="relative bg-ocean-900 overflow-hidden">
       {/* Background with Scenery (Mobile/General) */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-r from-ocean-900 via-ocean-900/80 to-transparent z-10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-ocean-900 via-ocean-900/40 to-transparent z-10" />
         <Image
           src="/images/marketing/srilanka-hero.png"
           alt="Sri Lanka Scenery"
           fill
-          className="object-cover opacity-40 mix-blend-overlay"
+          className="object-cover opacity-80"
           priority
         />
+        <div className="absolute inset-0 bg-ocean-900/20 backdrop-blur-[2px] z-5" />
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 pt-20 pb-12 sm:pt-28 sm:pb-16 lg:pt-36">
@@ -217,19 +218,22 @@ function HeroSection() {
 
           <motion.div
             initial={{ opacity:0, scale:0.95 }} animate={{ opacity:1, scale:1 }} transition={{ delay:0.4, duration:0.7 }}
-            className="hidden lg:block shrink-0 relative w-[480px] h-[340px]">
-            <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl">
+            className="hidden lg:block shrink-0 relative w-[520px] h-[380px]">
+            <div className="absolute inset-0 rounded-[3rem] overflow-hidden border border-white/30 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] z-0">
                <Image
                  src="/images/marketing/srilanka-hero.png"
                  alt="Explore Sri Lanka"
                  fill
-                 className="object-cover"
+                 className="object-cover scale-125 transition-transform duration-10000 ease-linear transform hover:scale-135"
                />
-               <div className="absolute inset-0 bg-gradient-to-t from-ocean-900/40 to-transparent" />
+               <div className="absolute inset-0 bg-gradient-to-tr from-ocean-900/60 via-transparent to-white/10" />
             </div>
-            {/* Floating App Card */}
-            <div className="absolute -bottom-6 -left-12 w-[300px] transform -rotate-2">
-              <AppPreviewCard />
+            {/* Floating App Card with Ultra-Premium Glassmorphism */}
+            <div className="absolute -bottom-8 -left-16 w-[320px] transform -rotate-3 z-10">
+              <div className="relative group">
+                <div className="absolute inset-0 bg-brand/30 rounded-[2rem] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <AppPreviewCard />
+              </div>
             </div>
           </motion.div>
         </div>
