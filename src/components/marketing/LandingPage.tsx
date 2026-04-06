@@ -409,7 +409,6 @@ function ReviewsSection() {
 // ── Pricing ───────────────────────────────────────────────────────────────────
 
 function PricingSection() {
-  const t = useTranslations('Common')
   const bags = [
     { e: '🎒', t: 'Small',   r: 200, popular: false },
     { e: '🧳', t: 'Regular', r: 300, popular: true  },
