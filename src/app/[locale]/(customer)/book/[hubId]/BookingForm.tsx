@@ -374,330 +374,399 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
+  const summaryBlock = (
+    <div className="space-y-4">
+      <div className="hidden md:block">
+        <h3 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-widest opacity-50">Booking Summary</h3>
+      </div>
+      
+      {/* Hub info */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+        <div className="w-10 h-10 bg-brand/10 rounded-xl flex items-center justify-center shrink-0 text-brand">
+          <Package size={20} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Hub Location</p>
+          <p className="text-sm font-bold text-gray-900 truncate">{hub.name}</p>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50 overflow-hidden">
+        {/* Time Window */}
+        <div className={`flex items-center gap-4 p-4 transition-opacity ${timesValid ? 'opacity-100' : 'opacity-30'}`}>
+          <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center shrink-0">
+            <CalendarDays size={18} className="text-gray-400" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Time Window</p>
+            {timesValid ? (
+              <>
+                <p className="text-sm font-bold text-gray-900">
+                  {startDate && format(startDate, 'dd MMM, HH:mm')} → {endDate && format(endDate, 'dd MMM, HH:mm')}
+                </p>
+                <p className="text-[10px] text-brand font-bold mt-0.5 uppercase tracking-tighter">{hours}h storage duration</p>
+              </>
+            ) : (
+              <p className="text-xs font-semibold text-gray-300 italic">Select times to proceed</p>
+            )}
+          </div>
+        </div>
+
+        {/* Bags */}
+        <div className={`p-4 transition-opacity ${totalBags > 0 ? 'opacity-100' : 'opacity-30'}`}>
+          <div className="flex items-center gap-4 mb-3">
+            <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center shrink-0">
+              <Shield size={18} className="text-gray-400" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Items</p>
+              <p className="text-sm font-bold text-gray-900">
+                {totalBags > 0 ? `${totalBags} Item${totalBags > 1 ? 's' : ''}` : 'No items added'}
+              </p>
+            </div>
+          </div>
+          {totalBags > 0 && (
+            <div className="flex flex-wrap gap-1.5 pl-14">
+              {(Object.entries(bags) as [BagType, number][]).filter(([, q]) => q > 0).map(([type, qty]) => (
+                <span key={type} className="text-[10px] bg-brand/5 text-brand font-bold px-2.5 py-1 rounded-lg border border-brand/10">
+                  {BAG_EMOJIS[type]} {qty}× {BAG_LABELS[type]}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Price Breakdown */}
+        {totalPrice > 0 && (
+          <div className="p-4 bg-gray-50/50">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 opacity-60">Price Breakdown</p>
+            {(Object.entries(bags) as [BagType, number][]).filter(([, q]) => q > 0).map(([type, qty]) => (
+              <div key={type} className="flex justify-between text-xs mb-1.5 last:mb-0">
+                <span className="text-gray-500 font-medium">{qty}× {BAG_LABELS[type]} × {hours}h</span>
+                <span className="font-bold text-gray-900 tabular-nums font-mono">LKR {(BAG_RATES[type] * qty * hours).toLocaleString()}</span>
+              </div>
+            ))}
+            <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-end">
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Total Amount</p>
+                <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">LKR {totalPrice.toLocaleString()}</p>
+              </div>
+              <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-100 uppercase tracking-widest">
+                <ShieldCheck size={11} strokeWidth={3} />
+                Secure
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Identity Summary */}
+      {isLoggedIn && wizardStep === 3 && (
+        <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-4 flex items-center gap-3">
+          <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0">
+            <User size={18} className="text-emerald-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Booking Guest</p>
+            <p className="font-bold text-gray-900 text-sm truncate">{initialProfile!.name}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <div className="pb-32">
-      <StepProgress current={wizardStep} />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        {/* Left Column: Form Content */}
+        <div className="lg:col-span-7 xl:col-span-8">
+          <StepProgress current={wizardStep} />
 
-      <div className="overflow-hidden relative">
-        <AnimatePresence initial={false} custom={direction} mode="wait">
-          <motion.div
-            key={wizardStep}
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ type: 'tween', duration: 0.22, ease: 'easeInOut' }}
-          >
+          <div className="overflow-hidden relative min-h-[420px]">
+            <AnimatePresence initial={false} custom={direction} mode="wait">
+              <motion.div
+                key={wizardStep}
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ type: 'tween', duration: 0.22, ease: 'easeInOut' }}
+              >
 
-            {/* ── STEP 1: WHEN? ─────────────────────────────────────────── */}
-            {wizardStep === 1 && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">When do you need storage?</h2>
-                  <p className="text-sm text-gray-400">Set your drop-off and pick-up times</p>
-                </div>
-
-                {/* Drop-off */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2">
-                  <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                    <CalendarDays size={12} className="text-brand" /> Drop-off
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={startValue}
-                    min={minDatetime}
-                    onChange={e => {
-                      setStartValue(e.target.value)
-                      if (endValue && e.target.value >= endValue)
-                        setEndValue(toLocalDatetimeValue(addHours(new Date(e.target.value), 4)))
-                    }}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all"
-                  />
-                </div>
-
-                {/* Pick-up */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2">
-                  <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                    <Clock size={12} className="text-brand" /> Pick-up
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={endValue}
-                    min={startValue || minDatetime}
-                    onChange={e => setEndValue(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all"
-                  />
-                </div>
-
-                {/* Duration pill */}
-                {timesValid && (
-                  <div className="flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-100 rounded-2xl py-2 px-4 mx-4">
-                    <CheckCircle2 size={13} className="text-emerald-500" />
-                    <p className="text-[11px] font-semibold text-emerald-700">
-                      {hours} hr{hours !== 1 ? 's' : ''} storage
-                    </p>
-                    <span className="text-emerald-400">·</span>
-                    <p className="text-[10px] text-emerald-600 font-medium">
-                      {startDate && format(startDate, 'dd MMM')} → {endDate && format(endDate, 'dd MMM, HH:mm')}
-                    </p>
-                  </div>
-                )}
-
-                <p className="text-center text-xs text-gray-400">
-                  Hub opens {hub.open_time.slice(0, 5)} – {hub.close_time.slice(0, 5)}
-                </p>
-              </div>
-            )}
-
-            {/* ── STEP 2: BAGS ──────────────────────────────────────────── */}
-            {wizardStep === 2 && (
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">What are you storing?</h2>
-                  <p className="text-sm text-gray-400">Select the number of each bag type</p>
-                </div>
-
-                {(Object.keys(BAG_LABELS) as BagType[]).map((type) => (
-                  <div
-                    key={type}
-                    className={`bg-white rounded-2xl border shadow-sm p-3 flex items-center gap-3 transition-all ${
-                      bags[type] > 0 ? 'border-brand/30 bg-brand/[0.02]' : 'border-gray-100'
-                    }`}
-                  >
-                    {/* Icon */}
-                    <div className={`w-11 h-11 md:w-14 md:h-14 rounded-xl flex items-center justify-center text-xl shrink-0 transition-colors ${
-                      bags[type] > 0 ? 'bg-brand/10' : 'bg-gray-50'
-                    }`}>
-                      {BAG_EMOJIS[type]}
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-gray-900 text-[13px] md:text-sm">{BAG_LABELS[type]}</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{BAG_DESC[type]}</p>
-                      <p className="text-[10px] md:text-xs font-semibold text-brand mt-0.5">LKR {BAG_RATES[type].toLocaleString()}/hr</p>
-                    </div>
-
-                    {/* Counter */}
-                    <div className="flex items-center gap-2 md:gap-3 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => bags[type] > 0 && setBags({ ...bags, [type]: bags[type] - 1 })}
-                        disabled={bags[type] === 0}
-                        className={`w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center transition-all active:scale-90 ${
-                          bags[type] > 0 ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-300 cursor-not-allowed'
-                        }`}
-                      >
-                        <Minus size={14} strokeWidth={2.5} />
-                      </button>
-                      <span className="w-4 text-center font-bold text-gray-900 text-sm md:text-base tabular-nums">
-                        {bags[type]}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => totalBags < 10 && setBags({ ...bags, [type]: bags[type] + 1 })}
-                        disabled={totalBags >= 10}
-                        className={`w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center transition-all active:scale-90 ${
-                          totalBags < 10 ? 'bg-brand text-white' : 'bg-gray-100 text-gray-300 cursor-not-allowed'
-                        }`}
-                      >
-                        <Plus size={14} strokeWidth={2.5} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                {totalBags >= 10 && (
-                  <p className="text-center text-xs text-amber-600 font-semibold bg-amber-50 border border-amber-100 rounded-2xl py-2.5">
-                    Maximum 10 bags per booking
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* ── STEP 3: REVIEW & PAY ──────────────────────────────────── */}
-            {wizardStep === 3 && (
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">Review your booking</h2>
-                  <p className="text-sm text-gray-400">Confirm details before paying</p>
-                </div>
-
-                {/* Summary card */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
-                  <div className="flex items-center gap-3 p-3">
-                    <div className="w-8 h-8 bg-brand/8 rounded-xl flex items-center justify-center shrink-0">
-                      <CalendarDays size={14} className="text-brand" />
-                    </div>
+                {/* ── STEP 1: WHEN? ─────────────────────────────────────────── */}
+                {wizardStep === 1 && (
+                  <div className="space-y-6">
                     <div>
-                      <p className="text-[10px] font-semibold text-gray-400">Time Window</p>
-                      <p className="text-xs font-bold text-gray-900">
-                        {startDate && format(startDate, 'dd MMM, HH:mm')} → {endDate && format(endDate, 'dd MMM, HH:mm')}
-                      </p>
-                      <p className="text-[10px] text-brand font-medium">{hours}h storage</p>
+                      <h2 className="text-2xl font-black text-gray-900 mb-1 tracking-tight">When do you need storage?</h2>
+                      <p className="text-sm text-gray-400">Set your drop-off and pick-up times</p>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3">
-                    <div className="w-8 h-8 bg-brand/8 rounded-xl flex items-center justify-center shrink-0">
-                      <Package size={14} className="text-brand" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-[10px] font-semibold text-gray-400">Bags</p>
-                      <div className="flex flex-wrap gap-1 mt-0.5">
-                        {(Object.entries(bags) as [BagType, number][]).filter(([, q]) => q > 0).map(([type, qty]) => (
-                          <span key={type} className="text-[10px] bg-gray-100 text-gray-700 font-semibold px-2 py-0.5 rounded-full">
-                            {BAG_EMOJIS[type]} {qty}× {BAG_LABELS[type]}
-                          </span>
-                        ))}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Drop-off */}
+                      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-3">
+                        <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">
+                          <CalendarDays size={14} className="text-brand" /> Drop-off
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={startValue}
+                          min={minDatetime}
+                          onChange={e => {
+                            setStartValue(e.target.value)
+                            if (endValue && e.target.value >= endValue)
+                              setEndValue(toLocalDatetimeValue(addHours(new Date(e.target.value), 4)))
+                          }}
+                          className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50 text-gray-900 text-base font-bold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all shadow-inner"
+                        />
+                      </div>
+
+                      {/* Pick-up */}
+                      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-3">
+                        <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">
+                          <Clock size={14} className="text-brand" /> Pick-up
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={endValue}
+                          min={startValue || minDatetime}
+                          onChange={e => setEndValue(e.target.value)}
+                          className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50 text-gray-900 text-base font-bold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all shadow-inner"
+                        />
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                {/* Price breakdown */}
-                <div className="bg-gray-50 rounded-2xl border border-gray-100 p-4 space-y-2">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Price breakdown</p>
-                  {(Object.entries(bags) as [BagType, number][]).filter(([, q]) => q > 0).map(([type, qty]) => (
-                    <div key={type} className="flex justify-between text-xs">
-                      <span className="text-gray-600">{qty}× {BAG_LABELS[type]} × {hours}h</span>
-                      <span className="font-semibold text-gray-900">LKR {(BAG_RATES[type] * qty * hours).toLocaleString()}</span>
-                    </div>
-                  ))}
-                  <div className="pt-2 border-t border-gray-200 flex justify-between items-center">
-                    <span className="font-bold text-gray-900 text-sm">Total</span>
-                    <span className="text-lg font-bold text-gray-900">LKR {totalPrice.toLocaleString()}</span>
-                  </div>
-                </div>
+                    {/* Duration pill (Mobile only) */}
+                    {timesValid && (
+                      <div className="lg:hidden flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-100 rounded-2xl py-2.5 px-4 mx-4">
+                        <CheckCircle2 size={13} className="text-emerald-500" />
+                        <p className="text-[11px] font-bold text-emerald-700">
+                          {hours} hr{hours !== 1 ? 's' : ''} storage
+                        </p>
+                      </div>
+                    )}
 
-                {/* Illegal items declaration */}
-                <label className={`flex items-start gap-3 rounded-2xl border p-4 cursor-pointer transition-all ${
-                  noIllegalItems
-                    ? 'border-emerald-200 bg-emerald-50/60'
-                    : 'border-gray-200 bg-white hover:border-brand/30'
-                }`}>
-                  <div className="relative shrink-0 mt-0.5">
-                    <input
-                      type="checkbox"
-                      checked={noIllegalItems}
-                      onChange={e => setNoIllegalItems(e.target.checked)}
-                      className="sr-only"
-                    />
-                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                      noIllegalItems ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 bg-white'
-                    }`}>
-                      {noIllegalItems && (
-                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={2.5}>
-                          <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900 leading-snug">
-                      I confirm I will not store any illegal items
-                    </p>
-                    <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">
-                      No weapons, controlled substances, perishables, hazardous materials, or items prohibited under
-                      Sri Lankan law. See{' '}
-                      <a
-                        href="/terms#prohibited"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={e => e.stopPropagation()}
-                        className="text-brand font-semibold hover:underline"
-                      >
-                        Section 3 of our Terms
-                      </a>
-                      {' '}for the full list.
-                    </p>
-                  </div>
-                </label>
-
-                {/* Identity — logged in */}
-                {isLoggedIn ? (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0">
-                      <User size={18} className="text-emerald-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-gray-900 text-xs truncate">{initialProfile!.name}</p>
-                      <p className="text-[10px] text-gray-400 truncate">{initialProfile!.email}</p>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-emerald-600 text-[10px] font-semibold bg-emerald-50 px-2.5 py-1 rounded-lg shrink-0">
-                      <ShieldCheck size={12} />
-                      Verified
-                    </div>
-                  </div>
-                ) : (
-                  /* Guest identity form */
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <Shield size={14} className="text-brand" />
-                      <p className="text-xs font-bold text-gray-900">Your Details</p>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <FieldInput label="Full Name" icon={User} value={name} onChange={e => setName(e.target.value)} placeholder="Amal Perera" />
-                      <FieldInput label="Phone" icon={Smartphone} type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="07XXXXXXXX" />
-                      <FieldInput label="Email" icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
-                      <FieldInput label="NIC / Passport" icon={Fingerprint} value={nic} onChange={e => setNic(e.target.value)} placeholder="987654321V" />
+                    <div className="bg-gray-50/50 rounded-2xl p-4 text-center border border-dashed border-gray-200">
+                      <p className="text-xs text-gray-400 font-semibold uppercase tracking-tighter">
+                        Operating Hours: {hub.open_time.slice(0, 5)} – {hub.close_time.slice(0, 5)}
+                      </p>
                     </div>
                   </div>
                 )}
-              </div>
-            )}
 
-          </motion.div>
-        </AnimatePresence>
+                {/* ── STEP 2: BAGS ──────────────────────────────────────────── */}
+                {wizardStep === 2 && (
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-2xl font-black text-gray-900 mb-1 tracking-tight">What are you storing?</h2>
+                      <p className="text-sm text-gray-400">Select the number of each bag type</p>
+                    </div>
+
+                    <div className="space-y-3.5">
+                      {(Object.keys(BAG_LABELS) as BagType[]).map((type) => (
+                        <div
+                          key={type}
+                          className={`bg-white rounded-[2rem] border shadow-sm p-4 flex items-center gap-4 transition-all duration-300 ${
+                            bags[type] > 0 ? 'border-brand/40 bg-brand/[0.04] ring-1 ring-brand/10' : 'border-gray-100'
+                          }`}
+                        >
+                          {/* Icon */}
+                          <div className={`w-14 h-14 md:w-16 md:h-16 rounded-[1.25rem] flex items-center justify-center text-3xl shrink-0 transition-colors ${
+                            bags[type] > 0 ? 'bg-brand/15' : 'bg-gray-50'
+                          }`}>
+                            {BAG_EMOJIS[type]}
+                          </div>
+
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-gray-900 text-base">{BAG_LABELS[type]}</p>
+                            <p className="text-xs font-bold text-gray-400 mt-0.5 line-clamp-1">{BAG_DESC[type]}</p>
+                            <div className="flex items-center gap-1.5 mt-2">
+                              <span className="text-[10px] uppercase font-black text-brand tracking-widest">Rate</span>
+                              <p className="text-sm font-black text-brand tabular-nums font-mono">LKR {BAG_RATES[type].toLocaleString()}/hr</p>
+                            </div>
+                          </div>
+
+                          {/* Counter */}
+                          <div className="flex items-center gap-3 shrink-0 bg-gray-100/50 p-2 rounded-2xl">
+                            <button
+                              type="button"
+                              onClick={() => bags[type] > 0 && setBags({ ...bags, [type]: bags[type] - 1 })}
+                              disabled={bags[type] === 0}
+                              className={`w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center transition-all active:scale-90 shadow-sm ${
+                                bags[type] > 0 ? 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-50' : 'bg-transparent text-gray-300 cursor-not-allowed'
+                              }`}
+                            >
+                              <Minus size={18} strokeWidth={3} />
+                            </button>
+                            <span className="w-6 text-center font-black text-gray-900 text-xl tabular-nums font-mono">
+                              {bags[type]}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => totalBags < 10 && setBags({ ...bags, [type]: bags[type] + 1 })}
+                              disabled={totalBags >= 10}
+                              className={`w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-lg ${
+                                totalBags < 10 ? 'bg-brand text-white border border-brand hover:scale-105' : 'bg-transparent text-gray-300 cursor-not-allowed'
+                              }`}
+                            >
+                              <Plus size={18} strokeWidth={3} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {totalBags >= 10 && (
+                      <p className="text-center text-xs text-amber-600 font-bold bg-amber-50 border border-amber-100 rounded-2xl py-3 px-4 flex items-center justify-center gap-2">
+                        <AlertCircle size={14} /> Maximum 10 bags per booking
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* ── STEP 3: REVIEW & PAY ──────────────────────────────────── */}
+                {wizardStep === 3 && (
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-2xl font-black text-gray-900 mb-1 tracking-tight">Review & Pay</h2>
+                      <p className="text-sm text-gray-400">Everything looks good? Proceed to payment.</p>
+                    </div>
+
+                    {/* Summary card (Mobile only) */}
+                    <div className="lg:hidden">
+                      {summaryBlock}
+                    </div>
+
+                    {/* Illegal items declaration */}
+                    <label className={`flex items-start gap-4 rounded-[2rem] border p-6 cursor-pointer transition-all ${
+                      noIllegalItems
+                        ? 'border-emerald-200 bg-emerald-50/40 ring-1 ring-emerald-100'
+                        : 'border-gray-100 bg-white hover:border-brand/40 shadow-sm'
+                    }`}>
+                      <div className="relative shrink-0 mt-1">
+                        <input
+                          type="checkbox"
+                          checked={noIllegalItems}
+                          onChange={e => setNoIllegalItems(e.target.checked)}
+                          className="sr-only"
+                        />
+                        <div className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all ${
+                          noIllegalItems ? 'bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-200' : 'border-gray-200 bg-white'
+                        }`}>
+                          {noIllegalItems && (
+                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={3}>
+                              <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 leading-snug">
+                          I agree to the storage terms & conditions
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
+                          I confirm no weapons, perishables, or hazardous items. See{' '}
+                          <a
+                            href="/terms#prohibited"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={e => e.stopPropagation()}
+                            className="text-brand font-black hover:underline decoration-2"
+                          >
+                            Prohibited Items
+                          </a>.
+                        </p>
+                      </div>
+                    </label>
+
+                    {/* Guest identity form */}
+                    {!isLoggedIn && (
+                      <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 lg:p-8 space-y-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-brand/10 rounded-xl flex items-center justify-center text-brand">
+                            <Fingerprint size={20} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Guest Details</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Required for luggage drop-off</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                          <FieldInput label="Full Name" icon={User} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. John Doe" />
+                          <FieldInput label="Phone Number" icon={Smartphone} type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="07XXXXXXXX" />
+                          <FieldInput label="Email Address" icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="john@example.com" />
+                          <FieldInput label="NIC / Passport" icon={Shield} value={nic} onChange={e => setNic(e.target.value)} placeholder="Identity ID" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Right Column: Desktop Summary Sidebar */}
+        <div className="hidden lg:block lg:col-span-5 xl:col-span-4 sticky top-24">
+          <div className="p-2">
+            {summaryBlock}
+          </div>
+        </div>
       </div>
 
       {/* Error */}
       {error && (
-        <div className="mt-4 flex items-start gap-3 bg-red-50 border border-red-100 rounded-2xl p-4">
-          <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
-          <p className="text-sm text-red-700 font-medium">{error}</p>
+        <div className="mt-8 flex items-start gap-4 bg-red-50 border border-red-100 rounded-3xl p-5 shadow-sm max-w-2xl mx-auto lg:mx-0">
+          <AlertCircle size={20} className="text-red-500 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-black text-red-900 uppercase tracking-widest mb-1">Attention Required</p>
+            <p className="text-sm text-red-700 font-bold">{error}</p>
+          </div>
         </div>
       )}
 
       {/* ── Fixed bottom action bar ── */}
-
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-100 px-4 py-4 pb-safe z-[200] shadow-lg">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-5 pb-safe z-[200] shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
+        <div className="max-w-5xl mx-auto flex items-center gap-4">
           {/* Back button */}
           {wizardStep > 1 && (
             <button onClick={back}
-              className="flex items-center justify-center w-12 h-12 rounded-2xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors shrink-0">
-              <ChevronLeft size={20} />
+              className="flex items-center justify-center w-14 h-14 rounded-2xl border-2 border-gray-100 bg-white text-gray-900 hover:bg-gray-50 transition-all active:scale-95 shrink-0 shadow-sm">
+              <ChevronLeft size={24} strokeWidth={2.5} />
             </button>
           )}
 
-          {/* Live price pill (step 2 only) */}
-          {wizardStep === 2 && totalBags > 0 && totalPrice > 0 && (
-            <div className="flex-1 min-w-0 bg-gray-50 rounded-2xl px-4 py-2.5 border border-gray-100">
-              <p className="text-[10px] text-gray-400 font-medium">{totalBags} bag{totalBags > 1 ? 's' : ''} · {hours}h</p>
-              <p className="text-sm font-bold text-gray-900">LKR {totalPrice.toLocaleString()}</p>
+          {/* Live price pill (step 2 & below only) */}
+          {wizardStep < 3 && totalBags > 0 && totalPrice > 0 && (
+            <div className="flex-1 min-w-0 bg-gray-50 rounded-2xl px-5 py-2.5 border border-gray-100 shadow-inner">
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">{totalBags} item{totalBags > 1 ? 's' : ''} · {hours}h</p>
+              <p className="text-lg font-black text-gray-900 tracking-tight tabular-nums">LKR {totalPrice.toLocaleString()}</p>
             </div>
           )}
 
           {/* Next / Pay button */}
-          {wizardStep < 3 ? (
-            <Button
-              onClick={next}
-              className="flex-1 h-12 rounded-2xl font-bold text-sm"
-              disabled={wizardStep === 1 ? !timesValid : totalBags === 0}
-            >
-              Next →
-            </Button>
-          ) : (
-            <Button
-              onClick={handlePayClick}
-              loading={loading}
-              className="flex-1 h-12 rounded-2xl font-bold text-sm"
-              disabled={(!isLoggedIn && !detailsValid) || !noIllegalItems}
-            >
-              {totalPrice > 0 ? `Pay LKR ${totalPrice.toLocaleString()}` : 'Confirm & Pay'}
-            </Button>
-          )}
+          <div className={`${(wizardStep === 3 || (wizardStep < 3 && totalBags === 0)) ? 'flex-1' : 'w-auto'}`}>
+            {wizardStep < 3 ? (
+              <Button
+                onClick={next}
+                className={`h-14 rounded-2xl font-black text-base shadow-xl transition-all active:scale-95 px-10 ${totalBags > 0 ? '' : 'w-full'}`}
+                disabled={wizardStep === 1 ? !timesValid : totalBags === 0}
+              >
+                Continue <ArrowRight size={18} className="ml-2" />
+              </Button>
+            ) : (
+              <Button
+                onClick={handlePayClick}
+                loading={loading}
+                className="w-full h-14 rounded-2xl font-black text-base shadow-xl shadow-brand/20 transition-all active:scale-95 tracking-tight px-10"
+                disabled={(!isLoggedIn && !detailsValid) || !noIllegalItems}
+              >
+                {totalPrice > 0 ? `Complete Payment · LKR ${totalPrice.toLocaleString()}` : 'Confirm & Proceed'}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -707,73 +776,73 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
           <div className="fixed inset-0 z-[500] flex items-end sm:items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => { setShowVerify(false); setOtpStep('method'); setOtpValue('') }}
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+              className="absolute inset-0 bg-gray-900/60 backdrop-blur-md" />
 
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-              transition={{ type: 'tween', duration: 0.25 }}
-              className="relative w-full max-w-sm bg-white rounded-[2rem] p-6 shadow-2xl">
+            <motion.div initial={{ y: '100%', scale: 0.95 }} animate={{ y: 0, scale: 1 }} exit={{ y: '100%', scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-sm bg-white rounded-[2.5rem] p-8 shadow-2xl">
 
               {otpStep === 'method' ? (
-                <div className="space-y-5">
+                <div className="space-y-6">
                   <div className="text-center">
-                    <div className="w-14 h-14 bg-brand/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                      <ShieldCheck size={28} className="text-brand" />
+                    <div className="w-16 h-16 bg-brand/10 rounded-2xl flex items-center justify-center mx-auto mb-4 text-brand">
+                      <ShieldCheck size={32} />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900">Verify your identity</h3>
-                    <p className="text-sm text-gray-400 mt-1">Choose how to receive your verification code</p>
+                    <h3 className="text-xl font-black text-gray-900 tracking-tight">Security Check</h3>
+                    <p className="text-sm font-semibold text-gray-400 mt-2">Verify your identifier to proceed with the booking</p>
                   </div>
                   <div className="space-y-3">
                     {[
-                      { method: 'email' as const, icon: Mail, label: 'Via Email', sub: email },
-                      { method: 'phone' as const, icon: Smartphone, label: 'Via SMS', sub: formatPhone(phone) },
+                      { method: 'email' as const, icon: Mail, label: 'Email Address', sub: email },
+                      { method: 'phone' as const, icon: Smartphone, label: 'Phone SMS', sub: formatPhone(phone) },
                     ].map(({ method, icon: Icon, label, sub }) => (
                       <button key={method} onClick={() => sendOtp(method)} disabled={loading}
-                        className="w-full flex items-center gap-4 p-4 rounded-2xl border border-gray-100 hover:border-brand/30 hover:bg-brand/4 transition-all text-left disabled:opacity-50">
-                        <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center shrink-0">
-                          <Icon size={20} className="text-brand" />
+                        className="w-full flex items-center gap-4 p-4 rounded-3xl border-2 border-gray-50 hover:border-brand/20 hover:bg-brand/[0.02] transition-all text-left disabled:opacity-50 group">
+                        <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-brand/10 group-hover:text-brand transition-colors">
+                          <Icon size={20} strokeWidth={2.5} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 text-sm">{label}</p>
-                          <p className="text-xs text-gray-400 truncate mt-0.5">{sub}</p>
+                          <p className="font-bold text-gray-900 text-sm">{label}</p>
+                          <p className="text-xs font-bold text-gray-400 truncate mt-0.5">{sub}</p>
                         </div>
-                        <ArrowRight size={16} className="text-gray-300 shrink-0" />
+                        <ArrowRight size={16} className="text-gray-300 group-hover:text-brand group-hover:translate-x-1 transition-all" />
                       </button>
                     ))}
                   </div>
-                  {loading && <div className="flex justify-center"><Spinner size="sm" className="text-brand" /></div>}
-                  {error && <p className="text-center text-xs text-red-500 font-medium">{error}</p>}
+                  {loading && <div className="flex justify-center"><Spinner className="text-brand" /></div>}
+                  {error && <p className="text-center text-xs text-red-500 font-bold bg-red-50 py-3 rounded-2xl">{error}</p>}
                 </div>
               ) : (
-                <div className="space-y-5 text-center">
+                <div className="space-y-6 text-center">
                   <div>
-                    <div className="w-14 h-14 bg-brand/10 rounded-2xl flex items-center justify-center mx-auto mb-3 relative">
+                    <div className="w-16 h-16 bg-brand/10 rounded-2xl flex items-center justify-center mx-auto mb-4 relative">
                       <div className="absolute inset-0 rounded-2xl border-2 border-brand/20 animate-ping opacity-20" />
-                      {verifyMethod === 'email' ? <Mail size={26} className="text-brand" /> : <Smartphone size={26} className="text-brand" />}
+                      {verifyMethod === 'email' ? <Mail size={30} className="text-brand" /> : <Smartphone size={30} className="text-brand" />}
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900">Enter verification code</h3>
-                    <p className="text-sm text-gray-400 mt-1">
-                      Sent to your {verifyMethod === 'email' ? 'email' : 'phone'}
+                    <h3 className="text-xl font-black text-gray-900 tracking-tight">Enter Code</h3>
+                    <p className="text-sm font-semibold text-gray-400 mt-2">
+                      Sent to your registered {verifyMethod === 'email' ? 'email' : 'mobile'}
                     </p>
                   </div>
                   <OtpInput value={otpValue} onChange={v => {
                     setOtpValue(v)
                     if (v.length === OTP_LENGTH) setTimeout(verifyOtp, 100)
                   }} />
-                  {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
+                  {error && <p className="text-sm text-red-500 font-bold">{error}</p>}
                   <Button fullWidth loading={loading} onClick={verifyOtp}
                     disabled={otpValue.length < OTP_LENGTH}
-                    className="h-12 rounded-2xl font-bold">
-                    Verify & Pay
+                    className="h-14 rounded-[1.25rem] font-black text-base shadow-xl shadow-brand/20">
+                    Verify & Pay Now
                   </Button>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-3">
                     <button onClick={() => sendOtp(verifyMethod!)} disabled={countdown > 0 || loading}
-                      className="flex items-center justify-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-brand disabled:opacity-40 transition-colors">
-                      <RefreshCw size={12} />
+                      className="flex items-center justify-center gap-1.5 text-xs font-bold text-gray-400 hover:text-brand disabled:opacity-40 transition-colors uppercase tracking-widest">
+                      <RefreshCw size={14} className={countdown > 0 ? 'animate-spin' : ''} />
                       {countdown > 0 ? `Resend in ${countdown}s` : 'Resend code'}
                     </button>
                     <button onClick={() => { setOtpStep('method'); setOtpValue(''); setError(null) }}
-                      className="text-xs text-gray-300 hover:text-gray-500 transition-colors">
-                      ← Change method
+                      className="text-xs font-bold text-gray-300 hover:text-gray-900 transition-colors uppercase tracking-widest">
+                      ← Use different method
                     </button>
                   </div>
                 </div>

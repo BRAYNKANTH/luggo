@@ -37,7 +37,7 @@ export default async function BookPage({ params }: { params: { hubId: string } }
   if (!hub || !hub.active) notFound()
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-5xl mx-auto px-4 md:px-6">
       <PageHeader
         title={`Book at ${hub.name}`}
         backHref={`/hubs/${hub.id}`}
@@ -49,9 +49,7 @@ export default async function BookPage({ params }: { params: { hubId: string } }
         }
       />
 
-
-
-      <div className="px-4 md:px-6 py-4">
+      <div className="py-4">
         <BookingForm hub={hub} initialProfile={profile} />
       </div>
     </div>
