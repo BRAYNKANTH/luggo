@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { type PostgrestError } from '@supabase/supabase-js'
 import { uuidSchema } from '@/lib/validators/common'
-import { z } from 'zod'
+
 
 // ─────────────────────────────────────────────
 // HELPER — get authenticated staff + their hub
@@ -494,7 +494,7 @@ export async function getHubProfile() {
 
 export async function verifyIdentity(bookingId: string) {
   const validId = uuidSchema.safeParse(bookingId)
-  if (!validId.success) return { error: validId.error.errors[0].message }
+  if (!validId.success) return { error: validId.error.issues[0].message }
   
   const { svc, hubId, userId } = await requireStaff()
 

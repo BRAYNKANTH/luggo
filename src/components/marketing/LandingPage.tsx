@@ -165,6 +165,16 @@ function AppPreviewCard() {
 
 function HeroSection() {
   const t = useTranslations('Index')
+  const cities = ['Colombo', 'Kandy', 'Galle', 'Ella', 'Mirissa', 'Negombo']
+  const [index, setIndex] = useState(0)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % cities.length)
+    }, 3000)
+    return () => clearInterval(timer)
+  }, [cities.length])
+
   return (
     <section className="relative bg-ocean-900 overflow-hidden">
       {/* Background with Scenery (Mobile/General) */}
@@ -188,8 +198,25 @@ function HeroSection() {
               {t('vettedNetwork')}
             </motion.div>
 
-            <motion.h1 variants={fadeUp} className="text-[2.25rem] sm:text-6xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-5">
-              {t('title')}
+            <motion.h1 variants={fadeUp} className="text-[2.25rem] sm:text-6xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-5 min-h-[140px] sm:min-h-0">
+              {t('titleBefore')}
+              <span className="relative inline-block mx-2">
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={index}
+                    initial={{ y: 20, opacity: 0, filter: 'blur(10px)' }}
+                    animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
+                    exit={{ y: -20, opacity: 0, filter: 'blur(10px)' }}
+                    transition={{ duration: 0.5, ease: 'circOut' }}
+                    className="text-brand inline-block"
+                  >
+                    {cities[index]}
+                  </motion.span>
+                </AnimatePresence>
+                <div className="absolute -bottom-2 left-0 right-0 h-1 sm:h-2 bg-brand/30 blur-sm rounded-full" />
+              </span>
+              <br className="hidden sm:block" />
+              {t('titleAfter')}
             </motion.h1>
 
             <motion.p variants={fadeUp} className="text-white/60 text-base sm:text-lg max-w-lg mx-auto lg:mx-0 mb-8 leading-relaxed">
