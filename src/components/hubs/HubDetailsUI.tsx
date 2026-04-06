@@ -7,7 +7,7 @@ import { Logo } from '@/components/ui/Logo'
 import { Button } from '@/components/ui/Button'
 import { SignOutButton } from '@/components/shared/SignOutButton'
 import {
-  MapPin, Clock, Package, ChevronLeft,
+  MapPin, Clock, ChevronLeft,
   ArrowRight, ShieldCheck, Star
 } from 'lucide-react'
 import { BAG_LABELS, BAG_RATES } from '@/lib/utils/pricing'

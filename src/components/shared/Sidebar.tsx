@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, MapPin, BookOpen, User, LogOut, LogIn } from 'lucide-react'
+import { LayoutDashboard, BookOpen, User, LogOut, LogIn } from 'lucide-react'
 import { Logo } from '@/components/ui/Logo'
 import { signOut } from '@/lib/auth/actions'
 
