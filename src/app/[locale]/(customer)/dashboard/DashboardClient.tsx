@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from '@/navigation'
 import Image from 'next/image'
 import { isPast } from 'date-fns'
 import {
-  Search, X, MapPin, Clock, Package, ChevronRight, ChevronLeft,
+  Search, X, MapPin, Clock, Package, ChevronRight,
   QrCode, Navigation, SlidersHorizontal, ShieldCheck
 } from 'lucide-react'
 import { HubMap } from '@/components/hubs/HubMap'
@@ -82,7 +82,7 @@ function fmtDist(km: number) {
   return km < 1 ? `${(km * 1000).toFixed(0)}m` : `${km.toFixed(1)}km`
 }
 
-function getAvailability(hub: HubCard, t: any) {
+function getAvailability(hub: HubCard) {
   const spots = hub.capacity - hub.activeCount
   const percent = Math.round((hub.activeCount / hub.capacity) * 100)
   
@@ -105,7 +105,7 @@ function HubImagePlaceholder() {
 
 function FeaturedHubCard({ hub, distanceKm }: { hub: HubCard; distanceKm: number | null }) {
   const t = useTranslations('Common')
-  const avail = getAvailability(hub, t)
+  const avail = getAvailability(hub)
   const open = isOpenNow(hub.open_time, hub.close_time)
 
   return (
@@ -181,7 +181,7 @@ function FeaturedHubCard({ hub, distanceKm }: { hub: HubCard; distanceKm: number
 
 function HubListCard({ hub, distanceKm }: { hub: HubCard; distanceKm: number | null }) {
   const t = useTranslations('Common')
-  const avail = getAvailability(hub, t)
+  const avail = getAvailability(hub)
   const open = isOpenNow(hub.open_time, hub.close_time)
 
   return (
@@ -384,7 +384,7 @@ export function DashboardClient({ hubs, activeBookings, firstName, userId, notif
         </div>
 
         <div className="flex items-center gap-2 px-4 pb-3 overflow-x-auto scrollbar-hide">
-          {['all', 'available', 'open'].map((key: any) => (
+          {(['all', 'available', 'open'] as const).map((key) => (
             <button key={key} onClick={() => setFilter(key)} className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${filter === key ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200'}`}>
               {t(`filters.${key}`)}
             </button>

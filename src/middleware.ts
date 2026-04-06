@@ -14,7 +14,7 @@ export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || ''
 
   // 1. Handle locale routing
-  const response = await intlMiddleware(request)
+  await intlMiddleware(request)
 
   // 2. Handle subdomain routing for staff
   if (hostname.startsWith('staff.')) {

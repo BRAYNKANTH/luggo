@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { LandingPage } from '@/components/marketing/LandingPage'
+import LandingPage from '@/components/marketing/LandingPage'
 import { type UserRole } from '@/types/database'
 
 export default async function RootPage() {

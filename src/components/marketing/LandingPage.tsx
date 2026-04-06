@@ -344,7 +344,6 @@ function HowItWorksSection() {
 
 function FeaturesSection() {
   const t = useTranslations('Sections.features')
-  const ft = useTranslations('Common') // Fallback/Shared for icons etc if needed
   
   // Fixed mapping for feature descriptions for now since they are many
   return (
