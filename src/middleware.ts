@@ -15,6 +15,11 @@ export async function middleware(request: NextRequest) {
 
   // 1. Handle locale routing
   const response = await intlMiddleware(request)
+  
+  // If the i18n middleware wants to redirect, do it immediately
+  if (response.status >= 300 && response.status < 400) {
+    return response
+  }
 
   // 2. Handle subdomain routing for staff
   if (hostname.startsWith('staff.')) {
