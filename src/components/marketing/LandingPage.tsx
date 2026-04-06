@@ -167,9 +167,16 @@ function HeroSection() {
   const t = useTranslations('Index')
   return (
     <section className="relative bg-ocean-900 overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-32 -right-32 w-[28rem] h-[28rem] bg-brand/20 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 -left-32 w-72 h-72 bg-brand/10 rounded-full blur-3xl" />
+      {/* Background with Scenery (Mobile/General) */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-r from-ocean-900 via-ocean-900/80 to-transparent z-10" />
+        <Image
+          src="/images/marketing/srilanka-hero.png"
+          alt="Sri Lanka Scenery"
+          fill
+          className="object-cover opacity-40 mix-blend-overlay"
+          priority
+        />
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 pt-20 pb-12 sm:pt-28 sm:pb-16 lg:pt-36">
@@ -209,9 +216,21 @@ function HeroSection() {
           </motion.div>
 
           <motion.div
-            initial={{ opacity:0, x:30 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.4, duration:0.6 }}
-            className="hidden lg:block shrink-0 w-[320px]">
-            <AppPreviewCard />
+            initial={{ opacity:0, scale:0.95 }} animate={{ opacity:1, scale:1 }} transition={{ delay:0.4, duration:0.7 }}
+            className="hidden lg:block shrink-0 relative w-[480px] h-[340px]">
+            <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl">
+               <Image
+                 src="/images/marketing/srilanka-hero.png"
+                 alt="Explore Sri Lanka"
+                 fill
+                 className="object-cover"
+               />
+               <div className="absolute inset-0 bg-gradient-to-t from-ocean-900/40 to-transparent" />
+            </div>
+            {/* Floating App Card */}
+            <div className="absolute -bottom-6 -left-12 w-[300px] transform -rotate-2">
+              <AppPreviewCard />
+            </div>
           </motion.div>
         </div>
 
