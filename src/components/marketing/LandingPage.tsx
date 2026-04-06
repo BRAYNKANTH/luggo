@@ -118,47 +118,42 @@ function NavBar() {
 
 function AppPreviewCard() {
   return (
-    <div className="relative group">
-      {/* Dynamic Glow */}
-      <div className="absolute inset-0 bg-brand/20 rounded-[2.5rem] blur-3xl opacity-50 group-hover:opacity-80 transition-opacity duration-1000" />
-      
-      <div className="relative bg-white/10 border border-white/20 backdrop-blur-xl rounded-[2.5rem] p-5 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] hover:shadow-[0_48px_80px_-16px_rgba(0,0,0,0.4)] transition-all duration-500">
-        <div className="bg-white rounded-3xl p-5 shadow-sm mb-4 border border-gray-100/50">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 bg-brand rounded-2xl flex items-center justify-center shadow-lg shadow-brand/20">
-              <Check size={16} className="text-white" strokeWidth={3} />
+    <div className="relative">
+      <div className="absolute inset-0 bg-brand/20 rounded-3xl blur-2xl scale-110" />
+      <div className="relative bg-white/10 border border-white/20 backdrop-blur-sm rounded-3xl p-4 shadow-2xl">
+        <div className="bg-white rounded-2xl p-4 shadow-lg mb-3">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-7 h-7 bg-brand rounded-full flex items-center justify-center">
+              <Check size={13} className="text-white" strokeWidth={3} />
             </div>
             <div>
-              <p className="text-[13px] font-black text-ocean-900 leading-none mb-1">Booking Confirmed!</p>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Colombo Fort Hub</p>
+              <p className="text-[11px] font-extrabold text-ocean-900 leading-none">Booking Confirmed!</p>
+              <p className="text-[9px] text-gray-400 mt-0.5">Colombo Fort Hub</p>
             </div>
-            <span className="ml-auto text-[10px] bg-emerald-50 text-emerald-600 font-black px-3 py-1 rounded-full border border-emerald-100 uppercase tracking-tight">Active</span>
+            <span className="ml-auto text-[9px] bg-emerald-50 text-emerald-600 font-bold px-2 py-0.5 rounded-full border border-emerald-100">Active</span>
           </div>
-          
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="bg-gray-50/50 rounded-2xl p-3 border border-gray-100">
-              <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Drop-off</p>
-              <p className="text-[12px] font-bold text-ocean-900">Today, 2:00 PM</p>
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div className="bg-gray-50 rounded-xl p-2.5">
+              <p className="text-[9px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Drop-off</p>
+              <p className="text-[11px] font-bold text-ocean-900">Today, 2:00 PM</p>
             </div>
-            <div className="bg-gray-50/50 rounded-2xl p-3 border border-gray-100">
-              <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Pick-up</p>
-              <p className="text-[12px] font-bold text-ocean-900">Tomorrow, 9 AM</p>
+            <div className="bg-gray-50 rounded-xl p-2.5">
+              <p className="text-[9px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Pick-up</p>
+              <p className="text-[11px] font-bold text-ocean-900">Tomorrow, 9 AM</p>
             </div>
           </div>
-          
-          <div className="bg-gray-50/80 rounded-2xl py-5 flex flex-col items-center gap-2 border border-dashed border-gray-200">
-            <QrCode size={32} className="text-ocean-900/40" strokeWidth={1.5} />
-            <p className="text-[10px] text-gray-500 font-bold tracking-tight">Tap to enlarge QR Code</p>
+          <div className="bg-gray-50 rounded-xl py-4 flex flex-col items-center gap-1.5">
+            <QrCode size={28} className="text-ocean-900/30" />
+            <p className="text-[9px] text-gray-400 font-semibold">Show at hub counter</p>
           </div>
         </div>
-        
-        <div className="flex items-center gap-3.5 bg-ocean-900/90 backdrop-blur-md rounded-2xl px-4 py-4 border border-white/5">
-          <div className="w-8 h-8 bg-emerald-400 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-emerald-400/20">
-            <ShieldCheck size={16} className="text-white" strokeWidth={2.5} />
+        <div className="flex items-center gap-2.5 bg-ocean-900 rounded-2xl px-3 py-2.5">
+          <div className="w-6 h-6 bg-emerald-400 rounded-full flex items-center justify-center shrink-0">
+            <Check size={11} className="text-white" strokeWidth={3} />
           </div>
           <div>
-            <p className="text-[11px] font-bold text-white leading-none mb-1">Bags Sealed & Insured</p>
-            <p className="text-[10px] text-white/40 font-medium">Digital proof available</p>
+            <p className="text-[10px] font-bold text-white leading-none">Bags sealed & secured</p>
+            <p className="text-[9px] text-white/50 mt-0.5">Photo proof uploaded</p>
           </div>
         </div>
       </div>
@@ -171,126 +166,93 @@ function AppPreviewCard() {
 function HeroSection() {
   const t = useTranslations('Index')
   return (
-    <section className="relative min-h-[90vh] flex items-center bg-black overflow-hidden">
-      {/* Background Split Transformation */}
-      <div className="absolute inset-0 z-0 flex flex-col lg:flex-row">
-        {/* Left Side: The Burden */}
-        <div className="relative w-full lg:w-1/2 h-1/2 lg:h-full overflow-hidden grayscale contrast-125 opacity-40">
-          <Image
-            src="/images/marketing/burden-hero.png"
-            alt="The Burden"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-b lg:bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
-        </div>
-        
-        {/* Right Side: The Freedom (Ken-Burns) */}
-        <div className="relative w-full lg:w-1/2 h-1/2 lg:h-full overflow-hidden">
-          <motion.div 
-            initial={{ scale: 1.1, x: -20 }}
-            animate={{ scale: 1.3, x: 20 }}
-            transition={{ duration: 30, repeat: Infinity, repeatType: 'reverse', ease: 'linear' }}
-            className="absolute inset-0"
-          >
-            <Image
-              src="/images/marketing/freedom-hero.png"
-              alt="The Freedom"
-              fill
-              className="object-cover"
-              priority
-            />
-          </motion.div>
-          <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-l from-black/80 via-black/20 to-transparent" />
-        </div>
+    <section className="relative bg-ocean-900 overflow-hidden">
+      {/* Background with Scenery (Mobile/General) */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-r from-ocean-900 via-ocean-900/40 to-transparent z-10" />
+        <Image
+          src="/images/marketing/srilanka-hero.png"
+          alt="Sri Lanka Scenery"
+          fill
+          className="object-cover opacity-80"
+          priority
+        />
+        <div className="absolute inset-0 bg-ocean-900/20 backdrop-blur-[2px] z-5" />
       </div>
 
-      {/* Content Overlay */}
-      <div className="relative z-10 w-full max-w-6xl mx-auto px-4 py-20 lg:py-32">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:gap-24">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 pt-20 pb-12 sm:pt-28 sm:pb-16 lg:pt-36">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:gap-20">
           <motion.div variants={stagger} initial="hidden" animate="show" className="flex-1 text-center lg:text-left">
-            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/10 text-white px-4 py-2 rounded-full text-xs font-black uppercase tracking-[0.2em] mb-8">
-              <div className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
+            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/10 text-white/90 px-3 py-1.5 rounded-full text-xs font-bold mb-6">
+              <Star size={11} fill="currentColor" className="text-brand-accent" />
               {t('vettedNetwork')}
             </motion.div>
 
-            <motion.h1 
-              variants={fadeUp} 
-              className="text-4xl sm:text-7xl lg:text-8xl font-black text-white leading-[0.95] tracking-tighter mb-8"
-            >
+            <motion.h1 variants={fadeUp} className="text-[2.25rem] sm:text-6xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-5">
               {t('title')}
             </motion.h1>
 
-            <motion.p variants={fadeUp} className="text-white/70 text-lg sm:text-xl max-w-xl mx-auto lg:mx-0 mb-12 leading-relaxed font-medium">
+            <motion.p variants={fadeUp} className="text-white/60 text-base sm:text-lg max-w-lg mx-auto lg:mx-0 mb-8 leading-relaxed">
               {t('subtitle')}
             </motion.p>
 
-            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12">
+            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-10">
               <Link href="/dashboard"
-                className="group flex items-center justify-center gap-3 bg-brand text-white font-black px-10 py-5 rounded-2xl hover:bg-brand/90 hover:scale-[1.02] active:scale-95 transition-all text-lg shadow-2xl shadow-brand/40">
-                {t('findStorage')} 
-                <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
+                className="flex items-center justify-center gap-2 bg-brand text-white font-bold px-8 py-4 rounded-2xl hover:bg-brand/90 active:scale-95 transition-all text-base shadow-xl shadow-brand/20">
+                {t('findStorage')} <ArrowRight size={18} />
               </Link>
               <a href="#how-it-works"
-                className="flex items-center justify-center gap-3 bg-white/5 backdrop-blur-md border border-white/10 text-white font-black px-10 py-5 rounded-2xl hover:bg-white/10 transition-all text-lg tracking-tight">
-                {t('howItWorks')} <ChevronDown size={20} className="text-white/40" />
+                className="flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 text-white font-bold px-8 py-4 rounded-2xl hover:bg-white/15 transition-all text-base">
+                {t('howItWorks')} <ChevronDown size={16} />
               </a>
             </motion.div>
 
-            <motion.div variants={fadeUp} className="hidden sm:flex flex-wrap gap-4 justify-center lg:justify-start">
-              {[
-                { text: 'Pay on Arrival (CoD)', icon: Star },
-                { text: 'Tamper-Proof Seals', icon: Lock },
-                { text: 'LKR 150k Protection', icon: ShieldCheck }
-              ].map(item => (
-                <span key={item.text} className="flex items-center gap-2 bg-white/5 border border-white/5 text-white/50 text-[11px] font-black uppercase tracking-wider px-5 py-2.5 rounded-full backdrop-blur-sm">
-                  <item.icon size={13} className="text-brand" strokeWidth={3} /> {item.text}
+            <motion.div variants={fadeUp} className="hidden sm:flex flex-wrap gap-2.5 justify-center lg:justify-start opacity-70">
+              {['No account needed','Tamper-proof seals','LKR 150k Protection'].map(chip => (
+                <span key={chip} className="flex items-center gap-1.5 bg-white/5 border border-white/10 text-white text-xs font-bold px-4 py-2 rounded-full">
+                  <Check size={12} className="text-emerald-400" strokeWidth={3} /> {chip}
                 </span>
               ))}
             </motion.div>
           </motion.div>
 
           <motion.div
-            initial={{ opacity:0, x:40 }} 
-            animate={{ opacity:1, x:0 }} 
-            transition={{ delay:0.4, duration:0.8, ease: "easeOut" }}
-            className="hidden lg:block shrink-0 relative"
-          >
-            <div className="w-[480px] perspective-1000">
-              <motion.div
-                animate={{ 
-                  y: [0, -15, 0],
-                  rotate: [-3, -1, -3]
-                }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              >
+            initial={{ opacity:0, scale:0.95 }} animate={{ opacity:1, scale:1 }} transition={{ delay:0.4, duration:0.7 }}
+            className="hidden lg:block shrink-0 relative w-[520px] h-[380px]">
+            <div className="absolute inset-0 rounded-[3rem] overflow-hidden border border-white/30 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] z-0">
+               <Image
+                 src="/images/marketing/srilanka-hero.png"
+                 alt="Explore Sri Lanka"
+                 fill
+                 className="object-cover scale-125 transition-transform duration-10000 ease-linear transform hover:scale-135"
+               />
+               <div className="absolute inset-0 bg-gradient-to-tr from-ocean-900/60 via-transparent to-white/10" />
+            </div>
+            {/* Floating App Card with Ultra-Premium Glassmorphism */}
+            <div className="absolute -bottom-8 -left-16 w-[320px] transform -rotate-3 z-10">
+              <div className="relative group">
+                <div className="absolute inset-0 bg-brand/30 rounded-[2rem] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <AppPreviewCard />
-              </motion.div>
-              
-              {/* Floating Social Proof Chip */}
-              <motion.div 
-                animate={{ y: [0, 10, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                className="absolute -top-12 -right-8 bg-brand text-white font-black px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs border border-white/20"
-              >
-                <Star size={14} fill="currentColor" />
-                #1 in Sri Lanka
-              </motion.div>
+              </div>
             </div>
           </motion.div>
         </div>
+
+        <motion.div
+          initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.6, duration:0.5 }}
+          className="mt-12 sm:mt-20 grid grid-cols-3 gap-3 sm:gap-6 max-w-lg mx-auto lg:mx-0">
+          {[
+            ['10+', t('stats.hubs')],
+            ['5,000+', t('stats.travellers')],
+            ['0', t('stats.bagsLost')]
+          ].map(([v,l]) => (
+            <div key={l} className="bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 text-center backdrop-blur-sm">
+              <p className="text-2xl sm:text-3xl font-black text-white mb-1">{v}</p>
+              <p className="text-[10px] sm:text-xs font-bold text-white/40 uppercase tracking-widest">{l}</p>
+            </div>
+          ))}
+        </motion.div>
       </div>
-      
-      {/* Scroll Indicator */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5 }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-30"
-      >
-        <div className="w-px h-12 bg-gradient-to-b from-white to-transparent" />
-      </motion.div>
     </section>
   )
 }
@@ -565,32 +527,13 @@ function FaqSection() {
 function FooterCta() {
   const t = useTranslations('Index')
   return (
-    <section className="bg-white py-12 px-4">
+    <section className="bg-white py-10 px-4">
       <div className="max-w-6xl mx-auto">
-        <div className="group bg-ocean-900 rounded-[40px] p-12 sm:p-24 text-center relative overflow-hidden shadow-2xl shadow-ocean-900/20">
-          {/* Background Motion Asset */}
-          <motion.div 
-            initial={{ scale: 1.1 }}
-            animate={{ scale: 1.3 }}
-            transition={{ duration: 20, repeat: Infinity, repeatType: 'reverse', ease: 'linear' }}
-            className="absolute inset-0 opacity-40 grayscale group-hover:grayscale-0 transition-all duration-1000"
-          >
-            <Image 
-              src="/images/marketing/freedom-hero.png" 
-              alt="Experience Freedom"
-              fill 
-              className="object-cover"
-            />
-          </motion.div>
-          <div className="absolute inset-0 bg-gradient-to-t from-ocean-900 via-ocean-900/60 to-transparent z-0" />
-          
+        <div className="bg-brand rounded-[40px] p-10 sm:p-20 text-center relative overflow-hidden shadow-2xl shadow-brand/30">
           <div className="relative z-10">
-            <h2 className="text-4xl sm:text-6xl font-black text-white mb-8 tracking-tighter leading-none">
-              READY TO <span className="text-brand">EXPLORE?</span>
-            </h2>
-            <Link href="/dashboard" className="group/btn inline-flex items-center gap-3 bg-white text-brand font-black px-12 py-6 rounded-[2rem] hover:scale-105 transition-all shadow-2xl active:scale-95">
-              {t('findStorage')} 
-              <ArrowRight size={24} className="group-hover/btn:translate-x-1 transition-transform" />
+            <h2 className="text-3xl sm:text-5xl font-black text-white mb-6">Explore Sri Lanka Hands-Free</h2>
+            <Link href="/dashboard" className="inline-flex items-center gap-2 bg-white text-brand font-black px-10 py-5 rounded-2xl hover:scale-105 transition-transform shadow-xl">
+              {t('findStorage')} <ArrowRight size={20} />
             </Link>
           </div>
         </div>
