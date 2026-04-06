@@ -404,7 +404,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                 <p className="text-sm font-bold text-gray-900">
                   {startDate && format(startDate, 'dd MMM, HH:mm')} → {endDate && format(endDate, 'dd MMM, HH:mm')}
                 </p>
-                <p className="text-[10px] text-brand font-bold mt-0.5 uppercase tracking-tighter">{hours}h storage duration</p>
+                <p className="text-[10px] text-brand font-black mt-1 uppercase tracking-wider">{hours}h storage duration</p>
               </>
             ) : (
               <p className="text-xs font-semibold text-gray-300 italic">Select times to proceed</p>
@@ -738,9 +738,9 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
             </button>
           )}
 
-          {/* Live price pill (step 2 & below only) */}
+          {/* Live price pill (Mobile only) */}
           {wizardStep < 3 && totalBags > 0 && totalPrice > 0 && (
-            <div className="flex-1 min-w-0 bg-gray-50 rounded-2xl px-5 py-2.5 border border-gray-100 shadow-inner">
+            <div className="lg:hidden flex-1 min-w-0 bg-gray-50 rounded-2xl px-5 py-2.5 border border-gray-100 shadow-inner">
               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">{totalBags} item{totalBags > 1 ? 's' : ''} · {hours}h</p>
               <p className="text-lg font-black text-gray-900 tracking-tight tabular-nums">LKR {totalPrice.toLocaleString()}</p>
             </div>
