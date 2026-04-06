@@ -61,24 +61,4 @@
     scrollbar-width: none;
   }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
-
-  /* Premium Glassmorphism */
-  .glass-premium {
-    @apply bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.15)];
-  }
-  .glass-premium-dark {
-    @apply bg-ocean-900/40 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)];
-  }
-
-  /* Animated Gradients */
-  .animate-mesh {
-    background-size: 200% 200%;
-    animation: mesh-gradient 15s ease infinite;
-  }
-}
-
-@keyframes mesh-gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
 }
