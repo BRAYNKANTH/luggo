@@ -117,8 +117,8 @@ export default function TermsPage() {
             ['"Customer"', 'Any individual who uses or wishes to use the Luggo Platform to access Services.'],
             ['"Customer Property" / "Items"', 'Personal belongings or luggage owned or controlled by a Customer that are stored or handled in connection with the Services.'],
             ['"Locker"', 'An automated, secure storage unit accessed by Customers independently using digital access credentials, without an in-person handoff.'],
-            ['"Luggo"', 'Luggo (Private) Limited ("Luggo", "we", "us", or "our").'],
-            ['"Luggo Platform"', "Luggo's websites, mobile applications, and any services through which Customers can find, book, and pay for Services."],
+            ['"Luggo"', 'Luggo (Private) Limited (&quot;Luggo&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;).'],
+            ['"Luggo Platform"', "Luggo&apos;s websites, mobile applications, and any services through which Customers can find, book, and pay for Services."],
             ['"Partner Location" / "Location"', 'Any third-party or Luggo-managed facility that offers short-term storage space or Lockers via the Platform.'],
             ['"Prohibited Items"', 'Any items prohibited by applicable Sri Lankan law or by these Terms.'],
             ['"Services"', 'Short-term luggage and bag storage services (including Locker-based storage) facilitated through the Luggo Platform.'],
@@ -149,7 +149,7 @@ export default function TermsPage() {
         <SubHeading>1.3 Scope of These Terms</SubHeading>
         <Body>
           These Terms apply only to Services booked and completed exclusively through the Luggo Platform. Any services
-          obtained directly from a Partner Location outside the Luggo Platform are governed by that location's own terms.
+          obtained directly from a Partner Location outside the Luggo Platform are governed by that location&apos;s own terms.
         </Body>
         <SubHeading>1.4 Independent Partner Locations</SubHeading>
         <Body>
@@ -187,7 +187,7 @@ export default function TermsPage() {
           ]} />
         </div>
         <Body>
-          Luggo and Partner Locations reserve the right to inspect Customer Property (in the Customer's presence) and to
+          Luggo and Partner Locations reserve the right to inspect Customer Property (in the Customer&apos;s presence) and to
           refuse or remove any Prohibited Items. Items suspected of violating Sri Lankan law may be reported to the
           Sri Lanka Police or relevant authorities.
         </Body>
@@ -212,7 +212,7 @@ export default function TermsPage() {
           Location may charge a Late Pick-Up Fee of LKR 3,000 (or equivalent) per Item.
         </Body>
         <Body>
-          Luggo Credits, if issued, are not redeemable for cash and may be revoked, limited, or expired at Luggo's
+          Luggo Credits, if issued, are not redeemable for cash and may be revoked, limited, or expired at Luggo&apos;s
           reasonable discretion.
         </Body>
 
@@ -294,7 +294,7 @@ export default function TermsPage() {
 
         {/* Section 10 */}
         <SectionHeading id="content">10. Content</SectionHeading>
-        <Body>You retain ownership of any content you submit to the Luggo Platform ("User Content"), including photos,
+        <Body>You retain ownership of any content you submit to the Luggo Platform (&quot;User Content&quot;), including photos,
           reviews, and messages.</Body>
         <Body>By submitting User Content, you grant Luggo a worldwide, non-exclusive, royalty-free, irrevocable license
           to host, store, display, reproduce, and distribute your User Content in connection with operating the Platform.</Body>
@@ -306,7 +306,7 @@ export default function TermsPage() {
           incidental, special, consequential, or punitive damages arising from your use of the Platform or Services.
         </Body>
         <Body>
-          Luggo's aggregate liability for all claims shall not exceed the greater of: (a) the total amount you paid to
+          Luggo&apos;s aggregate liability for all claims shall not exceed the greater of: (a) the total amount you paid to
           Luggo in the 12 months prior to the event; or (b) LKR 5,000. Nothing in this clause limits any statutory
           rights under Sri Lankan consumer protection law.
         </Body>
@@ -326,7 +326,7 @@ export default function TermsPage() {
         <Body>You may terminate your agreement with Luggo at any time by contacting{' '}
           <a href="mailto:support@luggo.lk" className="text-brand font-semibold hover:underline">support@luggo.lk</a>.</Body>
         <Body>
-          Luggo may terminate your account: (a) for any reason with 30 days' written notice; or (b) immediately if you
+          Luggo may terminate your account: (a) for any reason with 30 days&apos; written notice; or (b) immediately if you
           materially breach these Terms, violate applicable Sri Lankan law, or pose a risk to Luggo, Partner Locations,
           or other users.
         </Body>
@@ -337,7 +337,7 @@ export default function TermsPage() {
           All content, design, software, graphics, and other materials on the Luggo Platform are owned by Luggo or its
           licensors and are protected under the Intellectual Property Act No. 36 of 2003 of Sri Lanka and applicable
           international intellectual property laws. You may not reproduce, distribute, or use any Platform materials
-          without Luggo's prior written consent.
+          without Luggo&apos;s prior written consent.
         </Body>
 
         {/* Section 15 */}

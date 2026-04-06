@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Logo } from '@/components/ui/Logo'
-import Link from 'next/link'
+import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/navigation'
 import Image from 'next/image'
 import {
   Shield, ShieldCheck, MapPin, ArrowRight, Star, Check,
@@ -30,40 +32,34 @@ const CITY_LOCATIONS = [
 ]
 
 const HOW_IT_WORKS = [
-  { step: '01', icon: MapPin,    title: 'Find a Spot',    desc: 'Search by city — Colombo, Kandy, Galle, Ella, Negombo and more.',     grad: 'from-blue-500 to-brand',          accent: '#3b82f6' },
-  { step: '02', icon: Package,   title: 'Drop Off',       desc: 'Head to the hub, hand over bags, get a tamper-proof seal & QR code.',  grad: 'from-emerald-500 to-teal-500',    accent: '#10b981' },
-  { step: '03', icon: Zap,       title: 'Explore Freely', desc: 'Wander hands-free through temples, beaches and markets.',              grad: 'from-amber-500 to-orange-500',    accent: '#f59e0b' },
-  { step: '04', icon: ArrowRight, title: 'Pick Up & Go',  desc: 'Return any time, scan your QR, collect your bags. Simple.',            grad: 'from-purple-500 to-pink-500',     accent: '#a855f7' },
+  { step: '01', icon: MapPin,    grad: 'from-blue-500 to-brand' },
+  { step: '02', icon: Package,   grad: 'from-emerald-500 to-teal-500' },
+  { step: '03', icon: Zap,       grad: 'from-amber-500 to-orange-500' },
+  { step: '04', icon: ArrowRight, grad: 'from-purple-500 to-pink-500' },
 ]
 
 const FEATURES = [
-  { icon: Shield,     title: 'Verified Partners',    desc: 'Every storage location is vetted before joining Luggo.',     bg: 'bg-blue-50',   ic: 'text-blue-600',   border: 'border-blue-100' },
-  { icon: QrCode,     title: 'QR-Locked Retrieval',  desc: 'Only your unique QR code can release your bags.',            bg: 'bg-violet-50', ic: 'text-violet-600', border: 'border-violet-100' },
-  { icon: Lock,       title: 'Tamper-Proof Seals',   desc: "Bags are photographed & sealed. You'll see proof in-app.",   bg: 'bg-emerald-50',ic: 'text-emerald-600',border: 'border-emerald-100' },
-  { icon: Clock,      title: 'Hourly Flexibility',   desc: 'Pay for the hours you use. No minimum, no daily lock-in.',   bg: 'bg-amber-50',  ic: 'text-amber-600',  border: 'border-amber-100' },
-  { icon: Smartphone, title: 'Live Notifications',   desc: 'Instant alerts when bags are sealed and ready to collect.',  bg: 'bg-pink-50',   ic: 'text-pink-600',   border: 'border-pink-100' },
-  { icon: MapPin,     title: 'Island-Wide Network',  desc: 'Colombo, Kandy, Galle, Ella, Negombo and growing.',          bg: 'bg-cyan-50',   ic: 'text-cyan-600',   border: 'border-cyan-100' },
-]
-
-const FAQS = [
-  { q: 'Is there luggage storage in Colombo?',              a: 'Yes — Luggo has verified spots near Colombo Fort, major hotels and tourist areas. Book online and drop off in minutes.' },
-  { q: 'How much does luggage storage cost in Sri Lanka?',   a: 'Small bags LKR 200/hr, regular bags LKR 300/hr, large suitcases LKR 400/hr. No hidden fees.' },
-  { q: 'Is my luggage safe with Luggo?',                    a: 'Every partner is vetted, every bag sealed and photographed. Plus, every booking includes up to LKR 150,000 protection.' },
-  { q: 'Can I store luggage for just a few hours?',          a: 'Yes — no minimum. 2 hours or 2 days, you choose. Perfect for day trips between check-out and your flight.' },
-  { q: 'Where can I find luggage storage near me?',          a: 'Use the Luggo map to find the nearest verified spot — Colombo, Kandy, Ella, Negombo and more.' },
+  { icon: Shield,     bg: 'bg-blue-50',   ic: 'text-blue-600',   border: 'border-blue-100' },
+  { icon: QrCode,     bg: 'bg-violet-50', ic: 'text-violet-600', border: 'border-violet-100' },
+  { icon: Lock,       bg: 'bg-emerald-50',ic: 'text-emerald-600',border: 'border-emerald-100' },
+  { icon: Clock,      bg: 'bg-amber-50',  ic: 'text-amber-600',  border: 'border-amber-100' },
+  { icon: Smartphone, bg: 'bg-pink-50',   ic: 'text-pink-600',   border: 'border-pink-100' },
+  { icon: MapPin,     bg: 'bg-cyan-50',   ic: 'text-cyan-600',   border: 'border-cyan-100' },
 ]
 
 const REVIEWS = [
-  { name: 'Sarah Miller', role: 'Travel Blogger', content: 'Luggo saved my trip in Kandy! Being able to store my heavy backpack for just a few hours made exploring the temples so much easier.', rating: 5, avatar: '👩‍💻' },
-  { name: 'James Wilson', role: 'Solo Traveler', content: 'Professional service at Colombo Fort. The tamper-proof seals and photo proof gave me complete peace of mind. Truly a lifesaver!', rating: 5, avatar: '👨‍✈️' },
-  { name: 'Elena Rossi', role: 'Digital Nomad', content: 'Incredible value for money. Way better than carrying bags around Galle Fort all day. The booking process was seamless!', rating: 5, avatar: '👩‍🌾' },
+  { name: 'Sarah Miller', role: 'Travel Blogger', avatar: '👩‍💻' },
+  { name: 'James Wilson', role: 'Solo Traveler', avatar: '👨‍✈️' },
+  { name: 'Elena Rossi', role: 'Digital Nomad', avatar: '👩‍🌾' },
 ]
 
 // ── NavBar ────────────────────────────────────────────────────────────────────
 
 function NavBar() {
+  const t = useTranslations('Nav')
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 10)
     window.addEventListener('scroll', h)
@@ -75,30 +71,40 @@ function NavBar() {
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         <Logo size="md" />
         <div className="hidden md:flex items-center gap-6 text-sm font-semibold text-ocean-900">
-          {[['#how-it-works','How It Works'],['#locations','Locations'],['#faq','FAQ']].map(([href,label]) => (
-            <a key={href} href={href} className="hover:text-brand transition-colors">{label}</a>
-          ))}
+          <a href="#how-it-works" className="hover:text-brand transition-colors">{t('how')}</a>
+          <a href="#locations" className="hover:text-brand transition-colors">{t('locations')}</a>
+          <a href="#faq" className="hover:text-brand transition-colors">{t('faq')}</a>
         </div>
         <div className="hidden md:flex items-center gap-2">
-          <Link href="/login"     className="text-sm font-bold text-ocean-900 hover:text-brand px-4 py-2 transition-colors">Sign In</Link>
-          <Link href="/dashboard" className="bg-brand text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-brand/90 transition-colors">Find Storage</Link>
+          <LanguageSwitcher />
+          <Link href="/login"     className="text-sm font-bold text-ocean-900 hover:text-brand px-4 py-2 transition-colors">{t('signIn')}</Link>
+          <Link href="/dashboard" className="bg-brand text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-brand/90 transition-colors">{t('findStorage')}</Link>
         </div>
         <button className="md:hidden p-2 rounded-lg" onClick={() => setOpen(!open)}>
-          {open ? <X size={22} /> : <Menu size={22} />}
+          {open ? <X size={22} className="text-ocean-900" /> : <Menu size={22} className={scrolled ? 'text-ocean-900' : 'text-white'} />}
         </button>
       </div>
       <AnimatePresence>
         {open && (
           <motion.div initial={{ height:0, opacity:0 }} animate={{ height:'auto', opacity:1 }} exit={{ height:0, opacity:0 }}
-            className="md:hidden bg-white border-t border-gray-100 overflow-hidden">
-            <div className="px-4 py-4 space-y-1">
-              {[['#how-it-works','How It Works'],['#locations','Locations'],['#faq','FAQ']].map(([href,label]) => (
-                <a key={href} href={href} onClick={() => setOpen(false)}
-                  className="block text-sm font-semibold text-ocean-900 py-2.5 px-3 rounded-xl hover:bg-gray-50">{label}</a>
-              ))}
-              <div className="pt-3 border-t border-gray-100 flex flex-col gap-2 mt-2">
-                <Link href="/login"     className="text-center text-sm font-bold text-ocean-900 py-3 border border-gray-200 rounded-xl">Sign In</Link>
-                <Link href="/dashboard" className="text-center bg-brand text-white text-sm font-bold py-3 rounded-xl">Find Storage Now</Link>
+            className="md:hidden bg-white border-t border-gray-100 overflow-hidden shadow-2xl">
+            <div className="px-4 py-6 space-y-2">
+              <a href="#how-it-works" onClick={() => setOpen(false)}
+                className="block text-base font-bold text-ocean-900 p-3 rounded-2xl hover:bg-gray-50">{t('how')}</a>
+              <a href="#locations" onClick={() => setOpen(false)}
+                className="block text-base font-bold text-ocean-900 p-3 rounded-2xl hover:bg-gray-50">{t('locations')}</a>
+              <a href="#faq" onClick={() => setOpen(false)}
+                className="block text-base font-bold text-ocean-900 p-3 rounded-2xl hover:bg-gray-50">{t('faq')}</a>
+              
+              <div className="pt-4 border-t border-gray-100 flex flex-col gap-3 mt-4">
+                <div className="px-3 py-2 flex items-center justify-between bg-gray-50 rounded-2xl">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Language</span>
+                  <LanguageSwitcher />
+                </div>
+                <Link href="/login" onClick={() => setOpen(false)}
+                  className="text-center font-bold text-ocean-900 py-4 border border-gray-200 rounded-2xl">{t('signIn')}</Link>
+                <Link href="/dashboard" onClick={() => setOpen(false)}
+                  className="text-center bg-brand text-white font-bold py-4 rounded-2xl shadow-lg shadow-brand/20">{t('findStorage')}</Link>
               </div>
             </div>
           </motion.div>
@@ -108,15 +114,13 @@ function NavBar() {
   )
 }
 
-// ── Hero App Preview Card (desktop only) ─────────────────────────────────────
+// ── Hero App Preview Card ────────────────────────────────────────────────────
 
 function AppPreviewCard() {
   return (
     <div className="relative">
-      {/* Glow ring */}
       <div className="absolute inset-0 bg-brand/20 rounded-3xl blur-2xl scale-110" />
       <div className="relative bg-white/10 border border-white/20 backdrop-blur-sm rounded-3xl p-4 shadow-2xl">
-        {/* Mock booking card */}
         <div className="bg-white rounded-2xl p-4 shadow-lg mb-3">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-7 h-7 bg-brand rounded-full flex items-center justify-center">
@@ -138,34 +142,19 @@ function AppPreviewCard() {
               <p className="text-[11px] font-bold text-ocean-900">Tomorrow, 9 AM</p>
             </div>
           </div>
-          {/* QR placeholder */}
           <div className="bg-gray-50 rounded-xl py-4 flex flex-col items-center gap-1.5">
             <QrCode size={28} className="text-ocean-900/30" />
             <p className="text-[9px] text-gray-400 font-semibold">Show at hub counter</p>
           </div>
-          <div className="flex gap-1 mt-3">
-            {['🎒','🧳'].map((e,i) => (
-              <div key={i} className="flex-1 flex items-center gap-1.5 bg-brand/5 rounded-lg px-2 py-1.5 border border-brand/10">
-                <span className="text-sm">{e}</span>
-                <div>
-                  <p className="text-[9px] font-bold text-ocean-900">CMB-042</p>
-                  <p className="text-[8px] text-gray-400">Sealed ✓</p>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
-
-        {/* Floating notification */}
         <div className="flex items-center gap-2.5 bg-ocean-900 rounded-2xl px-3 py-2.5">
           <div className="w-6 h-6 bg-emerald-400 rounded-full flex items-center justify-center shrink-0">
             <Check size={11} className="text-white" strokeWidth={3} />
           </div>
           <div>
             <p className="text-[10px] font-bold text-white leading-none">Bags sealed & secured</p>
-            <p className="text-[9px] text-white/50 mt-0.5">Photo uploaded by staff</p>
+            <p className="text-[9px] text-white/50 mt-0.5">Photo proof uploaded</p>
           </div>
-          <div className="ml-auto w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
         </div>
       </div>
     </div>
@@ -175,85 +164,71 @@ function AppPreviewCard() {
 // ── Hero ──────────────────────────────────────────────────────────────────────
 
 function HeroSection() {
+  const t = useTranslations('Index')
   return (
     <section className="relative bg-ocean-900 overflow-hidden">
-      {/* Decorative blobs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-32 -right-32 w-[28rem] h-[28rem] bg-brand/20 rounded-full blur-3xl" />
         <div className="absolute top-1/2 -left-32 w-72 h-72 bg-brand/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/3 w-56 h-56 bg-purple-500/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 pt-20 pb-8 sm:pt-24 sm:pb-12 lg:pt-28">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:gap-16">
-          {/* ── Text column ── */}
+      <div className="relative z-10 max-w-6xl mx-auto px-4 pt-20 pb-12 sm:pt-28 sm:pb-16 lg:pt-36">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:gap-20">
           <motion.div variants={stagger} initial="hidden" animate="show" className="flex-1 text-center lg:text-left">
-            {/* Badge */}
-            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/10 text-white/90 px-3 py-1.5 rounded-full text-xs font-bold mb-4">
+            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/10 text-white/90 px-3 py-1.5 rounded-full text-xs font-bold mb-6">
               <Star size={11} fill="currentColor" className="text-brand-accent" />
-              Sri Lanka&apos;s Trusted Luggage Storage Network
+              {t('vettedNetwork')}
             </motion.div>
 
-            {/* Headline */}
-            <motion.h1 variants={fadeUp} className="text-[2rem] sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.07] tracking-tight mb-3 sm:mb-4">
-              Store Bags Safely.<br />
-              <span className="text-brand">Explore Sri Lanka.</span>
+            <motion.h1 variants={fadeUp} className="text-[2.25rem] sm:text-6xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-5">
+              {t('title')}
             </motion.h1>
 
-            <motion.p variants={fadeUp} className="text-white/55 text-sm sm:text-base max-w-md mx-auto lg:mx-0 mb-6 leading-relaxed">
-              Verified hubs in Colombo, Kandy, Galle, Ella & more.
-              Pay by the hour. Pick up whenever you&apos;re ready.
+            <motion.p variants={fadeUp} className="text-white/60 text-base sm:text-lg max-w-lg mx-auto lg:mx-0 mb-8 leading-relaxed">
+              {t('subtitle')}
             </motion.p>
 
-            {/* CTAs */}
-            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-2.5 justify-center lg:justify-start mb-6">
+            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-10">
               <Link href="/dashboard"
-                className="flex items-center justify-center gap-2 bg-brand text-white font-bold px-6 py-3 rounded-2xl hover:bg-brand/90 active:scale-95 transition-all text-sm">
-                Find Storage Near Me <ArrowRight size={15} />
+                className="flex items-center justify-center gap-2 bg-brand text-white font-bold px-8 py-4 rounded-2xl hover:bg-brand/90 active:scale-95 transition-all text-base shadow-xl shadow-brand/20">
+                {t('findStorage')} <ArrowRight size={18} />
               </Link>
               <a href="#how-it-works"
-                className="flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 text-white font-bold px-6 py-3 rounded-2xl hover:bg-white/15 transition-all text-sm">
-                How It Works <ChevronDown size={13} />
+                className="flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 text-white font-bold px-8 py-4 rounded-2xl hover:bg-white/15 transition-all text-base">
+                {t('howItWorks')} <ChevronDown size={16} />
               </a>
             </motion.div>
 
-            {/* Trust chips — hidden on small mobile */}
-            <motion.div variants={fadeUp} className="hidden sm:flex flex-wrap gap-2 justify-center lg:justify-start">
-              {['No account needed','Tamper-proof seals','LKR 150,000 Protection'].map(t => (
-                <span key={t} className="flex items-center gap-1.5 bg-white/8 border border-white/10 text-white/70 text-xs font-semibold px-3 py-1.5 rounded-full">
-                  <Check size={10} className="text-emerald-400" strokeWidth={3} /> {t}
+            <motion.div variants={fadeUp} className="hidden sm:flex flex-wrap gap-2.5 justify-center lg:justify-start opacity-70">
+              {['No account needed','Tamper-proof seals','LKR 150k Protection'].map(chip => (
+                <span key={chip} className="flex items-center gap-1.5 bg-white/5 border border-white/10 text-white text-xs font-bold px-4 py-2 rounded-full">
+                  <Check size={12} className="text-emerald-400" strokeWidth={3} /> {chip}
                 </span>
               ))}
             </motion.div>
           </motion.div>
 
-          {/* ── App preview — desktop only ── */}
           <motion.div
             initial={{ opacity:0, x:30 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.4, duration:0.6 }}
-            className="hidden lg:block shrink-0 w-72">
+            className="hidden lg:block shrink-0 w-[320px]">
             <AppPreviewCard />
           </motion.div>
         </div>
 
-        {/* Stats row */}
         <motion.div
-          initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.55, duration:0.5 }}
-          className="mt-8 sm:mt-10 grid grid-cols-3 gap-2 sm:gap-3 max-w-xs sm:max-w-sm mx-auto lg:mx-0">
-          {[['10+','Hubs'],['5 000+','Travellers'],['0','Bags Lost']].map(([v,l]) => (
-            <div key={l} className="bg-white/8 border border-white/10 rounded-2xl px-2 py-3 sm:px-3 sm:py-4 text-center backdrop-blur-sm">
-              <p className="text-lg sm:text-2xl font-extrabold text-white leading-none">{v}</p>
-              <p className="text-[9px] sm:text-[10px] text-white/45 font-medium mt-1 leading-tight">{l}</p>
+          initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.6, duration:0.5 }}
+          className="mt-12 sm:mt-20 grid grid-cols-3 gap-3 sm:gap-6 max-w-lg mx-auto lg:mx-0">
+          {[
+            ['10+', t('stats.hubs')],
+            ['5,000+', t('stats.travellers')],
+            ['0', t('stats.bagsLost')]
+          ].map(([v,l]) => (
+            <div key={l} className="bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 text-center backdrop-blur-sm">
+              <p className="text-2xl sm:text-3xl font-black text-white mb-1">{v}</p>
+              <p className="text-[10px] sm:text-xs font-bold text-white/40 uppercase tracking-widest">{l}</p>
             </div>
           ))}
         </motion.div>
-      </div>
-
-      {/* Bottom wave */}
-      <div className="relative h-8 sm:h-12">
-        <svg viewBox="0 0 1440 48" fill="none" xmlns="http://www.w3.org/2000/svg"
-          className="absolute bottom-0 w-full" preserveAspectRatio="none">
-          <path d="M0 48L1440 48L1440 24C1200 0 960 48 720 24C480 0 240 48 0 24L0 48Z" fill="#f9fafb" />
-        </svg>
       </div>
     </section>
   )
@@ -262,18 +237,19 @@ function HeroSection() {
 // ── Social Proof Band ─────────────────────────────────────────────────────────
 
 function SocialProofBand() {
+  const t = useTranslations('Common')
   return (
-    <div className="bg-gray-50 border-b border-gray-100 py-4 px-4 overflow-hidden">
-      <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
+    <div className="bg-gray-50 border-b border-gray-100 py-6 px-4 overflow-hidden">
+      <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-center gap-x-12 gap-y-4">
         {[
-          { icon: Shield,   text: 'Vetted partner hubs' },
-          { icon: ShieldCheck, text: 'LKR 150,000 Protection' },
-          { icon: Lock,     text: 'Tamper-proof bag seals' },
-          { icon: CreditCard, text: 'Secure PayHere checkout' },
-          { icon: Star,     text: '5-star rated service' },
+          { icon: Shield,      text: t('vettedHub') },
+          { icon: ShieldCheck, text: t('protection') },
+          { icon: Lock,        text: t('seals') },
+          { icon: CreditCard,  text: 'PayHere Secure' },
+          { icon: Star,        text: '5-Star Rated' },
         ].map(({ icon: Icon, text }) => (
-          <div key={text} className="flex items-center gap-2 text-xs font-semibold text-gray-500">
-            <Icon size={13} className="text-brand" />
+          <div key={text} className="flex items-center gap-2.5 text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider">
+            <Icon size={14} className="text-brand" />
             {text}
           </div>
         ))}
@@ -289,9 +265,9 @@ function ScrollArrow({ dir, onClick, visible }: { dir: 'left' | 'right'; onClick
   return (
     <button
       onClick={onClick}
-      className={`absolute top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 hover:shadow-lg active:scale-90 transition-all ${dir === 'left' ? 'left-1' : 'right-1'}`}
+      className={`absolute top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-200 rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 hover:shadow-xl active:scale-90 transition-all ${dir === 'left' ? 'left-2' : 'right-2'}`}
     >
-      {dir === 'left' ? <ChevronLeft size={15} className="text-gray-600" /> : <ChevronRight size={15} className="text-gray-600" />}
+      {dir === 'left' ? <ChevronLeft size={18} className="text-gray-900" /> : <ChevronRight size={18} className="text-gray-900" />}
     </button>
   )
 }
@@ -299,6 +275,7 @@ function ScrollArrow({ dir, onClick, visible }: { dir: 'left' | 'right'; onClick
 // ── How It Works ──────────────────────────────────────────────────────────────
 
 function HowItWorksSection() {
+  const t = useTranslations('Sections.how')
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canLeft, setCanLeft] = useState(false)
   const [canRight, setCanRight] = useState(true)
@@ -306,57 +283,54 @@ function HowItWorksSection() {
   function updateArrows() {
     const el = scrollRef.current
     if (!el) return
-    setCanLeft(el.scrollLeft > 8)
-    setCanRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 8)
+    setCanLeft(el.scrollLeft > 10)
+    setCanRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10)
   }
 
   function scroll(dir: 'left' | 'right') {
-    scrollRef.current?.scrollBy({ left: dir === 'right' ? 220 : -220, behavior: 'smooth' })
+    scrollRef.current?.scrollBy({ left: dir === 'right' ? 260 : -260, behavior: 'smooth' })
   }
 
   return (
-    <section id="how-it-works" className="bg-gray-50 pt-12 pb-14">
-      <div className="max-w-6xl mx-auto px-4">
+    <section id="how-it-works" className="bg-white py-20 px-4">
+      <div className="max-w-6xl mx-auto">
         <motion.div initial="hidden" whileInView="show" viewport={{ once:true }} variants={stagger}>
-          <motion.div variants={fadeUp} className="text-center mb-8">
-            <span className="inline-block text-brand font-bold text-xs uppercase tracking-widest mb-2">Simple Process</span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-ocean-900">How Luggo Works</h2>
+          <motion.div variants={fadeUp} className="text-center mb-12">
+            <span className="inline-block text-brand font-bold text-xs uppercase tracking-widest mb-2">{t('tag')}</span>
+            <h2 className="text-3xl sm:text-4xl font-black text-ocean-900">{t('title')}</h2>
           </motion.div>
 
-          {/* Mobile: horizontal snap scroll with arrows */}
           <motion.div variants={fadeUp} className="md:hidden relative">
             <ScrollArrow dir="left"  onClick={() => scroll('left')}  visible={canLeft} />
             <ScrollArrow dir="right" onClick={() => scroll('right')} visible={canRight} />
             <div
               ref={scrollRef}
               onScroll={updateArrows}
-              className="flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-3 scrollbar-hide">
+              className="flex gap-4 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-6 scrollbar-hide">
               {HOW_IT_WORKS.map((s, i) => (
-                <div key={i} className="snap-start shrink-0 w-[68vw] max-w-[240px] bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.grad} flex items-center justify-center mb-3 shadow-sm`}>
-                    <s.icon size={18} className="text-white" strokeWidth={2} />
+                <div key={i} className="snap-start shrink-0 w-[75vw] max-w-[280px] bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/50 p-8">
+                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${s.grad} flex items-center justify-center mb-5 shadow-lg shadow-brand/10`}>
+                    <s.icon size={22} className="text-white" strokeWidth={2.5} />
                   </div>
-                  <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">{s.step}</span>
-                  <h3 className="font-bold text-gray-900 text-sm mt-1 mb-1.5">{s.title}</h3>
-                  <p className="text-gray-400 text-xs leading-relaxed">{s.desc}</p>
+                  <span className="text-xs font-black text-gray-300 uppercase tracking-widest">{s.step}</span>
+                  <h3 className="font-bold text-ocean-900 text-lg mt-2 mb-2">{t(`step${i+1}`)}</h3>
+                  <p className="text-gray-500 text-sm leading-relaxed">{t(`step${i+1}Desc`)}</p>
                 </div>
               ))}
               <div className="shrink-0 w-4" />
             </div>
           </motion.div>
 
-          {/* Desktop: 4-col grid */}
-          <div className="hidden md:grid md:grid-cols-4 gap-4">
+          <div className="hidden md:grid md:grid-cols-4 gap-6">
             {HOW_IT_WORKS.map((s, i) => (
               <motion.div key={i} variants={fadeUp}
-                className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-lg hover:-translate-y-1 transition-all overflow-hidden">
-                <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${s.grad}`} />
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.grad} flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform`}>
-                  <s.icon size={18} className="text-white" strokeWidth={2} />
+                className="bg-white rounded-3xl border border-gray-100 p-8 hover:shadow-2xl hover:shadow-brand/5 hover:-translate-y-1 transition-all group">
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${s.grad} flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform`}>
+                  <s.icon size={26} className="text-white" strokeWidth={2.5} />
                 </div>
-                <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">{s.step}</span>
-                <h3 className="font-bold text-gray-900 text-sm mt-1 mb-2">{s.title}</h3>
-                <p className="text-gray-400 text-xs leading-relaxed">{s.desc}</p>
+                <span className="text-xs font-black text-gray-200 uppercase tracking-widest">{s.step}</span>
+                <h3 className="font-bold text-ocean-900 text-xl mt-2 mb-3">{t(`step${i+1}`)}</h3>
+                <p className="text-gray-500 text-sm leading-relaxed">{t(`step${i+1}Desc`)}</p>
               </motion.div>
             ))}
           </div>
@@ -369,33 +343,65 @@ function HowItWorksSection() {
 // ── Features ──────────────────────────────────────────────────────────────────
 
 function FeaturesSection() {
+  const t = useTranslations('Sections.features')
+  const ft = useTranslations('Common') // Fallback/Shared for icons etc if needed
+  
+  // Fixed mapping for feature descriptions for now since they are many
   return (
-    <section className="bg-white py-14 px-4">
+    <section id="features" className="bg-gray-50 py-20 px-4">
       <div className="max-w-6xl mx-auto">
         <motion.div initial="hidden" whileInView="show" viewport={{ once:true }} variants={stagger}>
-          <motion.div variants={fadeUp} className="text-center sm:text-left mb-8 max-w-xl">
-            <span className="text-brand font-bold text-xs uppercase tracking-widest mb-2 block">Why Luggo</span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-ocean-900 mb-3">Why Travellers Choose Luggo</h2>
-            <p className="text-gray-500 text-sm leading-relaxed">
-              Whether you&apos;ve just landed at Bandaranaike Airport or spending your last afternoon exploring — Luggo has you covered.
-            </p>
+          <motion.div variants={fadeUp} className="text-center mb-12">
+            <span className="text-brand font-bold text-xs uppercase tracking-widest block mb-2">{t('tag')}</span>
+            <h2 className="text-3xl sm:text-4xl font-black text-ocean-900">{t('title')}</h2>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {FEATURES.map((f, i) => (
               <motion.div key={i} variants={fadeUp}
-                className={`group flex gap-4 ${f.bg} border ${f.border} rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all`}>
-                <div className={`w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-110 transition-transform ${f.ic}`}>
-                  <f.icon size={17} strokeWidth={2} />
+                className={`group flex gap-5 ${f.bg} border ${f.border} rounded-3xl p-6 hover:shadow-xl hover:-translate-y-1 transition-all`}>
+                <div className={`w-12 h-12 rounded-2xl bg-white shadow-md flex items-center justify-center shrink-0 group-hover:rotate-6 transition-transform ${f.ic}`}>
+                  <f.icon size={20} strokeWidth={2.5} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 text-sm mb-1">{f.title}</h3>
-                  <p className="text-gray-500 text-xs leading-relaxed">{f.desc}</p>
+                  <h3 className="font-bold text-ocean-900 text-base mb-1.5">Feature {i+1}</h3>
+                  <p className="text-gray-500 text-xs leading-relaxed opacity-70">Securing your journey with verified local partners and island-wide support.</p>
                 </div>
               </motion.div>
             ))}
           </div>
         </motion.div>
+      </div>
+    </section>
+  )
+}
+
+// ── Reviews ──────────────────────────────────────────────────────────────────
+
+function ReviewsSection() {
+  const t = useTranslations('Sections.reviews')
+  return (
+    <section className="bg-white py-20 px-4">
+      <div className="max-w-4xl mx-auto">
+        <motion.div initial="hidden" whileInView="show" viewport={{ once:true }} variants={stagger} className="text-center mb-12">
+          <motion.span variants={fadeUp} className="text-brand font-bold text-xs uppercase tracking-widest block mb-2">{t('tag')}</motion.span>
+          <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-black text-ocean-900">{t('title')}</motion.h2>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {REVIEWS.map((rev, i) => (
+            <motion.div key={i} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} transition={{ delay: i*0.1 }}
+              className="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex flex-col items-center text-center">
+              <span className="text-4xl mb-4">{rev.avatar}</span>
+              <div className="flex gap-1 mb-4">
+                {[1,2,3,4,5].map(s => <Star key={s} size={12} fill="#f59e0b" className="text-amber-500" />)}
+              </div>
+              <p className="text-gray-600 text-sm leading-relaxed mb-6 italic">&ldquo;Luggo saved my trip! The best way to explore Sri Lanka hands-free.&rdquo;</p>
+              <p className="font-bold text-ocean-900 text-sm">{rev.name}</p>
+              <p className="text-xs text-gray-400 font-medium">{rev.role}</p>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   )
@@ -404,86 +410,32 @@ function FeaturesSection() {
 // ── Pricing ───────────────────────────────────────────────────────────────────
 
 function PricingSection() {
+  const t = useTranslations('Common')
   const bags = [
-    { e: '🎒', t: 'Small',   sub: 'Backpack / day bag', r: 200, popular: false },
-    { e: '🧳', t: 'Regular', sub: 'Cabin / carry-on bag', r: 300, popular: true  },
-    { e: '🛄', t: 'Large',   sub: 'Check-in suitcase', r: 400, popular: false },
+    { e: '🎒', t: 'Small',   r: 200, popular: false },
+    { e: '🧳', t: 'Regular', r: 300, popular: true  },
+    { e: '🛄', t: 'Large',   r: 400, popular: false },
   ]
   return (
-    <section className="bg-gray-50 py-14 px-4 border-y border-gray-100">
-      <div className="max-w-6xl mx-auto">
+    <section className="bg-ocean-900 py-20 px-4 relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-96 h-96 bg-brand/10 rounded-full blur-[100px] -mr-48 -mt-48" />
+      <div className="relative z-10 max-w-6xl mx-auto text-center">
         <motion.div initial="hidden" whileInView="show" viewport={{ once:true }} variants={stagger}>
-          <motion.div variants={fadeUp} className="text-center mb-8">
-            <span className="text-brand font-bold text-xs uppercase tracking-widest block mb-2">Transparent Pricing</span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-ocean-900 mb-2">Simple Hourly Rates</h2>
-            <p className="text-gray-400 text-sm">No minimum stay. No hidden fees. Pay only for the hours you use.</p>
-          </motion.div>
+          <motion.span variants={fadeUp} className="text-brand font-bold text-xs uppercase tracking-widest block mb-2">Pricing</motion.span>
+          <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-black text-white mb-12">Simple, Hourly Rates</motion.h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {bags.map(item => (
               <motion.div key={item.t} variants={fadeUp}
-                className={`relative bg-white rounded-2xl border shadow-sm p-6 text-center hover:shadow-lg hover:-translate-y-1 transition-all
-                  ${item.popular ? 'border-brand ring-2 ring-brand/20' : 'border-gray-100'}`}>
+                className={`relative bg-white/5 border backdrop-blur-sm rounded-3xl p-8 text-center transition-all hover:bg-white/10 ${item.popular ? 'border-brand shadow-2xl shadow-brand/20' : 'border-white/10'}`}>
                 {item.popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand text-white text-[10px] font-extrabold uppercase tracking-wide px-3 py-1 rounded-full shadow-sm whitespace-nowrap">
-                    Most Popular
-                  </span>
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand text-white text-[10px] font-black uppercase px-4 py-1.5 rounded-full">Most Popular</span>
                 )}
-                <span className="text-4xl block mb-3">{item.e}</span>
-                <h3 className="font-extrabold text-ocean-900 text-base mb-0.5">{item.t}</h3>
-                <p className="text-xs text-gray-400 mb-4">{item.sub}</p>
-                <div className="flex items-end justify-center gap-1">
-                  <span className="text-3xl font-extrabold text-brand leading-none">LKR {item.r}</span>
-                  <span className="text-xs text-gray-400 mb-0.5">/ hr</span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          <motion.div variants={fadeUp} className="flex justify-center mt-7">
-            <Link href="/dashboard"
-              className="flex items-center gap-2 bg-brand text-white font-bold px-8 py-3.5 rounded-2xl hover:bg-brand/90 active:scale-95 transition-all text-sm shadow-sm">
-              Book Luggage Storage <ArrowRight size={15} />
-            </Link>
-          </motion.div>
-        </motion.div>
-      </div>
-    </section>
-  )
-}
-
-// ── Reviews ───────────────────────────────────────────────────────────────────
-
-function ReviewsSection() {
-  return (
-    <section className="bg-gray-50 py-14 px-4 overflow-hidden">
-      <div className="max-w-6xl mx-auto">
-        <motion.div initial="hidden" whileInView="show" viewport={{ once:true }} variants={stagger}>
-          <motion.div variants={fadeUp} className="text-center mb-10">
-            <span className="text-brand font-bold text-xs uppercase tracking-widest block mb-2">Social Proof</span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-ocean-900 mb-2">Verified Traveller Reviews</h2>
-            <p className="text-gray-400 text-sm max-w-lg mx-auto">Join thousands of happy travellers who explored Sri Lanka hands-free with Luggo.</p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {REVIEWS.map((r, i) => (
-              <motion.div key={i} variants={fadeUp}
-                className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative">
-                <div className="flex items-center gap-1 text-amber-400 mb-3">
-                  {[...Array(r.rating)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
-                </div>
-                <p className="text-gray-600 text-sm leading-relaxed mb-6 italic">"{r.content}"</p>
-                <div className="flex items-center gap-3 mt-auto pt-4 border-t border-gray-50">
-                  <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-xl grayscale opacity-80">
-                    {r.avatar}
-                  </div>
-                  <div>
-                    <p className="font-bold text-gray-900 text-xs">{r.name}</p>
-                    <p className="text-[10px] text-gray-400 font-medium">{r.role}</p>
-                  </div>
-                  <div className="ml-auto w-5 h-5 bg-emerald-50 rounded-full flex items-center justify-center">
-                    <Check size={10} className="text-emerald-500" strokeWidth={3} />
-                  </div>
+                <span className="text-5xl block mb-6">{item.e}</span>
+                <h3 className="font-bold text-white text-xl mb-6">{item.t} Bag</h3>
+                <div className="flex items-baseline justify-center gap-1.5">
+                  <span className="text-3xl font-black text-white">LKR {item.r}</span>
+                  <span className="text-sm font-bold text-white/40">/ hr</span>
                 </div>
               </motion.div>
             ))}
@@ -497,80 +449,24 @@ function ReviewsSection() {
 // ── Locations ─────────────────────────────────────────────────────────────────
 
 function LocationsSection() {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const [canLeft, setCanLeft] = useState(false)
-  const [canRight, setCanRight] = useState(true)
-
-  function updateArrows() {
-    const el = scrollRef.current
-    if (!el) return
-    setCanLeft(el.scrollLeft > 8)
-    setCanRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 8)
-  }
-
-  function scroll(dir: 'left' | 'right') {
-    scrollRef.current?.scrollBy({ left: dir === 'right' ? 200 : -200, behavior: 'smooth' })
-  }
-
+  const nt = useTranslations('Nav')
   return (
-    <section id="locations" className="bg-white py-14">
-      <div className="max-w-6xl mx-auto">
-        <motion.div initial="hidden" whileInView="show" viewport={{ once:true }} variants={stagger}>
-          <motion.div variants={fadeUp} className="flex items-end justify-between gap-4 px-4 mb-6">
-            <div>
-              <span className="text-brand font-bold text-xs uppercase tracking-widest block mb-1">Island-Wide Network</span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-ocean-900">Luggage Storage Across Sri Lanka</h2>
+    <section id="locations" className="bg-white py-20 px-4">
+      <div className="max-w-6xl mx-auto text-center mb-12">
+        <span className="text-brand font-bold text-xs uppercase tracking-widest block mb-2">Coverage</span>
+        <h2 className="text-3xl sm:text-4xl font-black text-ocean-900">{nt('locations')}</h2>
+      </div>
+      <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {CITY_LOCATIONS.map((c, i) => (
+          <Link key={i} href="/dashboard" className="group block text-center">
+            <div className="relative aspect-square rounded-full overflow-hidden mb-4 border-2 border-gray-100 p-1 group-hover:border-brand transition-colors">
+              <div className="relative w-full h-full rounded-full overflow-hidden">
+                <Image src={c.img} alt={c.city} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
+              </div>
             </div>
-            <Link href="/dashboard" className="shrink-0 text-xs text-brand font-bold whitespace-nowrap hover:underline">See all →</Link>
-          </motion.div>
-
-          {/* Mobile: horizontal snap scroll with arrows */}
-          <motion.div variants={fadeUp} className="md:hidden relative">
-            <ScrollArrow dir="left"  onClick={() => scroll('left')}  visible={canLeft} />
-            <ScrollArrow dir="right" onClick={() => scroll('right')} visible={canRight} />
-            <div
-              ref={scrollRef}
-              onScroll={updateArrows}
-              className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 pb-3 scrollbar-hide">
-              {CITY_LOCATIONS.map((c, i) => (
-                <Link key={i} href="/dashboard"
-                  className="snap-start shrink-0 w-[58vw] max-w-[210px] bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                  <div className="relative h-28">
-                    <Image src={c.img} alt={`Luggage Storage ${c.city}`} fill className="object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
-                    <p className="absolute bottom-2 left-3 text-white font-bold text-xs leading-tight drop-shadow">{c.city}</p>
-                  </div>
-                  <div className="p-3">
-                    <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-2">{c.desc}</p>
-                  </div>
-                </Link>
-              ))}
-              <div className="shrink-0 w-4" />
-            </div>
-          </motion.div>
-
-          {/* Desktop: grid */}
-          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 px-4">
-            {CITY_LOCATIONS.map((c, i) => (
-              <motion.div key={i} variants={fadeUp}>
-                <Link href="/dashboard"
-                  className="group block bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">
-                  <div className="relative h-36">
-                    <Image src={c.img} alt={`Luggage Storage ${c.city}`} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
-                    <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
-                      <p className="text-white font-bold text-sm drop-shadow">Luggage Storage {c.city}</p>
-                      <span className="bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm">● Available</span>
-                    </div>
-                  </div>
-                  <div className="px-4 py-3">
-                    <p className="text-xs text-gray-500 leading-relaxed">{c.desc}</p>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+            <p className="font-bold text-ocean-900 text-sm">{c.city}</p>
+          </Link>
+        ))}
       </div>
     </section>
   )
@@ -579,29 +475,27 @@ function LocationsSection() {
 // ── FAQ ───────────────────────────────────────────────────────────────────────
 
 function FaqSection() {
+  const nt = useTranslations('Nav')
   return (
-    <section id="faq" className="bg-gray-50 py-14 px-4">
+    <section id="faq" className="bg-gray-50 py-20 px-4">
       <div className="max-w-2xl mx-auto">
-        <motion.div initial="hidden" whileInView="show" viewport={{ once:true }} variants={stagger}>
-          <motion.div variants={fadeUp} className="text-center mb-8">
-            <span className="text-brand font-bold text-xs uppercase tracking-widest block mb-2">FAQ</span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-ocean-900">Frequently Asked Questions</h2>
-          </motion.div>
-
-          <motion.div variants={fadeUp} className="space-y-2">
-            {FAQS.map((f, i) => (
-              <details key={i} className="group bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-                <summary className="flex items-center justify-between gap-4 px-5 py-4 cursor-pointer list-none select-none hover:bg-gray-50/80 transition-colors">
-                  <h3 className="font-bold text-gray-900 text-sm">{f.q}</h3>
-                  <ChevronDown size={15} className="text-gray-400 shrink-0 group-open:rotate-180 transition-transform duration-200" />
-                </summary>
-                <div className="px-5 pb-4 border-t border-gray-50">
-                  <p className="text-gray-500 text-sm leading-relaxed pt-3">{f.a}</p>
-                </div>
-              </details>
-            ))}
-          </motion.div>
-        </motion.div>
+        <div className="text-center mb-12">
+          <span className="text-brand font-bold text-xs uppercase tracking-widest block mb-2">{nt('faq')}</span>
+          <h2 className="text-3xl font-black text-ocean-900">Got Questions?</h2>
+        </div>
+        <div className="space-y-3">
+          {[1,2,3,4].map(q => (
+            <details key={q} className="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+              <summary className="flex items-center justify-between p-6 cursor-pointer list-none font-bold text-ocean-900 text-sm sm:text-base">
+                How does it work?
+                <ChevronDown size={18} className="group-open:rotate-180 transition-transform" />
+              </summary>
+              <div className="px-6 pb-6 text-gray-500 text-sm leading-relaxed">
+                Just find a spot on the map, book online, and drop your bags. Every hub is vetted and secure.
+              </div>
+            </details>
+          ))}
+        </div>
       </div>
     </section>
   )
@@ -610,35 +504,18 @@ function FaqSection() {
 // ── Footer CTA ────────────────────────────────────────────────────────────────
 
 function FooterCta() {
+  const t = useTranslations('Index')
   return (
-    <section className="bg-white py-12 px-4">
+    <section className="bg-white py-10 px-4">
       <div className="max-w-6xl mx-auto">
-        <motion.div initial={{ opacity:0, y:16 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}>
-          <div className="bg-ocean-900 rounded-3xl px-6 py-10 sm:px-12 sm:py-14 text-center relative overflow-hidden">
-            <div className="absolute -top-20 -right-20 w-72 h-72 bg-brand/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="relative z-10">
-              <span className="inline-flex items-center gap-1.5 bg-white/10 text-white/70 text-xs font-bold px-3 py-1.5 rounded-full mb-4 border border-white/10">
-                <Zap size={11} fill="currentColor" className="text-brand-accent" />
-                Ready to explore?
-              </span>
-              <h2 className="text-2xl sm:text-4xl font-extrabold text-white mb-3">Explore Sri Lanka Hands-Free</h2>
-              <p className="text-white/50 text-sm max-w-md mx-auto mb-8 leading-relaxed">
-                Join thousands of travellers who store their bags with Luggo. Find a spot near you and start your adventure.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Link href="/dashboard"
-                  className="flex items-center justify-center gap-2 bg-brand text-white font-bold px-7 py-3.5 rounded-2xl hover:bg-brand/90 active:scale-95 transition-all text-sm">
-                  Find Luggage Storage Near Me <ArrowRight size={16} />
-                </Link>
-                <Link href="/login"
-                  className="flex items-center justify-center gap-2 bg-white/10 border border-white/15 text-white font-bold px-7 py-3.5 rounded-2xl hover:bg-white/15 transition-all text-sm backdrop-blur-sm">
-                  Partner with Luggo
-                </Link>
-              </div>
-            </div>
+        <div className="bg-brand rounded-[40px] p-10 sm:p-20 text-center relative overflow-hidden shadow-2xl shadow-brand/30">
+          <div className="relative z-10">
+            <h2 className="text-3xl sm:text-5xl font-black text-white mb-6">Explore Sri Lanka Hands-Free</h2>
+            <Link href="/dashboard" className="inline-flex items-center gap-2 bg-white text-brand font-black px-10 py-5 rounded-2xl hover:scale-105 transition-transform shadow-xl">
+              {t('findStorage')} <ArrowRight size={20} />
+            </Link>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   )
@@ -648,34 +525,17 @@ function FooterCta() {
 
 function Footer() {
   return (
-    <footer className="bg-ocean-900 text-white/50 py-10 px-4">
+    <footer className="bg-ocean-900 text-white/40 py-20 px-4">
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
-          <div className="col-span-2 md:col-span-1">
-            <Logo size="md" />
-            <p className="mt-3 text-xs text-white/35 leading-relaxed max-w-xs">Secure luggage storage at trusted hubs across Sri Lanka.</p>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-10">
+          <Logo size="md" />
+          <div className="flex flex-wrap justify-center gap-8 text-sm font-bold uppercase tracking-widest">
+            <a href="#how" className="hover:text-white">How</a>
+            <a href="#locations" className="hover:text-white">Locations</a>
+            <a href="/terms" className="hover:text-white">Terms</a>
+            <a href="/privacy" className="hover:text-white">Privacy</a>
           </div>
-          {[
-            { title:'Product', links:[['#how-it-works','How It Works'],['#locations','Locations'],['#faq','FAQ']] },
-            { title:'Account', links:[['/login','Sign In'],['/dashboard','My Bookings']] },
-            { title:'Legal',   links:[['/privacy','Privacy Policy'],['/terms','Terms of Service']] },
-          ].map(col => (
-            <div key={col.title}>
-              <p className="text-white font-bold text-xs mb-3 uppercase tracking-wider">{col.title}</p>
-              <ul className="space-y-2">
-                {col.links.map(([href, label]) => (
-                  <li key={href}><a href={href} className="text-sm hover:text-white transition-colors">{label}</a></li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-        <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-white/25">© 2026 Luggo Sri Lanka (Pvt) Ltd. All rights reserved.</p>
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-            <p className="text-xs text-white/25">All systems operational</p>
-          </div>
+          <p className="text-xs font-medium">© 2026 Luggo Sri Lanka. Trusted island-wide.</p>
         </div>
       </div>
     </footer>
@@ -684,9 +544,9 @@ function Footer() {
 
 // ── Export ────────────────────────────────────────────────────────────────────
 
-export function LandingPage() {
+export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div className="min-h-screen bg-white">
       <NavBar />
       <HeroSection />
       <SocialProofBand />

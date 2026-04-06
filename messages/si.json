@@ -1,0 +1,83 @@
+{
+  "Index": {
+    "title": "බෑග් සුරක්ෂිතව තබන්න. ශ්‍රී ලංකාව ගවේෂණය කරන්න.",
+    "subtitle": "කොළඹ, මහනුවර, ගාල්ල, ඇල්ල සහ තවත් නගර වල තහවුරු කළ මධ්‍යස්ථාන. පැයකට ගෙවන්න. ඕනෑම වේලාවක ලබාගන්න.",
+    "findStorage": "ළඟම ඇති ස්ථානය සොයන්න",
+    "howItWorks": "මෙය ක්‍රියා කරන ආකාරය",
+    "vettedNetwork": "ශ්‍රී ලංකාවේ විශ්වසනීය ගමන් මලු ගබඩා ජාලය",
+    "stats": {
+      "hubs": "මධ්‍යස්ථාන",
+      "travellers": "සංචාරකයින්",
+      "bagsLost": "අස්ථානගත වූ බෑග්"
+    }
+  },
+  "Common": {
+    "protection": "LKR 150,000 ආරක්ෂාව",
+    "vettedHub": "තහවුරු කළ ස්ථානය",
+    "seals": "ආරක්ෂිත සීල්",
+    "support": "24/7 සහය",
+    "signIn": "ඇතුල් වන්න",
+    "findStorage": "ගබඩා සොයන්න",
+    "open": "විවෘතයි",
+    "closed": "වසා ඇත",
+    "vetted": "තහවුරු කළ",
+    "capacity": "ධාරිතාව"
+  },
+  "Nav": {
+    "how": "ක්‍රියා කරන ආකාරය",
+    "locations": "ස්ථාන",
+    "faq": "නිතර අසන ප්‍රශ්න",
+    "signIn": "ඇතුල් වන්න",
+    "findStorage": "ගබඩා සොයන්න"
+  },
+  "Dashboard": {
+    "welcomeBack": "නැවත සාදරයෙන් පිළිගනිමු",
+    "guestTitle": "ස්ථානයක් සොයාගන්න 🧳",
+    "locating": "ස්ථානය සොයමින්...",
+    "nearMe": "මා අසල",
+    "nearMeChecked": "මා අසල ✓",
+    "searchPlaceholder": "මධ්‍යස්ථානයේ නම හෝ ප්‍රදේශය අනුව සොයන්න...",
+    "filters": {
+      "all": "සියලු මධ්‍යස්ථාන",
+      "available": "ඇබෑර්තු ඇත",
+      "open": "දැන් විවෘතයි",
+      "more": "තව"
+    },
+    "activeBookings": "ඔබගේ සක්‍රීය වෙන් කිරීම්",
+    "seeAll": "සියල්ල බලන්න",
+    "hubsFound": "මධ්‍යස්ථාන {count} ක් හමුවිය",
+    "zeroMatches": "ගැළපෙන දත්ත කිසිවක් නැත",
+    "zeroMatchesDesc": "ඔබගේ සෙවුමට ගැළපෙන මධ්‍යස්ථාන කිසිවක් නැත.",
+    "resetFilters": "සියලු පෙරහන් ඉවත් කරන්න",
+    "nearestHubs": "📍 ළඟම ඇති මධ්‍යස්ථාන",
+    "storageHubs": "🏪 ගබඩා මධ්‍යස්ථාන",
+    "nearestDesc": "ඔබ සිටින ස්ථානයේ සිට දුර අනුව පෙළගස්වා ඇත",
+    "locationsCount": "ස්ථාන {count} ක්",
+    "allHubs": "සියලු මධ්‍යස්ථාන",
+    "viewAllHubs": "සියලු මධ්‍යස්ථාන {count} බලන්න",
+    "bags": {
+      "single": "බෑග් 1",
+      "multiple": "බෑග් කිහිපයක්",
+      "none": "බෑග් නැත"
+    },
+    "totalPaid": "මුළු ගෙවීම",
+    "showQr": "QR පෙන්වන්න",
+    "qrInstruction": "බෑග් ලබා ගැනීමට මෙම QR එක මධ්‍යස්ථානයේ කාර්ය මණ්ඩලයට පෙන්වන්න",
+    "timeExceeded": "⚠ කාලය ඉක්මවා ඇත",
+    "clearSearch": "මකන්න"
+  },
+  "Statuses": {
+    "pending_payment": "ගෙවීම් අපේක්ෂාවෙන්",
+    "confirmed": "තහවුරු කර ඇත",
+    "arrived": "මධ්‍යස්ථානයට පැමිණ ඇත",
+    "sealing_in_progress": "බෑග් සීල් කරමින් පවතී",
+    "sealed_waiting_user_confirmation": "බෑග් තහවුරු කරන්න",
+    "active_storage": "බෑග් සුරක්ෂිත කර ඇත",
+    "pickup_requested": "බෑග් ලබා ගැනීමට සූදානම්",
+    "completed": "ලබාගෙන ඇත",
+    "cancelled": "අවලංගු කර ඇත",
+    "expired": "කාලය ඉකුත් වී ඇත",
+    "overstayed": "අමතර කාලය",
+    "disputed": "පරීක්ෂාවට ලක්වෙමින් පවතී"
+  }
+}

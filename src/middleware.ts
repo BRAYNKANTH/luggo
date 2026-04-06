@@ -1,11 +1,22 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
+import createMiddleware from 'next-intl/middleware'
+import { locales, defaultLocale } from './navigation'
+
+const intlMiddleware = createMiddleware({
+  locales,
+  defaultLocale,
+  localePrefix: 'as-needed'
+})
 
 export async function middleware(request: NextRequest) {
   const url = request.nextUrl
   const hostname = request.headers.get('host') || ''
 
-  // Subdomain routing for staff
+  // 1. Handle locale routing
+  const response = await intlMiddleware(request)
+
+  // 2. Handle subdomain routing for staff
   if (hostname.startsWith('staff.')) {
     if (url.pathname === '/') {
       return NextResponse.rewrite(new URL('/staff/dashboard', request.url))
@@ -16,6 +27,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // 3. Update session
   return await updateSession(request)
 }
 

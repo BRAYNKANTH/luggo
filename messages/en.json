@@ -1,0 +1,83 @@
+{
+  "Index": {
+    "title": "Store Bags Safely. Explore Sri Lanka.",
+    "subtitle": "Verified hubs in Colombo, Kandy, Galle, Ella & more. Pay by the hour. Pick up whenever you're ready.",
+    "findStorage": "Find Storage Near Me",
+    "howItWorks": "How It Works",
+    "vettedNetwork": "Sri Lanka's Trusted Luggage Storage Network",
+    "stats": {
+      "hubs": "Hubs",
+      "travellers": "Travellers",
+      "bagsLost": "Bags Lost"
+    }
+  },
+  "Common": {
+    "protection": "LKR 150,000 Protection",
+    "vettedHub": "Vetted Hub",
+    "seals": "Tamper-proof seals",
+    "support": "24/7 Support",
+    "signIn": "Sign In",
+    "findStorage": "Find Storage",
+    "open": "Open",
+    "closed": "Closed",
+    "vetted": "Vetted",
+    "capacity": "Capacity"
+  },
+  "Nav": {
+    "how": "How It Works",
+    "locations": "Locations",
+    "faq": "FAQ",
+    "signIn": "Sign In",
+    "findStorage": "Find Storage"
+  },
+  "Dashboard": {
+    "welcomeBack": "Welcome back",
+    "guestTitle": "Find a hub 🧳",
+    "locating": "Locating...",
+    "nearMe": "Near Me",
+    "nearMeChecked": "Near Me ✓",
+    "searchPlaceholder": "Search by hub name or area...",
+    "filters": {
+      "all": "All Hubs",
+      "available": "Available",
+      "open": "Open Now",
+      "more": "More"
+    },
+    "activeBookings": "Your Active Bookings",
+    "seeAll": "See all",
+    "hubsFound": "{count} {count, plural, =1 {hub} other {hubs}} found",
+    "zeroMatches": "Zero matches found",
+    "zeroMatchesDesc": "No hubs match your current search or filters.",
+    "resetFilters": "Reset all filters",
+    "nearestHubs": "📍 Nearest Hubs",
+    "storageHubs": "🏪 Storage Hubs",
+    "nearestDesc": "Sorted by distance from your location",
+    "locationsCount": "{count} locations",
+    "allHubs": "All Hubs",
+    "viewAllHubs": "View all {count} hubs",
+    "bags": {
+      "single": "1 Bag",
+      "multiple": "Multiple Bags",
+      "none": "No Bags"
+    },
+    "totalPaid": "Total Paid",
+    "showQr": "Show QR",
+    "qrInstruction": "Present this QR to hub staff for bag collection",
+    "timeExceeded": "⚠ Time exceeded",
+    "clearSearch": "Clear"
+  },
+  "Statuses": {
+    "pending_payment": "Awaiting Payment",
+    "confirmed": "Confirmed",
+    "arrived": "At the Hub",
+    "sealing_in_progress": "Staff Packing Bags",
+    "sealed_waiting_user_confirmation": "Confirm Your Bags",
+    "active_storage": "Bags Secured",
+    "pickup_requested": "Retrieving Your Bags",
+    "completed": "Collected",
+    "cancelled": "Cancelled",
+    "expired": "Expired",
+    "overstayed": "Time Exceeded",
+    "disputed": "Under Review"
+  }
+}
