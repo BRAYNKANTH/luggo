@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { type PostgrestError } from '@supabase/supabase-js'
 import { uuidSchema } from '@/lib/validators/common'
-import { z } from 'zod'
 
 // ─────────────────────────────────────────────
 // HELPER — get authenticated staff + their hub
@@ -74,6 +73,32 @@ export async function resolveQRCode(
 export async function markArrivedAction(bookingId: string): Promise<void> {
   await markArrived(bookingId)
   redirect(`/staff/booking/${bookingId}`)
+}
+
+export async function verifyIdentity(bookingId: string): Promise<{ error?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+  
+  const { svc, hubId, userId } = await requireStaff()
+
+  const { error } = await svc
+    .from('bookings' as never)
+    .update({ id_verified: true })
+    .eq('id', bookingId)
+    .eq('hub_id', hubId)
+
+  if (error) return { error: (error as { message: string }).message }
+
+  // Audit
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'identity_verified',
+    p_entity: 'bookings',
+    p_entity_id: bookingId
+  })
+
+  return {}
 }
 
 export async function markArrived(
@@ -490,30 +515,4 @@ export async function getHubProfile() {
 
   if (error) return { error: error.message }
   return { hub: data }
-}
-
-export async function verifyIdentity(bookingId: string) {
-  const validId = uuidSchema.safeParse(bookingId)
-  if (!validId.success) return { error: validId.error.errors[0].message }
-  
-  const { svc, hubId, userId } = await requireStaff()
-
-  const { error } = await svc
-    .from('bookings' as never)
-    .update({ id_verified: true })
-    .eq('id', bookingId)
-    .eq('hub_id', hubId)
-
-  if (error) return { error: (error as { message: string }).message }
-
-  // Audit
-  await svc.rpc('write_audit_log', {
-    p_actor_id: userId,
-    p_actor_role: 'hub_staff',
-    p_action: 'identity_verified',
-    p_entity: 'bookings',
-    p_entity_id: bookingId
-  })
-
-  return { success: true }
 }
