@@ -92,7 +92,7 @@ export function HubDetailsUI({
 
             {/* Hero Image */}
             <div className="relative rounded-3xl overflow-hidden shadow-xl shadow-gray-200/80">
-              <div className="aspect-[16/7] md:aspect-[16/10]">
+              <div className="aspect-[16/6] md:h-80 relative">
                 {hub.image_url ? (
                   <Image
                     src={hub.image_url}
@@ -126,25 +126,6 @@ export function HubDetailsUI({
               </div>
             </div>
 
-            {/* Quick attributes */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {[
-                { icon: <Clock size={16} />, label: 'Open Hours', value: `${hub.open_time.slice(0, 5)}–${hub.close_time.slice(0, 5)}` },
-                { icon: <Package size={16} />, label: 'Capacity', value: `${hub.capacity} Units` },
-                { icon: <ShieldCheck size={16} />, label: 'Security', value: 'Vault Grade' },
-              ].map((attr, i) => (
-                <div key={i} className="bg-white p-3 md:p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-2">
-                  <div className="w-8 h-8 bg-brand/8 rounded-xl flex items-center justify-center text-brand">
-                    {attr.icon}
-                  </div>
-                  <div>
-                    <p className="text-[9px] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">{attr.label}</p>
-                    <p className="font-bold text-gray-900 text-[11px] sm:text-xs">{attr.value}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
             {/* Location */}
             <div className="bg-ocean-900 p-5 md:p-8 rounded-3xl text-white space-y-3 relative overflow-hidden">
               <div className="absolute right-0 bottom-0 w-32 h-32 bg-brand/15 rounded-full blur-3xl pointer-events-none" />
@@ -158,10 +139,32 @@ export function HubDetailsUI({
                 {hub.address}
               </p>
               <div className="relative z-10 pt-1">
-                <Link href="#" className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white text-[10px] md:text-xs font-semibold px-3.5 py-2 rounded-xl border border-white/10 transition-colors">
+                <Link 
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hub.address)}`}
+                  target="_blank"
+                  className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white text-[10px] md:text-xs font-semibold px-3.5 py-2 rounded-xl border border-white/10 transition-colors"
+                >
                   Open in Maps <ArrowRight size={10} />
                 </Link>
               </div>
+            </div>
+
+            {/* Quick attributes */}
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
+              {[
+                { icon: <Clock size={16} />, label: 'Open Hours', value: `${hub.open_time.slice(0, 5)}–${hub.close_time.slice(0, 5)}` },
+                { icon: <ShieldCheck size={16} />, label: 'Security', value: 'Vault Grade' },
+              ].map((attr, i) => (
+                <div key={i} className="bg-white p-3 md:p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-2">
+                  <div className="w-8 h-8 bg-brand/8 rounded-xl flex items-center justify-center text-brand">
+                    {attr.icon}
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">{attr.label}</p>
+                    <p className="font-bold text-gray-900 text-[11px] sm:text-xs">{attr.value}</p>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Full Nearby Explorer — desktop, visible below left column */}

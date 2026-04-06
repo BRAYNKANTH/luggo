@@ -8,7 +8,6 @@ import { signOut } from '@/lib/auth/actions'
 
 const NAV_ALL = [
   { label: 'Home',        href: '/dashboard', icon: LayoutDashboard, guestOk: true  },
-  { label: 'Map View',    href: '/hubs',      icon: MapPin,          guestOk: true  },
   { label: 'My Bookings', href: '/bookings',  icon: BookOpen,        guestOk: false },
   { label: 'Profile',     href: '/profile',   icon: User,            guestOk: false },
 ]

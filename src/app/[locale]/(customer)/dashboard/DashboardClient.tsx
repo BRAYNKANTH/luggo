@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { isPast } from 'date-fns'
 import {
   Search, X, MapPin, Clock, Package, ChevronRight,
-  QrCode, Navigation, SlidersHorizontal, ShieldCheck
+  QrCode, Navigation, ShieldCheck
 } from 'lucide-react'
 import { HubMap } from '@/components/hubs/HubMap'
 import { BookingStatusBadge } from '@/components/customer/BookingStatusBadge'
@@ -84,11 +84,10 @@ function fmtDist(km: number) {
 
 function getAvailability(hub: HubCard) {
   const spots = hub.capacity - hub.activeCount
-  const percent = Math.round((hub.activeCount / hub.capacity) * 100)
   
-  if (spots <= 0) return { label: 'Full', color: 'bg-red-500', textColor: 'text-red-600', spots: 0, percent: 100 }
-  if (spots <= hub.capacity * 0.3) return { label: `${spots} left`, color: 'bg-amber-400', textColor: 'text-amber-600', spots, percent }
-  return { label: 'Available', color: 'bg-emerald-500', textColor: 'text-emerald-600', spots, percent }
+  if (spots <= 0) return { label: 'Full', color: 'bg-red-500', textColor: 'text-red-600', spots: 0 }
+  if (spots <= hub.capacity * 0.3) return { label: `${spots} left`, color: 'bg-amber-400', textColor: 'text-amber-600', spots }
+  return { label: 'Available', color: 'bg-emerald-500', textColor: 'text-emerald-600', spots }
 }
 
 const minRate = Math.min(...Object.values(BAG_RATES) as number[])
@@ -154,16 +153,6 @@ function FeaturedHubCard({ hub, distanceKm }: { hub: HubCard; distanceKm: number
             </span>
           </div>
 
-          <div className="space-y-1">
-            <div className="flex justify-between text-[9px] font-bold uppercase tracking-tighter">
-              <span className="text-gray-400">{t('capacity')}</span>
-              <span className={avail.textColor}>{avail.percent}%</span>
-            </div>
-            <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-              <div className={`h-full transition-all duration-1000 ${avail.color}`} style={{ width: `${avail.percent}%` }} />
-            </div>
-          </div>
-
           <div className="flex items-center justify-between">
             <p className="text-xs font-bold text-brand">
               From LKR {minRate.toLocaleString()}<span className="text-gray-400 font-normal text-[10px]">/hr</span>
@@ -222,12 +211,6 @@ function HubListCard({ hub, distanceKm }: { hub: HubCard; distanceKm: number | n
             </span>
           </div>
 
-          <div className="flex items-center gap-2 mt-1">
-            <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-              <div className={`h-full transition-all duration-1000 ${avail.color}`} style={{ width: `${avail.percent}%` }} />
-            </div>
-            <span className={`text-[9px] font-bold ${avail.textColor}`}>{avail.percent}%</span>
-          </div>
 
           <p className="text-xs font-bold text-brand mt-1">
             From LKR {minRate.toLocaleString()}/hr
@@ -389,10 +372,6 @@ export function DashboardClient({ hubs, activeBookings, firstName, userId, notif
               {t(`filters.${key}`)}
             </button>
           ))}
-          <div className="w-px h-4 bg-gray-200 shrink-0 mx-1" />
-          <button className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border border-gray-200 bg-white text-gray-600">
-            <SlidersHorizontal size={11} /> {t('filters.more')}
-          </button>
         </div>
       </div>
 
