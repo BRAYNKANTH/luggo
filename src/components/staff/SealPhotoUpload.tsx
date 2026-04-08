@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Camera, Upload, CheckCircle, AlertCircle, X } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
-import { createClient } from '@/lib/supabase/client'
-import { saveSealProof } from '@/lib/staff/actions'
+import { uploadSealProof } from '@/lib/staff/actions'
 
 interface SealPhotoUploadProps {
   bookingId: string
@@ -56,29 +55,10 @@ export function SealPhotoUpload({ bookingId }: SealPhotoUploadProps) {
     setError(null)
 
     try {
-      const supabase = createClient()
-
-      // Build storage path
-      const ext = selectedFile.name.split('.').pop() ?? 'jpg'
-      const path = `${bookingId}/${Date.now()}.${ext}`
-
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('seal-proofs')
-        .upload(path, selectedFile, {
-          contentType: selectedFile.type,
-          upsert: false,
-        })
-
-      if (uploadError) {
-        setError(`Upload failed: ${uploadError.message}`)
-        setState('preview')
-        return
-      }
-
-      // Save proof record via server action
       setState('saving')
-      const result = await saveSealProof(bookingId, path)
+      const formData = new FormData()
+      formData.set('photo', selectedFile)
+      const result = await uploadSealProof(bookingId, formData)
 
       if (result.error) {
         setError(result.error)

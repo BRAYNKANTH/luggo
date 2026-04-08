@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
     const md5sig           = formData.get('md5sig')?.toString() ?? ''
 
     const merchant_secret = process.env.PAYHERE_MERCHANT_SECRET!
+    const expectedMerchantId = process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID!
 
     console.log('[PayHere IPN] Received:', { order_id, status_code, payhere_amount })
 
@@ -39,6 +40,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true })
     }
 
+    if (merchant_id !== expectedMerchantId || payhere_currency !== 'LKR') {
+      console.warn('[PayHere IPN] Merchant or currency mismatch', { merchant_id, payhere_currency, order_id })
+      return NextResponse.json({ received: true })
+    }
+
     // Service client — bypasses RLS for trusted server-side updates
     const supabase = createServiceClient()
 
@@ -48,14 +54,24 @@ export async function POST(req: NextRequest) {
 
       const { data: lateFeePayment } = await supabase
         .from('payments' as never)
-        .update({ status: 'paid', gateway_ref: payment_id })
+        .select('id, booking_id, amount')
         .eq('id', paymentId)
         .eq('type', 'late_fee')
         .eq('status', 'pending')
-        .select('booking_id')
-        .maybeSingle() as { data: { booking_id: string } | null }
+        .maybeSingle() as { data: { id: string; booking_id: string; amount: number } | null }
 
-      if (lateFeePayment?.booking_id) {
+      if (!lateFeePayment || Number(payhere_amount) !== Number(lateFeePayment.amount)) {
+        console.warn('[PayHere IPN] Late fee amount mismatch', { paymentId, payhere_amount })
+        return NextResponse.json({ received: true })
+      }
+
+      await supabase
+        .from('payments' as never)
+        .update({ status: 'paid', gateway_ref: payment_id })
+        .eq('id', lateFeePayment.id)
+        .eq('status', 'pending')
+
+      if (lateFeePayment.booking_id) {
         const bookingId = lateFeePayment.booking_id
         const { error } = await supabase
           .from('bookings' as never)
@@ -80,14 +96,24 @@ export async function POST(req: NextRequest) {
 
       const { data: extPayment } = await supabase
         .from('payments' as never)
-        .update({ status: 'paid', gateway_ref: payment_id })
+        .select('id, booking_id, amount')
         .eq('id', paymentId)
         .eq('type', 'extension')
         .eq('status', 'pending')
-        .select('booking_id, amount')
-        .maybeSingle() as { data: { booking_id: string; amount: number } | null }
+        .maybeSingle() as { data: { id: string; booking_id: string; amount: number } | null }
 
-      if (extPayment?.booking_id) {
+      if (!extPayment || Number(payhere_amount) !== Number(extPayment.amount)) {
+        console.warn('[PayHere IPN] Extension amount mismatch', { paymentId, payhere_amount })
+        return NextResponse.json({ received: true })
+      }
+
+      await supabase
+        .from('payments' as never)
+        .update({ status: 'paid', gateway_ref: payment_id })
+        .eq('id', extPayment.id)
+        .eq('status', 'pending')
+
+      if (extPayment.booking_id) {
         const bookingId = extPayment.booking_id
         
         const { data: booking } = await supabase
@@ -129,11 +155,24 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Initial booking payment: order_id = {bookingId} ──────────────────
+    const { data: bookingPayment } = await supabase
+      .from('payments' as never)
+      .select('id, amount')
+      .eq('booking_id', order_id)
+      .eq('type', 'booking')
+      .eq('status', 'pending')
+      .maybeSingle() as { data: { id: string; amount: number } | null }
+
+    if (!bookingPayment || Number(payhere_amount) !== Number(bookingPayment.amount)) {
+      console.warn('[PayHere IPN] Booking amount mismatch', { order_id, payhere_amount })
+      return NextResponse.json({ received: true })
+    }
+
     await supabase
       .from('payments' as never)
       .update({ status: 'paid', gateway_ref: payment_id })
-      .eq('booking_id', order_id)
-      .eq('type', 'booking')
+      .eq('id', bookingPayment.id)
+      .eq('status', 'pending')
 
     const { error } = await supabase
       .from('bookings' as never)

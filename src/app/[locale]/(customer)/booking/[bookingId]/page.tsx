@@ -53,25 +53,6 @@ export default async function BookingDetailPage({
 
   if (!booking) notFound()
 
-  // Dev fallback: confirm payment if webhook couldn't reach localhost
-  if (searchParams.payment === 'success' && booking.status === 'pending_payment') {
-    const { createServiceClient } = await import('@/lib/supabase/service')
-    const svc = createServiceClient()
-    await svc.from('bookings' as never).update({ status: 'confirmed' }).eq('id', booking.id)
-    await svc.from('payments' as never).update({ status: 'paid' }).eq('booking_id', booking.id).eq('status', 'pending')
-    booking.status = 'confirmed'
-    // Auto-assign sticker numbers
-    const { autoAssignStickers } = await import('@/lib/utils/stickerAssignment')
-    autoAssignStickers(booking.id).catch(console.error)
-    try {
-      const { sendBookingConfirmedEmail } = await import('@/lib/utils/email')
-      const { data: p } = await svc.from('users' as never).select('name, email, phone').eq('id', user.id).single() as { data: { name: string; email: string; phone: string | null } | null }
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
-      if (p?.email) sendBookingConfirmedEmail(p.email, p.name, booking.hubs?.name ?? 'hub', booking.id, appUrl, { startTime: booking.start_time, endTime: booking.end_time, totalPrice: booking.total_price, address: booking.hubs?.address }, booking.qr_code).catch(console.error)
-      if (p?.phone) { const { sendSMS } = await import('@/lib/utils/sms'); sendSMS(p.phone, `Luggo: Booking confirmed! Drop-off: ${format(new Date(booking.start_time), 'dd MMM HH:mm')}. View: ${appUrl}/booking/${booking.id}`).catch(console.error) }
-    } catch { /* best-effort */ }
-  }
-
   const start = new Date(booking.start_time)
   const end   = new Date(booking.end_time)
   const isCancellable   = CANCELLABLE.includes(booking.status)

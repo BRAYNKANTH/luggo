@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react'
 import { Bell, Check, Trash2, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from 'date-fns'
 
 type Notification = {
@@ -17,14 +16,12 @@ type Notification = {
 
 interface NotificationBellProps {
   initialNotifications: Notification[]
-  userId: string
 }
 
-export function NotificationBell({ initialNotifications, userId }: NotificationBellProps) {
+export function NotificationBell({ initialNotifications }: NotificationBellProps) {
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifications)
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const supabase = createClient()
 
   const unreadCount = notifications.filter(n => !n.read).length
 
@@ -40,13 +37,13 @@ export function NotificationBell({ initialNotifications, userId }: NotificationB
   }, [])
 
   const markAsRead = async (id: string) => {
-    const { error } = await (supabase
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from('notifications') as any)
-      .update({ read: true })
-      .eq('id', id)
+    const res = await fetch('/api/notifications', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
 
-    if (!error) {
+    if (res.ok) {
       setNotifications(prev => 
         prev.map(n => n.id === id ? { ...n, read: true } : n)
       )
@@ -54,25 +51,25 @@ export function NotificationBell({ initialNotifications, userId }: NotificationB
   }
 
   const markAllAsRead = async () => {
-    const { error } = await (supabase
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from('notifications') as any)
-      .update({ read: true })
-      .eq('user_id', userId)
+    const res = await fetch('/api/notifications', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'mark_all_read' }),
+    })
 
-    if (!error) {
+    if (res.ok) {
       setNotifications(prev => prev.map(n => ({ ...n, read: true })))
     }
   }
 
   const deleteNotification = async (id: string) => {
-    const { error } = await (supabase
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from('notifications') as any)
-      .delete()
-      .eq('id', id)
+    const res = await fetch('/api/notifications', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
 
-    if (!error) {
+    if (res.ok) {
       setNotifications(prev => prev.filter(n => n.id !== id))
     }
   }

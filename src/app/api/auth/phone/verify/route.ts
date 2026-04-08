@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createHash } from 'crypto'
+import { clearRateLimit, hitRateLimit } from '@/lib/security/rateLimit'
 import { createServiceClient } from '@/lib/supabase/service'
 import { createServerClient } from '@supabase/ssr'
+
+function hashOtp(otp: string) {
+  return createHash('sha256').update(otp).digest('hex')
+}
+
+function getClientIp(req: NextRequest) {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+}
 
 export async function POST(req: NextRequest) {
   const { phone, otp, name, email, nic } = await req.json()
@@ -8,14 +18,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Phone and OTP required' }, { status: 400 })
   }
 
+  const clientIp = getClientIp(req)
+  if (!hitRateLimit(`otp-verify:ip:${clientIp}`, 20, 10 * 60_000).allowed) {
+    return NextResponse.json({ error: 'Too many verification attempts. Please try again later.' }, { status: 429 })
+  }
+
+  if (!hitRateLimit(`otp-verify:phone:${phone}`, 8, 10 * 60_000).allowed) {
+    return NextResponse.json({ error: 'Too many verification attempts for this number. Please request a new code later.' }, { status: 429 })
+  }
+
   const supabase = createServiceClient()
+  const otpHash = hashOtp(String(otp))
 
   // ── 1. Verify OTP ──────────────────────────────────────────
   const { data: record } = await supabase
     .from('phone_otps' as never)
     .select('otp, expires_at')
     .eq('phone', phone)
-    .eq('otp', otp)
+    .eq('otp', otpHash)
     .is('used_at', null)
     .gte('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false })
@@ -26,12 +46,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Incorrect or expired code.' }, { status: 400 })
   }
 
+  clearRateLimit(`otp-verify:ip:${clientIp}`)
+  clearRateLimit(`otp-verify:phone:${phone}`)
+
   // Mark OTP as used
   await supabase
     .from('phone_otps' as never)
     .update({ used_at: new Date().toISOString() })
     .eq('phone', phone)
-    .eq('otp', otp)
+    .eq('otp', otpHash)
     .is('used_at', null)
 
   // ── 2. Find or create user ─────────────────────────────────

@@ -1,15 +1,34 @@
+import { createHash, randomInt } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
+import { hitRateLimit } from '@/lib/security/rateLimit'
 import { createServiceClient } from '@/lib/supabase/service'
 import { sendSMS } from '@/lib/utils/sms'
 
 function generateOtp() {
-  return Math.floor(100000 + Math.random() * 900000).toString()
+  return randomInt(100000, 1000000).toString()
+}
+
+function hashOtp(otp: string) {
+  return createHash('sha256').update(otp).digest('hex')
+}
+
+function getClientIp(req: NextRequest) {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
 }
 
 export async function POST(req: NextRequest) {
   const { phone } = await req.json()
   if (!phone || typeof phone !== 'string') {
     return NextResponse.json({ error: 'Phone number required' }, { status: 400 })
+  }
+
+  const clientIp = getClientIp(req)
+  if (!hitRateLimit(`otp-send:ip:${clientIp}`, 10, 10 * 60_000).allowed) {
+    return NextResponse.json({ error: 'Too many requests. Please try again shortly.' }, { status: 429 })
+  }
+
+  if (!hitRateLimit(`otp-send:phone:${phone}`, 3, 10 * 60_000).allowed) {
+    return NextResponse.json({ error: 'Too many codes requested for this number. Please try again later.' }, { status: 429 })
   }
 
   const supabase = createServiceClient()
@@ -34,7 +53,7 @@ export async function POST(req: NextRequest) {
   // Store OTP — if this fails the table doesn't exist or RLS is blocking
   const { error: insertError } = await supabase
     .from('phone_otps' as never)
-    .insert({ phone, otp, expires_at: expiresAt }) as { error: { message: string } | null }
+    .insert({ phone, otp: hashOtp(otp), expires_at: expiresAt }) as { error: { message: string } | null }
 
   if (insertError) {
     console.error('phone_otps insert failed:', insertError.message)

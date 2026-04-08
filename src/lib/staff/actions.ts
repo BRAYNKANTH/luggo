@@ -258,6 +258,45 @@ export async function saveSealProof(
   return {}
 }
 
+export async function uploadSealProof(
+  bookingId: string,
+  formData: FormData
+): Promise<{ error?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const file = formData.get('photo')
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: 'Photo is required.' }
+  }
+
+  if (!file.type.startsWith('image/')) {
+    return { error: 'Please upload an image file.' }
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    return { error: 'Photo must be under 10 MB.' }
+  }
+
+  const { svc } = await requireStaff()
+  const ext = file.name.split('.').pop() ?? 'jpg'
+  const path = `${bookingId}/${Date.now()}.${ext}`
+  const arrayBuffer = await file.arrayBuffer()
+
+  const { error: uploadError } = await svc.storage
+    .from('seal-proofs')
+    .upload(path, arrayBuffer, {
+      contentType: file.type,
+      upsert: false,
+    })
+
+  if (uploadError) {
+    return { error: `Upload failed: ${uploadError.message}` }
+  }
+
+  return saveSealProof(bookingId, path)
+}
+
 // ─────────────────────────────────────────────
 // WAIVE LATE FEE & COMPLETE  overstayed → completed (staff override)
 // Form-action wrapper

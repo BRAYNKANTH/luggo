@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 export async function POST(req: NextRequest) {
   const { email, phone } = await req.json()
   const supabase = createServiceClient()
+  let exists = false
 
   // Check email
   if (email) {
@@ -14,7 +15,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle() as { data: { id: string } | null }
 
     if (byEmail) {
-      return NextResponse.json({ exists: true, field: 'email' })
+      exists = true
     }
   }
 
@@ -27,9 +28,9 @@ export async function POST(req: NextRequest) {
       .maybeSingle() as { data: { id: string } | null }
 
     if (byPhone) {
-      return NextResponse.json({ exists: true, field: 'phone' })
+      exists = true
     }
   }
 
-  return NextResponse.json({ exists: false })
+  return NextResponse.json({ canProceed: !exists })
 }

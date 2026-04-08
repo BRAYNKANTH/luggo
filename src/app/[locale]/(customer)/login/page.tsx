@@ -301,10 +301,8 @@ function SignUpFlow({ supabase, returnTo }: { supabase: ReturnType<typeof create
     })
     const data = await res.json()
     setLoading(false)
-    if (data.exists) {
-      setError(data.field === 'email'
-        ? 'An account with this email already exists. Please sign in.'
-        : 'An account with this phone number already exists. Please sign in.')
+    if (!data.canProceed) {
+      setError('We could not create an account with those details. Please sign in or try different details.')
       return
     }
     setStep('method')

@@ -353,7 +353,7 @@ export function DashboardClient({ hubs, activeBookings, firstName, userId, notif
               <Navigation size={12} className={locating ? 'animate-pulse' : ''} />
               {locating ? t('locating') : userPos ? t('nearMeChecked') : t('nearMe')}
             </button>
-            {userId && <NotificationBell initialNotifications={notifications} userId={userId} />}
+            {userId && <NotificationBell initialNotifications={notifications} />}
           </div>
         </div>
 

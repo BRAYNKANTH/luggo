@@ -36,7 +36,6 @@ DROP FUNCTION IF EXISTS calculate_late_fee(uuid);
 CREATE OR REPLACE FUNCTION calculate_late_fee(p_booking_id uuid)
 RETURNS numeric
 LANGUAGE plpgsql
-SECURITY DEFINER
 AS $$
 DECLARE
   v_end_time   timestamptz;

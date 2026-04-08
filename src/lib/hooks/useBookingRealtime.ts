@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { type BookingStatus } from '@/types/database'
 
 /**
@@ -15,27 +14,27 @@ export function useBookingRealtime(
   const [status, setStatus] = useState<BookingStatus>(initialStatus)
 
   useEffect(() => {
-    const supabase = createClient()
+    let cancelled = false
 
-    const channel = supabase
-      .channel(`booking:${bookingId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'bookings',
-          filter: `id=eq.${bookingId}`,
-        },
-        (payload) => {
-          const newStatus = payload.new?.status as BookingStatus | undefined
-          if (newStatus) setStatus(newStatus)
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/bookings/${bookingId}/status`, { cache: 'no-store' })
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled && data.status) {
+          setStatus(data.status as BookingStatus)
         }
-      )
-      .subscribe()
+      } catch {
+        // Best-effort polling only.
+      }
+    }
+
+    void poll()
+    const interval = window.setInterval(poll, 5000)
 
     return () => {
-      supabase.removeChannel(channel)
+      cancelled = true
+      window.clearInterval(interval)
     }
   }, [bookingId])
 

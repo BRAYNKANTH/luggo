@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 
 interface RealtimeRefresherProps {
   /** The booking ID to watch */
@@ -26,34 +25,34 @@ export function RealtimeRefresher({ bookingId, watchStatuses }: RealtimeRefreshe
   const lastStatus = useRef<string | null>(null)
 
   useEffect(() => {
-    const supabase = createClient()
+    let cancelled = false
 
-    const channel = supabase
-      .channel(`rt-refresh:${bookingId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'bookings',
-          filter: `id=eq.${bookingId}`,
-        },
-        (payload) => {
-          const newStatus = payload.new?.status as string | undefined
-          if (!newStatus) return
-          if (newStatus === lastStatus.current) return
-          lastStatus.current = newStatus
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/bookings/${bookingId}/status`, { cache: 'no-store' })
+        if (!res.ok) return
 
-          // Only refresh if status is in watchlist (or no filter set)
-          if (!watchStatuses || watchStatuses.includes(newStatus)) {
-            router.refresh()
-          }
+        const data = await res.json()
+        const newStatus = data.status as string | undefined
+        if (!newStatus || cancelled) return
+        if (newStatus === lastStatus.current) return
+
+        if (lastStatus.current !== null && (!watchStatuses || watchStatuses.includes(newStatus))) {
+          router.refresh()
         }
-      )
-      .subscribe()
+
+        lastStatus.current = newStatus
+      } catch {
+        // Best-effort polling only.
+      }
+    }
+
+    void poll()
+    const interval = window.setInterval(poll, 5000)
 
     return () => {
-      supabase.removeChannel(channel)
+      cancelled = true
+      window.clearInterval(interval)
     }
   }, [bookingId, router, watchStatuses])
 
