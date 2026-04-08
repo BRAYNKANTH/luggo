@@ -14,7 +14,11 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json()
 
   if (body?.action === 'mark_all_read') {
-    const { error } = await (supabase.from('notifications') as never)
+    const { error } = await ((supabase.from('notifications') as unknown) as {
+      update: (values: { read: boolean }) => {
+        eq: (column: string, value: string) => Promise<{ error: { message: string } | null }>
+      }
+    })
       .update({ read: true })
       .eq('user_id', user.id)
 
@@ -29,7 +33,13 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Notification id required' }, { status: 400 })
   }
 
-  const { error } = await (supabase.from('notifications') as never)
+  const { error } = await ((supabase.from('notifications') as unknown) as {
+    update: (values: { read: boolean }) => {
+      eq: (column: string, value: string) => {
+        eq: (column: string, value: string) => Promise<{ error: { message: string } | null }>
+      }
+    }
+  })
     .update({ read: true })
     .eq('id', body.id)
     .eq('user_id', user.id)
@@ -56,7 +66,13 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Notification id required' }, { status: 400 })
   }
 
-  const { error } = await (supabase.from('notifications') as never)
+  const { error } = await ((supabase.from('notifications') as unknown) as {
+    delete: () => {
+      eq: (column: string, value: string) => {
+        eq: (column: string, value: string) => Promise<{ error: { message: string } | null }>
+      }
+    }
+  })
     .delete()
     .eq('id', body.id)
     .eq('user_id', user.id)
