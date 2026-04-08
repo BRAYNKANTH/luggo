@@ -1,8 +1,7 @@
 import { MetadataRoute } from 'next'
 import { locales, defaultLocale, type Locale } from '@/i18n-config'
 import { createClient } from '@/lib/supabase/server'
-
-const baseUrl = 'https://luggo.lk'
+import { siteUrl } from '@/lib/site-url'
 
 type SitemapEntryInput = {
   path: string
@@ -20,7 +19,7 @@ function localizedPath(locale: Locale, path: string) {
 }
 
 function absoluteUrl(path: string) {
-  return `${baseUrl}${path}`
+  return `${siteUrl}${path}`
 }
 
 function buildEntry({

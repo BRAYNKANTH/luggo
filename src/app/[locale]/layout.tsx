@@ -2,9 +2,10 @@ import type { Metadata, Viewport } from 'next'
 import '../globals.css'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
+import { siteUrl } from '@/lib/site-url'
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://luggo.lk'),
+  metadataBase: new URL(siteUrl),
   title: {
     template: '%s | Luggo',
     default: 'Luggo | Luggage Storage Network in Sri Lanka — Store Bags Safely',

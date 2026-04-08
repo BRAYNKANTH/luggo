@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 import createMiddleware from 'next-intl/middleware'
 import { locales, defaultLocale } from './i18n-config'
+import { canonicalHost } from '@/lib/site-url'
 
 const intlMiddleware = createMiddleware({
   locales,
@@ -12,6 +13,12 @@ const intlMiddleware = createMiddleware({
 export async function middleware(request: NextRequest) {
   const url = request.nextUrl
   const hostname = request.headers.get('host') || ''
+
+  if (hostname.startsWith('www.')) {
+    const redirectUrl = url.clone()
+    redirectUrl.host = canonicalHost
+    return NextResponse.redirect(redirectUrl, 308)
+  }
 
   // 1. Handle locale routing
   const response = await intlMiddleware(request)
@@ -37,6 +44,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
