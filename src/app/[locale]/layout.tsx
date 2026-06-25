@@ -36,8 +36,8 @@ export const metadata: Metadata = {
     title: 'Luggo',
   },
   icons: {
-    icon: '/icon.svg',
-    apple: '/apple-touch-icon.svg',
+    icon: '/logo.png',
+    apple: '/logo.png',
   },
   openGraph: {
     type: 'website',
