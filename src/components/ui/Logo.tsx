@@ -1,4 +1,8 @@
+'use client'
+
+import Image from 'next/image'
 import { cn } from '@/lib/utils/cn'
+import { motion } from 'framer-motion'
 
 interface LogoProps {
   className?: string
@@ -7,36 +11,51 @@ interface LogoProps {
 }
 
 const sizes = { sm: 'text-xl', md: 'text-2xl', lg: 'text-4xl' }
-const iconSizes = { sm: 18, md: 24, lg: 40 }
+const iconSizes = { sm: 24, md: 32, lg: 56 }
 
 export function Logo({ className, variant = 'default', size = 'md' }: LogoProps) {
-  const textColor = variant === 'white' ? 'text-white' : 'text-ocean-900'
-  const dotColor = variant === 'white' ? 'text-brand-accent' : 'text-brand'
-  const iconColor = variant === 'white' ? '#f0c040' : '#038cc9'
-
   return (
-    <div className={cn('flex items-center gap-2', className)}>
-      <svg
-        width={iconSizes[size]}
-        height={iconSizes[size]}
-        viewBox="0 0 22 22"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="shrink-0"
+    <motion.div 
+      className={cn('flex items-center gap-2 cursor-pointer', className)}
+      initial="initial"
+      animate="animate"
+      whileHover="hover"
+    >
+      <motion.div 
+        className="relative shrink-0 flex items-center justify-center"
+        style={{ width: iconSizes[size], height: iconSizes[size] * 1.5 }}
+        variants={{
+          initial: { scale: 0.8, opacity: 0 },
+          animate: { scale: 1, opacity: 1, transition: { type: 'spring', stiffness: 300, damping: 20 } },
+          hover: { 
+            rotate: [0, -10, 10, -5, 5, 0],
+            scale: 1.05,
+            transition: { duration: 0.5 }
+          }
+        }}
       >
-        <path
-          d="M8 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
-          stroke={iconColor}
-          strokeWidth="1.5"
-          strokeLinecap="round"
+        <Image
+          src="/logo.png"
+          alt="Luggo Logo"
+          fill
+          className={cn(
+            "object-contain",
+            variant === 'white' 
+              ? "mix-blend-screen invert grayscale brightness-200" 
+              : "mix-blend-multiply"
+          )}
+          priority
         />
-        <rect x="2" y="7" width="18" height="13" rx="2" fill={iconColor} />
-        <rect x="2" y="12" width="18" height="2" fill={variant === 'white' ? '#011a2e' : '#ffffff'} fillOpacity="0.3" />
-        <rect x="9" y="10" width="4" height="4" rx="1" fill={variant === 'white' ? '#ffffff' : '#f0c040'} />
-      </svg>
-      <span className={cn('font-extrabold tracking-tight', sizes[size], textColor)}>
-        Lugg<span className={dotColor}>o</span>
-      </span>
-    </div>
+      </motion.div>
+      <motion.span 
+        className={cn('font-extrabold tracking-tight', sizes[size], variant === 'white' ? 'text-white' : 'text-[#042258]')}
+        variants={{
+          initial: { x: -10, opacity: 0 },
+          animate: { x: 0, opacity: 1, transition: { type: 'spring', stiffness: 300, damping: 20, delay: 0.1 } }
+        }}
+      >
+        Lugg<span className={variant === 'white' ? 'text-blue-400' : 'text-[#0055ff]'}>o</span>
+      </motion.span>
+    </motion.div>
   )
 }

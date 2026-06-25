@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Logo } from '@/components/ui/Logo'
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher'
+import { SplashScreen } from '@/components/marketing/SplashScreen'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
 import Image from 'next/image'
@@ -593,8 +594,13 @@ function Footer() {
 // ── Export ────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
+  const [showSplash, setShowSplash] = useState(true)
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white relative">
+      <AnimatePresence>
+        {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
+      </AnimatePresence>
       <NavBar />
       <HeroSection />
       <SocialProofBand />
