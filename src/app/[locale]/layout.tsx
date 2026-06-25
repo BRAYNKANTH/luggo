@@ -35,10 +35,7 @@ export const metadata: Metadata = {
     statusBarStyle: 'black-translucent',
     title: 'Luggo',
   },
-  icons: {
-    icon: '/logo.png',
-    apple: '/logo.png',
-  },
+
   openGraph: {
     type: 'website',
     siteName: 'Luggo',
