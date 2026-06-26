@@ -531,7 +531,7 @@ export async function getHubProfile() {
   return { hub: data }
 }
 
-export async function verifyIdentity(bookingId: string) {
+export async function verifyIdentity(bookingId: string, metadata?: Record<string, unknown>) {
   const validId = uuidSchema.safeParse(bookingId)
   if (!validId.success) return { error: validId.error.issues[0].message }
   
@@ -551,7 +551,33 @@ export async function verifyIdentity(bookingId: string) {
     p_actor_role: 'hub_staff',
     p_action: 'identity_verified',
     p_entity: 'bookings',
-    p_entity_id: bookingId
+    p_entity_id: bookingId,
+    p_metadata: metadata || null
+  })
+
+  return { success: true }
+}
+
+export async function rejectBookingIdentity(bookingId: string, reason: string) {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+  if (!reason.trim()) return { error: 'Rejection reason is required' }
+  
+  const { svc, hubId, userId } = await requireStaff()
+
+  // Audit the identity verification rejection / escalation
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'identity_verification_rejected',
+    p_entity: 'bookings',
+    p_entity_id: bookingId,
+    p_metadata: {
+      rejectionReason: reason.trim(),
+      escalated: true,
+      rejectedAt: new Date().toISOString(),
+      rejectedByStaffId: userId
+    }
   })
 
   return { success: true }

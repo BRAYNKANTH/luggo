@@ -58,6 +58,61 @@ export async function POST(req: NextRequest) {
     .is('used_at', null)
 
   // ── 2. Find or create user ─────────────────────────────────
+  const response = NextResponse.json({ success: true })
+
+  const sessionClient = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => req.cookies.getAll(),
+        setAll: (cookiesToSet) => {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  const { data: { user: currentUser } } = await sessionClient.auth.getUser()
+
+  if (currentUser) {
+    // Check if the phone number is already registered to another user
+    const { data: phoneUser } = await supabase
+      .from('users' as never)
+      .select('id')
+      .eq('phone', phone)
+      .maybeSingle() as { data: { id: string } | null }
+
+    if (phoneUser && phoneUser.id !== currentUser.id) {
+      return NextResponse.json({ error: 'This phone number is already registered to another account.' }, { status: 400 })
+    }
+
+    // Update Auth user phone
+    const { error: updateAuthErr } = await supabase.auth.admin.updateUserById(
+      currentUser.id,
+      { phone, phone_confirm: true }
+    )
+    if (updateAuthErr) {
+      console.error('[Verify] updateAuthErr:', updateAuthErr)
+      return NextResponse.json({ error: 'Failed to update phone number in auth service.' }, { status: 500 })
+    }
+
+    // Update users table in db
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updateDbErr } = await (supabase.from('users') as any)
+      .update({ name: name?.trim() || currentUser.user_metadata?.name || '', phone, nic_passport: nic?.trim() || null })
+      .eq('id', currentUser.id)
+
+    if (updateDbErr) {
+      console.error('[Verify] updateDbErr:', updateDbErr)
+      return NextResponse.json({ error: 'Failed to update user profile in database.' }, { status: 500 })
+    }
+
+    return response
+  }
+
   const { data: existingProfile } = await supabase
     .from('users' as never)
     .select('id, email')
@@ -105,26 +160,6 @@ export async function POST(req: NextRequest) {
     console.error('[Verify] generateLink error:', linkErr, 'props:', linkData?.properties)
     return NextResponse.json({ error: 'Failed to generate session token.' }, { status: 500 })
   }
-
-  // ── 4. Exchange token → session, write cookies onto response ─
-  // Must create supabase client against the response object so cookies are
-  // included in the response the browser actually receives.
-  const response = NextResponse.json({ success: true })
-
-  const sessionClient = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => req.cookies.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
 
   const { error: verifyErr } = await sessionClient.auth.verifyOtp({
     token_hash: linkData.properties.hashed_token,

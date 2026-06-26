@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/Button'
 import { type BagCounts } from '@/components/customer/BagSelector'
 import { type PayhereFormData } from '@/lib/utils/payhere'
 import { createClient } from '@/lib/supabase/client'
-import { BAG_LABELS, BAG_RATES } from '@/lib/utils/pricing'
 import { type BagType } from '@/types/database'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -22,6 +21,7 @@ type Hub = {
   id: string
   name: string
   alias: string
+  address: string
   open_time: string
   close_time: string
 }
@@ -44,10 +44,23 @@ interface BookingFormProps {
 const EMPTY_BAGS: BagCounts = { small: 0, regular: 0, large: 0 }
 const OTP_LENGTH = 6
 const BAG_EMOJIS: Record<BagType, string> = { small: '🎒', regular: '🧳', large: '🛄' }
-const BAG_DESC: Record<BagType, string> = {
-  small:   'Backpacks & hand luggage',
-  regular: 'Standard cabin carry-ons',
-  large:   'Check-in suitcases',
+
+const LOCAL_BAG_LABELS: Record<BagType, string> = {
+  small: 'Small',
+  regular: 'Regular',
+  large: 'Large',
+}
+
+const LOCAL_BAG_DESC: Record<BagType, string> = {
+  small: 'Backpack / hand luggage',
+  regular: 'Cabin bag / carry-on',
+  large: 'Check-in suitcase',
+}
+
+const LOCAL_BAG_RATES: Record<BagType, number> = {
+  small: 200,
+  regular: 300,
+  large: 400,
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -64,14 +77,70 @@ function formatPhone(raw: string): string {
   return d.length > 0 ? `+94${d}` : ''
 }
 
-function isEmail(v: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) }
-function isPhone(v: string) { return v.replace(/\D/g, '').length >= 9 }
+function isEmail(v: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
+}
+
+function isValidSriLankanPhone(phone: string): boolean {
+  const formatted = formatPhone(phone)
+  // Sri Lankan mobile number contains country code (+94) followed by 7 and 8 digits (total 9 digits after +94)
+  return /^\+947[0-9]{8}$/.test(formatted)
+}
+
+// TODO: Implement advanced Sri Lankan NIC / Passport validation rules if needed.
+function isValidId(type: 'NIC' | 'Passport', value: string): boolean {
+  const clean = value.trim()
+  if (type === 'NIC') {
+    // Old NIC: 9 digits followed by V/X. New NIC: 12 digits.
+    return /^[0-9]{9}[vVxX]$/.test(clean) || /^[0-9]{12}$/.test(clean) || clean.length >= 5
+  }
+  return clean.length >= 5
+}
+
+function maskIdNumber(idNum: string): string {
+  if (!idNum) return ''
+  const clean = idNum.trim()
+  if (clean.length <= 4) return '*'.repeat(clean.length)
+  return '*'.repeat(clean.length - 4) + clean.slice(-4)
+}
+
+function parseInitialId(nicPassport: string | null) {
+  if (!nicPassport) return { type: 'NIC', number: '' }
+  const clean = nicPassport.trim()
+  // Basic heuristic: if it has letters inside the prefix or length is shorter, assume Passport
+  const isPassport = /^[A-Z][0-9]{7,8}$/i.test(clean) || (clean.length < 10 && /[A-Za-z]/.test(clean.substring(0, 3)))
+  return {
+    type: isPassport ? 'Passport' : 'NIC',
+    number: clean
+  }
+}
+
+// TODO: Confirm if the billing rounding rules change in future.
+function calculateBillableHours(dropOff: Date | null, pickUp: Date | null): number {
+  if (!dropOff || !pickUp || pickUp <= dropOff) return 0
+  return Math.ceil((pickUp.getTime() - dropOff.getTime()) / (1000 * 60 * 60))
+}
 
 function computeTotal(bags: BagCounts, start: Date | null, end: Date | null): number {
-  if (!start || !end || end <= start) return 0
-  const hours = Math.ceil(differenceInHours(end, start)) || 1
+  const hours = calculateBillableHours(start, end)
+  if (hours <= 0) return 0
   return (Object.entries(bags) as [BagType, number][])
-    .reduce((sum, [type, qty]) => sum + BAG_RATES[type] * qty * hours, 0)
+    .reduce((sum, [type, qty]) => sum + LOCAL_BAG_RATES[type] * qty * hours, 0)
+}
+
+function isWithinOperatingHours(date: Date | null, openTimeStr: string, closeTimeStr: string): boolean {
+  if (!date) return false
+  const hours = date.getHours()
+  const minutes = date.getMinutes()
+  const timeVal = hours * 60 + minutes
+
+  const [openH, openM] = openTimeStr.split(':').map(Number)
+  const openVal = openH * 60 + openM
+
+  const [closeH, closeM] = closeTimeStr.split(':').map(Number)
+  const closeVal = closeH * 60 + closeM
+
+  return timeVal >= openVal && timeVal <= closeVal
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
@@ -90,21 +159,21 @@ function OtpInput({ value, onChange }: { value: string; onChange: (v: string) =>
     if (e.key === 'Backspace' && !value[i] && i > 0) refs.current[i - 1]?.focus()
   }
   return (
-    <div className="flex gap-2 justify-center">
+    <div className="flex gap-2 justify-center my-3">
       {Array.from({ length: OTP_LENGTH }).map((_, i) => (
         <input key={i} ref={el => { refs.current[i] = el }}
           type="text" inputMode="numeric" maxLength={1}
           value={value[i] ?? ''} onChange={e => handleChange(i, e.target.value)}
           onKeyDown={e => handleKeyDown(i, e)}
-          className="w-11 h-13 text-center text-xl font-bold text-gray-900 border-2 border-gray-200 rounded-2xl focus:border-brand focus:outline-none focus:bg-brand/5 transition-all bg-gray-50"
+          className="w-10 h-12 text-center text-lg font-bold text-gray-900 border-2 border-gray-200 rounded-xl focus:border-brand focus:outline-none focus:bg-brand/5 transition-all bg-gray-50"
         />
       ))}
     </div>
   )
 }
 
-function StepProgress({ current }: { current: 1 | 2 | 3 }) {
-  const steps = ['When?', 'Bags', 'Review']
+function StepProgress({ current, isLoggedIn }: { current: 1 | 2; isLoggedIn: boolean }) {
+  const steps = ['Booking', isLoggedIn ? 'Review & Pay' : 'Pay']
   return (
     <div className="flex items-center justify-center gap-0 mb-6">
       {steps.map((label, i) => {
@@ -127,7 +196,7 @@ function StepProgress({ current }: { current: 1 | 2 | 3 }) {
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div className={`w-8 md:w-20 h-px mx-1 md:mx-2 mb-3.5 transition-colors ${n < current ? 'bg-emerald-400' : 'bg-gray-200'}`} />
+              <div className={`w-12 md:w-24 h-px mx-1 md:mx-2 mb-3.5 transition-colors ${n < current ? 'bg-emerald-400' : 'bg-gray-200'}`} />
             )}
           </div>
         )
@@ -162,7 +231,6 @@ const slideVariants = {
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export function BookingForm({ hub, initialProfile }: BookingFormProps) {
-  const supabase = createClient()
   const payhereFormRef = useRef<HTMLFormElement>(null)
   const [payhereData, setPayhereData] = useState<PayhereFormData | null>(null)
 
@@ -170,27 +238,34 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
   const defaultEnd = addHours(defaultStart, 4)
 
   // Core state
-  const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1)
+  const [wizardStep, setWizardStep] = useState<1 | 2>(1)
   const [direction, setDirection] = useState(1)
   const [startValue, setStartValue] = useState(toLocalDatetimeValue(defaultStart))
   const [endValue, setEndValue] = useState(toLocalDatetimeValue(defaultEnd))
+
+  // Time fields split
+  const [dropOffDate, setDropOffDate] = useState('')
+  const [dropOffTime, setDropOffTime] = useState('')
+  const [pickUpDate, setPickUpDate] = useState('')
+  const [pickUpTime, setPickUpTime] = useState('')
+
   const [bags, setBags] = useState<BagCounts>(EMPTY_BAGS)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  // Guest fields
+  // Customer fields
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
-  const [nic, setNic] = useState('')
+  const [idType, setIdType] = useState<'NIC' | 'Passport'>('NIC')
+  const [idNumber, setIdNumber] = useState('')
 
   // Declarations
   const [noIllegalItems, setNoIllegalItems] = useState(false)
+  const [isProhibitedExpanded, setIsProhibitedExpanded] = useState(false)
 
-  // OTP flow
-  const [showVerify, setShowVerify] = useState(false)
-  const [verifyMethod, setVerifyMethod] = useState<'email' | 'phone' | null>(null)
-  const [otpStep, setOtpStep] = useState<'method' | 'otp'>('method')
+  // OTP flow state
+  const [phoneVerificationStatus, setPhoneVerificationStatus] = useState<'not_verified' | 'otp_sending' | 'otp_sent' | 'otp_verifying' | 'verified' | 'error'>('not_verified')
   const [otpValue, setOtpValue] = useState('')
   const [countdown, setCountdown] = useState(0)
 
@@ -200,11 +275,96 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
   const endDate = endValue ? new Date(endValue) : null
   const totalBags = Object.values(bags).reduce((s, n) => s + n, 0)
   const minDatetime = toLocalDatetimeValue(new Date())
-  const timesValid = !!(startDate && endDate && endDate > startDate)
-  const detailsValid = name.trim().length >= 2 && isEmail(email) && isPhone(phone) && nic.trim().length >= 5
+
+  const isStartWithinOps = isWithinOperatingHours(startDate, hub.open_time, hub.close_time)
+  const isEndWithinOps = isWithinOperatingHours(endDate, hub.open_time, hub.close_time)
+  const timesWithinOperating = isStartWithinOps && isEndWithinOps
+
+  const timesValid = !!(
+    dropOffDate && dropOffTime &&
+    pickUpDate && pickUpTime &&
+    startDate && endDate &&
+    endDate > startDate &&
+    timesWithinOperating
+  )
+
+  const hours = calculateBillableHours(startDate, endDate)
   const totalPrice = computeTotal(bags, startDate, endDate)
-  const hours = startDate && endDate && endDate > startDate
-    ? Math.ceil(differenceInHours(endDate, startDate)) || 1 : 0
+
+  const detailsValid =
+    name.trim().length >= 2 &&
+    isEmail(email) &&
+    isValidSriLankanPhone(phone) &&
+    idType &&
+    isValidId(idType, idNumber)
+
+  const isPhoneVerified = phoneVerificationStatus === 'verified'
+
+  const isStep2Valid =
+    detailsValid &&
+    isPhoneVerified &&
+    noIllegalItems &&
+    timesValid &&
+    totalBags > 0 &&
+    totalPrice > 0
+
+  // Split DateTime handling
+  useEffect(() => {
+    if (startValue && startValue.includes('T')) {
+      const [d, t] = startValue.split('T')
+      setDropOffDate(d)
+      setDropOffTime(t.substring(0, 5))
+    }
+    if (endValue && endValue.includes('T')) {
+      const [d, t] = endValue.split('T')
+      setPickUpDate(d)
+      setPickUpTime(t.substring(0, 5))
+    }
+  }, []) // Mount only
+
+  function handleDropOffChange(date: string, time: string) {
+    setDropOffDate(date)
+    setDropOffTime(time)
+    if (date && time) {
+      const combined = `${date}T${time}`
+      setStartValue(combined)
+      const dt = new Date(combined)
+      const currentEnd = endValue ? new Date(endValue) : null
+      if (currentEnd && currentEnd <= dt) {
+        const newEnd = addHours(dt, 4)
+        const newEndStr = toLocalDatetimeValue(newEnd)
+        setEndValue(newEndStr)
+        const [ed, et] = newEndStr.split('T')
+        setPickUpDate(ed)
+        setPickUpTime(et.substring(0, 5))
+      }
+    }
+  }
+
+  function handlePickUpChange(date: string, time: string) {
+    setPickUpDate(date)
+    setPickUpTime(time)
+    if (date && time) {
+      setEndValue(`${date}T${time}`)
+    }
+  }
+
+  // Populate from initialProfile
+  useEffect(() => {
+    if (initialProfile) {
+      setName(initialProfile.name || '')
+      setEmail(initialProfile.email || '')
+      setPhone(initialProfile.phone || '')
+      
+      const parsedId = parseInitialId(initialProfile.nic_passport)
+      setIdType(parsedId.type as 'NIC' | 'Passport')
+      setIdNumber(parsedId.number)
+
+      if (initialProfile.phone) {
+        setPhoneVerificationStatus('verified')
+      }
+    }
+  }, [initialProfile])
 
   // Countdown timer
   useEffect(() => {
@@ -220,13 +380,24 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
     try {
       const s = JSON.parse(saved)
       if (s.bags) setBags(s.bags)
-      if (s.start) setStartValue(s.start)
-      if (s.end) setEndValue(s.end)
+      if (s.start) {
+        setStartValue(s.start)
+        const [d, t] = s.start.split('T')
+        setDropOffDate(d || '')
+        setDropOffTime(t ? t.substring(0, 5) : '')
+      }
+      if (s.end) {
+        setEndValue(s.end)
+        const [d, t] = s.end.split('T')
+        setPickUpDate(d || '')
+        setPickUpTime(t ? t.substring(0, 5) : '')
+      }
       if (!isLoggedIn) {
         if (s.name) setName(s.name)
         if (s.email) setEmail(s.email)
         if (s.phone) setPhone(s.phone)
-        if (s.nic) setNic(s.nic)
+        if (s.idType) setIdType(s.idType)
+        if (s.idNumber) setIdNumber(s.idNumber)
       }
       if (s.autoSubmit && isLoggedIn) {
         localStorage.setItem(`luggo_booking_${hub.id}`, JSON.stringify({ ...s, autoSubmit: false }))
@@ -239,8 +410,8 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
   // Save guest state
   useEffect(() => {
     if (isLoggedIn) return
-    localStorage.setItem(`luggo_booking_${hub.id}`, JSON.stringify({ bags, start: startValue, end: endValue, name, email, phone, nic }))
-  }, [bags, startValue, endValue, name, email, phone, nic, hub.id, isLoggedIn])
+    localStorage.setItem(`luggo_booking_${hub.id}`, JSON.stringify({ bags, start: startValue, end: endValue, name, email, phone, idType, idNumber }))
+  }, [bags, startValue, endValue, name, email, phone, idType, idNumber, hub.id, isLoggedIn])
 
   // Auto-submit PayHere form
   useEffect(() => {
@@ -251,25 +422,26 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
   }, [payhereData, hub.id])
 
   // Navigation
-  function goTo(step: 1 | 2 | 3) {
+  function goTo(step: 1 | 2) {
     setDirection(step > wizardStep ? 1 : -1)
     setError(null)
     setWizardStep(step)
   }
 
-  function next() {
-    if (wizardStep === 1) {
-      if (!timesValid) { setError('Please select valid drop-off and pick-up times.'); return }
-      goTo(2)
-    } else if (wizardStep === 2) {
-      if (totalBags === 0) { setError('Please add at least one bag.'); return }
-      goTo(3)
+  function handleContinue() {
+    if (!timesValid) {
+      setError('Please select valid drop-off and pick-up times within operating hours.')
+      return
     }
+    if (totalBags === 0) {
+      setError('Please add at least one bag.')
+      return
+    }
+    goTo(2)
   }
 
-  function back() {
+  function handleBack() {
     if (wizardStep === 2) goTo(1)
-    else if (wizardStep === 3) goTo(2)
   }
 
   // Booking submission
@@ -308,75 +480,112 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
     }
   }
 
-  function handlePayClick() {
-    setError(null)
-    if (isLoggedIn) {
-      submitBooking()
+  function handlePhoneChange(newVal: string) {
+    setPhone(newVal)
+    if (isLoggedIn && initialProfile?.phone) {
+      const formattedNew = formatPhone(newVal)
+      const formattedSaved = formatPhone(initialProfile.phone)
+      if (formattedNew === formattedSaved && formattedSaved !== '') {
+        setPhoneVerificationStatus('verified')
+      } else {
+        setPhoneVerificationStatus('not_verified')
+      }
     } else {
-      if (!detailsValid) { setError('Please fill in all your details.'); return }
-      setShowVerify(true)
-      setOtpStep('method')
-      setOtpValue('')
+      setPhoneVerificationStatus('not_verified')
     }
   }
 
-  // OTP
-  async function sendOtp(method: 'email' | 'phone') {
+  // OTP Send
+  async function handleSendPhoneOtp() {
+    if (!isValidSriLankanPhone(phone)) {
+      setError('Please enter a valid Sri Lankan phone number (e.g. 07XXXXXXXX).')
+      return
+    }
     setError(null)
+    setPhoneVerificationStatus('otp_sending')
     setLoading(true)
-    setVerifyMethod(method)
-    if (method === 'email') {
-      const { error: e } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: { shouldCreateUser: true, data: { name: name.trim(), phone: formatPhone(phone), nic_passport: nic.trim() } },
-      })
-      setLoading(false)
-      if (e) { setError(e.message); return }
-    } else {
+    try {
       const res = await fetch('/api/auth/phone/send', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: formatPhone(phone) }),
       })
       const data = await res.json()
       setLoading(false)
-      if (!res.ok) { setError(data.error ?? 'Failed to send SMS.'); return }
+      if (!res.ok) {
+        setPhoneVerificationStatus('error')
+        setError(data.error ?? 'Failed to send SMS.')
+        return
+      }
+      setPhoneVerificationStatus('otp_sent')
+      setCountdown(60)
+    } catch {
+      setLoading(false)
+      setPhoneVerificationStatus('error')
+      setError('Failed to send code. Please check your connection.')
     }
-    setOtpStep('otp')
-    setCountdown(60)
   }
 
-  async function verifyOtp() {
+  // OTP Verify
+  async function handleVerifyPhoneOtp() {
     if (otpValue.length < OTP_LENGTH) return
     setError(null)
+    setPhoneVerificationStatus('otp_verifying')
     setLoading(true)
-    if (verifyMethod === 'email') {
-      const { error: e } = await supabase.auth.verifyOtp({ email: email.trim(), token: otpValue, type: 'email' })
-      if (e) { setError('Incorrect or expired code.'); setOtpValue(''); setLoading(false); return }
-      setLoading(false)
-      setShowVerify(false)
-      submitBooking()
-    } else {
+    try {
+      // Save state to localStorage to auto-resume on reload
       const saved = localStorage.getItem(`luggo_booking_${hub.id}`)
       if (saved) {
         const s = JSON.parse(saved)
         localStorage.setItem(`luggo_booking_${hub.id}`, JSON.stringify({ ...s, autoSubmit: true }))
+      } else {
+        localStorage.setItem(`luggo_booking_${hub.id}`, JSON.stringify({
+          bags, start: startValue, end: endValue, name, email, phone, idType, idNumber, autoSubmit: true
+        }))
       }
+
       const res = await fetch('/api/auth/phone/verify', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: formatPhone(phone), otp: otpValue, name: name.trim(), email: email.trim(), nic: nic.trim() }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: formatPhone(phone),
+          otp: otpValue,
+          name: name.trim(),
+          email: email.trim(),
+          nic: idNumber.trim()
+        }),
       })
       const data = await res.json()
       setLoading(false)
-      if (!res.ok) { setError(data.error ?? 'Incorrect code.'); setOtpValue(''); return }
+      if (!res.ok) {
+        setPhoneVerificationStatus('error')
+        setError(data.error ?? 'Incorrect or expired code.')
+        setOtpValue('')
+        return
+      }
+      setPhoneVerificationStatus('verified')
       window.location.reload()
+    } catch {
+      setLoading(false)
+      setPhoneVerificationStatus('error')
+      setError('Verification failed. Please check your connection.')
     }
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  function handlePayClick() {
+    setError(null)
+    if (!isStep2Valid) {
+      setError('Please fill in all your details, verify your phone number and confirm the prohibited items declaration.')
+      return
+    }
+    submitBooking()
+  }
+
+  // ── Render Components ──────────────────────────────────────────────────────
 
   const summaryBlock = (
     <div className="space-y-4">
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         <h3 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-widest opacity-50">Booking Summary</h3>
       </div>
       
@@ -404,7 +613,9 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                 <p className="text-sm font-bold text-gray-900">
                   {startDate && format(startDate, 'dd MMM, HH:mm')} → {endDate && format(endDate, 'dd MMM, HH:mm')}
                 </p>
-                <p className="text-[10px] text-brand font-black mt-1 uppercase tracking-wider">{hours}h storage duration</p>
+                <p className="text-[10px] text-brand font-black mt-1 uppercase tracking-wider">
+                  {hours} hr{hours !== 1 ? 's' : ''} storage duration
+                </p>
               </>
             ) : (
               <p className="text-xs font-semibold text-gray-300 italic">Select times to proceed</p>
@@ -429,7 +640,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
             <div className="flex flex-wrap gap-1.5 pl-14">
               {(Object.entries(bags) as [BagType, number][]).filter(([, q]) => q > 0).map(([type, qty]) => (
                 <span key={type} className="text-[10px] bg-brand/5 text-brand font-bold px-2.5 py-1 rounded-lg border border-brand/10">
-                  {BAG_EMOJIS[type]} {qty}× {BAG_LABELS[type]}
+                  {BAG_EMOJIS[type]} {qty}× {LOCAL_BAG_LABELS[type]}
                 </span>
               ))}
             </div>
@@ -442,8 +653,8 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 opacity-60">Price Breakdown</p>
             {(Object.entries(bags) as [BagType, number][]).filter(([, q]) => q > 0).map(([type, qty]) => (
               <div key={type} className="flex justify-between text-xs mb-1.5 last:mb-0">
-                <span className="text-gray-500 font-medium">{qty}× {BAG_LABELS[type]} × {hours}h</span>
-                <span className="font-bold text-gray-900 tabular-nums font-mono">LKR {(BAG_RATES[type] * qty * hours).toLocaleString()}</span>
+                <span className="text-gray-500 font-medium">{qty}× {LOCAL_BAG_LABELS[type]} × {hours}h</span>
+                <span className="font-bold text-gray-900 tabular-nums font-mono">LKR {(LOCAL_BAG_RATES[type] * qty * hours).toLocaleString()}</span>
               </div>
             ))}
             <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-end">
@@ -460,17 +671,22 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
         )}
       </div>
 
-      {/* Identity Summary */}
-      {isLoggedIn && wizardStep === 3 && (
-        <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0">
-            <User size={18} className="text-emerald-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Booking Guest</p>
-            <p className="font-bold text-gray-900 text-sm truncate">{initialProfile!.name}</p>
-          </div>
+      {/* Guest Summary in Step 2 */}
+      {wizardStep === 2 && (name || phone || email || idNumber) && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Booking Guest</p>
+          {name && <p className="text-xs font-bold text-gray-700">Name: <span className="text-gray-900 font-semibold">{name}</span></p>}
+          {phone && <p className="text-xs font-bold text-gray-700">Phone: <span className="text-gray-900 font-semibold font-mono">{formatPhone(phone)}</span></p>}
+          {email && <p className="text-xs font-bold text-gray-700">Email: <span className="text-gray-900 font-semibold">{email}</span></p>}
+          {idNumber && <p className="text-xs font-bold text-gray-700">ID: <span className="text-gray-900 font-semibold font-mono">{idType} ({maskIdNumber(idNumber)})</span></p>}
         </div>
+      )}
+
+      {/* Secure Payment Note */}
+      {wizardStep === 2 && (
+        <p className="text-[10px] text-center text-gray-400 font-medium">
+          🔒 Secure payment. Booking confirmation will be sent after payment.
+        </p>
       )}
     </div>
   )
@@ -480,7 +696,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
         {/* Left Column: Form Content */}
         <div className="lg:col-span-7 xl:col-span-8">
-          <StepProgress current={wizardStep} />
+          <StepProgress current={wizardStep} isLoggedIn={isLoggedIn} />
 
           <div className="overflow-hidden relative min-h-[420px]">
             <AnimatePresence initial={false} custom={direction} mode="wait">
@@ -494,143 +710,185 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                 transition={{ type: 'tween', duration: 0.22, ease: 'easeInOut' }}
               >
 
-                {/* ── STEP 1: WHEN? ─────────────────────────────────────────── */}
+                {/* ── STEP 1: BOOKING ─────────────────────────────────────────── */}
                 {wizardStep === 1 && (
                   <div className="space-y-6">
                     <div>
-                      <h2 className="text-2xl font-black text-gray-900 mb-1 tracking-tight">When do you need storage?</h2>
-                      <p className="text-sm text-gray-400">Set your drop-off and pick-up times</p>
+                      <h2 className="text-2xl font-black text-gray-900 mb-1 tracking-tight">Book your storage</h2>
+                      <p className="text-sm text-gray-400">Choose your time and luggage items</p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Drop-off */}
-                      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-3">
-                        <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">
-                          <CalendarDays size={14} className="text-brand" /> Drop-off
-                        </label>
-                        <input
-                          type="datetime-local"
-                          value={startValue}
-                          min={minDatetime}
-                          onChange={e => {
-                            setStartValue(e.target.value)
-                            if (endValue && e.target.value >= endValue)
-                              setEndValue(toLocalDatetimeValue(addHours(new Date(e.target.value), 4)))
-                          }}
-                          className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50 text-gray-900 text-base font-bold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all shadow-inner"
-                        />
+                    {/* Hub Card */}
+                    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-brand/10 rounded-2xl flex items-center justify-center shrink-0 text-brand">
+                          <Package size={24} />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-black text-gray-900 leading-tight">{hub.name}</h3>
+                          <p className="text-xs text-gray-400 font-semibold mt-0.5">{hub.address}</p>
+                        </div>
                       </div>
-
-                      {/* Pick-up */}
-                      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-3">
-                        <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">
-                          <Clock size={14} className="text-brand" /> Pick-up
-                        </label>
-                        <input
-                          type="datetime-local"
-                          value={endValue}
-                          min={startValue || minDatetime}
-                          onChange={e => setEndValue(e.target.value)}
-                          className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50 text-gray-900 text-base font-bold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all shadow-inner"
-                        />
+                      <div className="mt-4 pt-3 border-t border-gray-50 flex flex-wrap gap-x-6 gap-y-2 justify-between items-center">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500">
+                          <Clock size={14} className="text-brand" />
+                          <span>Operating hours: {hub.open_time.slice(0, 5)} – {hub.close_time.slice(0, 5)}</span>
+                        </div>
+                        <p className="text-[10px] font-black text-brand uppercase tracking-widest bg-brand/5 px-2.5 py-1 rounded-lg border border-brand/10">Luggo Hub</p>
                       </div>
                     </div>
 
-                    {/* Duration pill (Mobile only) */}
-                    {timesValid && (
-                      <div className="lg:hidden flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-100 rounded-2xl py-2.5 px-4 mx-4">
-                        <CheckCircle2 size={13} className="text-emerald-500" />
-                        <p className="text-[11px] font-bold text-emerald-700">
-                          {hours} hr{hours !== 1 ? 's' : ''} storage
+                    {/* Time selection */}
+                    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
+                      <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 pl-1">Storage Times</h3>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        {/* Drop-off Date/Time */}
+                        <div className="space-y-3">
+                          <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">
+                            <CalendarDays size={14} className="text-brand" /> Drop-off
+                          </label>
+                          <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
+                            <input
+                              type="date"
+                              min={minDatetime.split('T')[0]}
+                              value={dropOffDate}
+                              onChange={e => handleDropOffChange(e.target.value, dropOffTime)}
+                              className="w-full px-3 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all shadow-inner"
+                            />
+                            <input
+                              type="time"
+                              value={dropOffTime}
+                              onChange={e => handleDropOffChange(dropOffDate, e.target.value)}
+                              className="w-full px-3 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all shadow-inner"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Pick-up Date/Time */}
+                        <div className="space-y-3">
+                          <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">
+                            <Clock size={14} className="text-brand" /> Pick-up
+                          </label>
+                          <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
+                            <input
+                              type="date"
+                              min={dropOffDate || minDatetime.split('T')[0]}
+                              value={pickUpDate}
+                              onChange={e => handlePickUpChange(e.target.value, pickUpTime)}
+                              className="w-full px-3 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all shadow-inner"
+                            />
+                            <input
+                              type="time"
+                              value={pickUpTime}
+                              onChange={e => handlePickUpChange(pickUpDate, e.target.value)}
+                              className="w-full px-3 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all shadow-inner"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Storage Duration Pill */}
+                      {timesValid && hours > 0 ? (
+                        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-2xl py-2.5 px-4">
+                          <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                          <p className="text-xs font-bold text-emerald-700">
+                            Storage duration: <span className="font-extrabold">{hours} hour{hours !== 1 ? 's' : ''}</span>
+                          </p>
+                        </div>
+                      ) : (
+                        (dropOffDate && dropOffTime && pickUpDate && pickUpTime) && (
+                          <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-2xl py-2.5 px-4">
+                            <AlertCircle size={14} className="text-amber-500 shrink-0" />
+                            <p className="text-xs font-bold text-amber-700">
+                              {!timesWithinOperating ? 'Selected times must be within hub operating hours.' : 'Pick-up time must be after drop-off time.'}
+                            </p>
+                          </div>
+                        )
+                      )}
+                    </div>
+
+                    {/* Bag selection */}
+                    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
+                      <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 pl-1">Luggage Items</h3>
+                      <div className="space-y-3.5">
+                        {(Object.keys(LOCAL_BAG_LABELS) as BagType[]).map((type) => {
+                          const qty = bags[type]
+                          const isActive = qty > 0
+                          return (
+                            <div
+                              key={type}
+                              className={`bg-white rounded-[2rem] border shadow-sm p-4 flex items-center gap-4 transition-all duration-300 ${
+                                isActive ? 'border-brand/40 bg-brand/[0.04] ring-1 ring-brand/10' : 'border-gray-100'
+                              }`}
+                            >
+                              {/* Icon */}
+                              <div className={`w-14 h-14 md:w-16 md:h-16 rounded-[1.25rem] flex items-center justify-center text-3xl shrink-0 transition-colors ${
+                                isActive ? 'bg-brand/15' : 'bg-gray-50'
+                              }`}>
+                                {BAG_EMOJIS[type]}
+                              </div>
+
+                              {/* Info */}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-gray-900 text-base">{LOCAL_BAG_LABELS[type]}</p>
+                                <p className="text-xs font-bold text-gray-400 mt-0.5 line-clamp-1">{LOCAL_BAG_DESC[type]}</p>
+                                <div className="flex items-center gap-1.5 mt-2">
+                                  <span className="text-[10px] uppercase font-black text-brand tracking-widest">Rate</span>
+                                  <p className="text-sm font-black text-brand tabular-nums font-mono">LKR {LOCAL_BAG_RATES[type].toLocaleString()}/hr</p>
+                                </div>
+                              </div>
+
+                              {/* Counter */}
+                              <div className="flex items-center gap-3 shrink-0 bg-gray-100/50 p-2 rounded-2xl">
+                                <button
+                                  type="button"
+                                  onClick={() => bags[type] > 0 && setBags({ ...bags, [type]: bags[type] - 1 })}
+                                  disabled={bags[type] === 0}
+                                  className={`w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center transition-all active:scale-90 shadow-sm ${
+                                    bags[type] > 0 ? 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-50' : 'bg-transparent text-gray-300 cursor-not-allowed'
+                                  }`}
+                                >
+                                  <Minus size={18} strokeWidth={3} />
+                                </button>
+                                <span className="w-6 text-center font-black text-gray-900 text-xl tabular-nums font-mono">
+                                  {bags[type]}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => totalBags < 10 && setBags({ ...bags, [type]: bags[type] + 1 })}
+                                  disabled={totalBags >= 10}
+                                  className={`w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-lg ${
+                                    totalBags < 10 ? 'bg-brand text-white border border-brand hover:scale-105' : 'bg-transparent text-gray-300 cursor-not-allowed'
+                                  }`}
+                                >
+                                  <Plus size={18} strokeWidth={3} />
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {totalBags >= 10 && (
+                        <p className="text-center text-xs text-amber-600 font-bold bg-amber-50 border border-amber-100 rounded-2xl py-3 px-4 flex items-center justify-center gap-2">
+                          <AlertCircle size={14} /> Maximum 10 bags per booking
                         </p>
-                      </div>
-                    )}
-
-                    <div className="bg-gray-50/50 rounded-2xl p-4 text-center border border-dashed border-gray-200">
-                      <p className="text-xs text-gray-400 font-semibold uppercase tracking-tighter">
-                        Operating Hours: {hub.open_time.slice(0, 5)} – {hub.close_time.slice(0, 5)}
-                      </p>
+                      )}
                     </div>
                   </div>
                 )}
 
-                {/* ── STEP 2: BAGS ──────────────────────────────────────────── */}
+                {/* ── STEP 2: PAY / REVIEW & PAY ──────────────────────────────── */}
                 {wizardStep === 2 && (
                   <div className="space-y-6">
                     <div>
-                      <h2 className="text-2xl font-black text-gray-900 mb-1 tracking-tight">What are you storing?</h2>
-                      <p className="text-sm text-gray-400">Select the number of each bag type</p>
-                    </div>
-
-                    <div className="space-y-3.5">
-                      {(Object.keys(BAG_LABELS) as BagType[]).map((type) => (
-                        <div
-                          key={type}
-                          className={`bg-white rounded-[2rem] border shadow-sm p-4 flex items-center gap-4 transition-all duration-300 ${
-                            bags[type] > 0 ? 'border-brand/40 bg-brand/[0.04] ring-1 ring-brand/10' : 'border-gray-100'
-                          }`}
-                        >
-                          {/* Icon */}
-                          <div className={`w-14 h-14 md:w-16 md:h-16 rounded-[1.25rem] flex items-center justify-center text-3xl shrink-0 transition-colors ${
-                            bags[type] > 0 ? 'bg-brand/15' : 'bg-gray-50'
-                          }`}>
-                            {BAG_EMOJIS[type]}
-                          </div>
-
-                          {/* Info */}
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-gray-900 text-base">{BAG_LABELS[type]}</p>
-                            <p className="text-xs font-bold text-gray-400 mt-0.5 line-clamp-1">{BAG_DESC[type]}</p>
-                            <div className="flex items-center gap-1.5 mt-2">
-                              <span className="text-[10px] uppercase font-black text-brand tracking-widest">Rate</span>
-                              <p className="text-sm font-black text-brand tabular-nums font-mono">LKR {BAG_RATES[type].toLocaleString()}/hr</p>
-                            </div>
-                          </div>
-
-                          {/* Counter */}
-                          <div className="flex items-center gap-3 shrink-0 bg-gray-100/50 p-2 rounded-2xl">
-                            <button
-                              type="button"
-                              onClick={() => bags[type] > 0 && setBags({ ...bags, [type]: bags[type] - 1 })}
-                              disabled={bags[type] === 0}
-                              className={`w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center transition-all active:scale-90 shadow-sm ${
-                                bags[type] > 0 ? 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-50' : 'bg-transparent text-gray-300 cursor-not-allowed'
-                              }`}
-                            >
-                              <Minus size={18} strokeWidth={3} />
-                            </button>
-                            <span className="w-6 text-center font-black text-gray-900 text-xl tabular-nums font-mono">
-                              {bags[type]}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => totalBags < 10 && setBags({ ...bags, [type]: bags[type] + 1 })}
-                              disabled={totalBags >= 10}
-                              className={`w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-lg ${
-                                totalBags < 10 ? 'bg-brand text-white border border-brand hover:scale-105' : 'bg-transparent text-gray-300 cursor-not-allowed'
-                              }`}
-                            >
-                              <Plus size={18} strokeWidth={3} />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {totalBags >= 10 && (
-                      <p className="text-center text-xs text-amber-600 font-bold bg-amber-50 border border-amber-100 rounded-2xl py-3 px-4 flex items-center justify-center gap-2">
-                        <AlertCircle size={14} /> Maximum 10 bags per booking
+                      <h2 className="text-2xl font-black text-gray-900 mb-1 tracking-tight">
+                        {isLoggedIn ? 'Review & Pay' : 'Guest details & payment'}
+                      </h2>
+                      <p className="text-sm text-gray-400">
+                        {isLoggedIn ? 'Check your booking details before payment.' : 'Enter your details and verify your phone number'}
                       </p>
-                    )}
-                  </div>
-                )}
-
-                {/* ── STEP 3: REVIEW & PAY ──────────────────────────────────── */}
-                {wizardStep === 3 && (
-                  <div className="space-y-6">
-                    <div>
-                      <h2 className="text-2xl font-black text-gray-900 mb-1 tracking-tight">Review & Pay</h2>
-                      <p className="text-sm text-gray-400">Everything looks good? Proceed to payment.</p>
                     </div>
 
                     {/* Summary card (Mobile only) */}
@@ -638,68 +896,198 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                       {summaryBlock}
                     </div>
 
-                    {/* Illegal items declaration */}
-                    <label className={`flex items-start gap-4 rounded-[2rem] border p-6 cursor-pointer transition-all ${
-                      noIllegalItems
-                        ? 'border-emerald-200 bg-emerald-50/40 ring-1 ring-emerald-100'
-                        : 'border-gray-100 bg-white hover:border-brand/40 shadow-sm'
-                    }`}>
-                      <div className="relative shrink-0 mt-1">
-                        <input
-                          type="checkbox"
-                          checked={noIllegalItems}
-                          onChange={e => setNoIllegalItems(e.target.checked)}
-                          className="sr-only"
-                        />
-                        <div className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all ${
-                          noIllegalItems ? 'bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-200' : 'border-gray-200 bg-white'
-                        }`}>
-                          {noIllegalItems && (
-                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={3}>
-                              <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          )}
+                    {/* Customer details form */}
+                    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 lg:p-8 space-y-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-brand/10 rounded-xl flex items-center justify-center text-brand">
+                          <User size={20} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Customer Details</p>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Required for luggage drop-off</p>
                         </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-900 leading-snug">
-                          I agree to the storage terms & conditions
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
-                          I confirm no weapons, perishables, or hazardous items. See{' '}
-                          <a
-                            href="/terms#prohibited"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={e => e.stopPropagation()}
-                            className="text-brand font-black hover:underline decoration-2"
-                          >
-                            Prohibited Items
-                          </a>.
-                        </p>
-                      </div>
-                    </label>
 
-                    {/* Guest identity form */}
-                    {!isLoggedIn && (
-                      <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 lg:p-8 space-y-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-brand/10 rounded-xl flex items-center justify-center text-brand">
-                            <Fingerprint size={20} />
-                          </div>
-                          <div>
-                            <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Guest Details</p>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Required for luggage drop-off</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <FieldInput label="Full name" icon={User} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. John Doe" />
+                        <div className="space-y-1">
+                          <label className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+                            <Smartphone size={12} className="text-brand" />
+                            Phone number
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="tel"
+                              value={phone}
+                              onChange={e => handlePhoneChange(e.target.value)}
+                              placeholder="e.g. 0771234567"
+                              className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-3 py-2.5 pr-28 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all font-mono"
+                            />
+                            {isPhoneVerified && (
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] bg-emerald-50 text-emerald-600 font-bold border border-emerald-200 px-2 py-1 rounded-lg">
+                                Verified ✓
+                              </span>
+                            )}
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                          <FieldInput label="Full Name" icon={User} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. John Doe" />
-                          <FieldInput label="Phone Number" icon={Smartphone} type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="07XXXXXXXX" />
-                          <FieldInput label="Email Address" icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="john@example.com" />
-                          <FieldInput label="NIC / Passport" icon={Shield} value={nic} onChange={e => setNic(e.target.value)} placeholder="Identity ID" />
+                        <FieldInput label="Email address" icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="e.g. john@example.com" />
+                        
+                        <div className="space-y-1">
+                          <label className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+                            <Shield size={12} className="text-brand" />
+                            ID type
+                          </label>
+                          <select
+                            value={idType}
+                            onChange={e => setIdType(e.target.value as 'NIC' | 'Passport')}
+                            className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all"
+                          >
+                            <option value="NIC">NIC</option>
+                            <option value="Passport">Passport</option>
+                          </select>
                         </div>
+
+                        <div className="sm:col-span-2 space-y-1">
+                          <FieldInput
+                            label="NIC / Passport number"
+                            icon={Fingerprint}
+                            value={idNumber}
+                            onChange={e => setIdNumber(e.target.value)}
+                            placeholder={idType === 'NIC' ? 'e.g. 981234567V or 199812345678' : 'e.g. N1234567'}
+                          />
+                          <p className="text-[10px] text-gray-400 font-semibold pl-1 leading-relaxed">
+                            💡 This will be checked against your physical ID at drop-off. Please bring the same NIC or passport when dropping off your luggage.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Inline Phone OTP Verification Card */}
+                    {!isPhoneVerified && isValidSriLankanPhone(phone) && (
+                      <div className="bg-white rounded-[2rem] border border-brand/20 bg-brand/[0.02] shadow-sm p-6 space-y-4">
+                        <div className="text-center space-y-1">
+                          <h3 className="text-lg font-black text-gray-900 tracking-tight">Confirm your phone number</h3>
+                          <p className="text-xs text-gray-500">
+                            {phoneVerificationStatus === 'otp_sent' || phoneVerificationStatus === 'otp_verifying'
+                              ? `Enter the OTP sent to ${formatPhone(phone)} to continue.`
+                              : `Verify your phone number with SMS code to complete your booking.`}
+                          </p>
+                        </div>
+
+                        {/* Sending/Verify state */}
+                        {(phoneVerificationStatus === 'not_verified' || phoneVerificationStatus === 'error') && (
+                          <div className="flex justify-center">
+                            <Button onClick={handleSendPhoneOtp} loading={loading} className="px-6 py-2.5 rounded-xl font-bold">
+                              Verify phone
+                            </Button>
+                          </div>
+                        )}
+
+                        {phoneVerificationStatus === 'otp_sending' && (
+                          <div className="flex flex-col items-center justify-center gap-2 py-3">
+                            <Spinner className="text-brand" />
+                            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Sending OTP...</p>
+                          </div>
+                        )}
+
+                        {(phoneVerificationStatus === 'otp_sent' || phoneVerificationStatus === 'otp_verifying') && (
+                          <div className="space-y-4">
+                            <OtpInput value={otpValue} onChange={v => {
+                              setOtpValue(v)
+                              if (v.length === OTP_LENGTH) {
+                                setTimeout(handleVerifyPhoneOtp, 100)
+                              }
+                            }} />
+                            
+                            <div className="flex justify-center gap-3">
+                              <Button
+                                onClick={handleVerifyPhoneOtp}
+                                loading={phoneVerificationStatus === 'otp_verifying'}
+                                disabled={otpValue.length < OTP_LENGTH}
+                                className="px-6 py-2 rounded-xl font-bold"
+                              >
+                                Verify & Confirm
+                              </Button>
+                            </div>
+
+                            <div className="flex justify-center">
+                              <button
+                                onClick={handleSendPhoneOtp}
+                                disabled={countdown > 0 || loading}
+                                className="flex items-center gap-1 text-[11px] font-bold text-gray-400 hover:text-brand disabled:opacity-40 transition-colors uppercase tracking-widest"
+                              >
+                                <RefreshCw size={12} className={countdown > 0 ? 'animate-spin' : ''} />
+                                {countdown > 0 ? `Resend in ${countdown}s` : 'Resend code'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
+
+                    {/* Prohibited items declaration */}
+                    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 space-y-4">
+                      <label className={`flex items-start gap-4 cursor-pointer transition-all`}>
+                        <div className="relative shrink-0 mt-1">
+                          <input
+                            type="checkbox"
+                            checked={noIllegalItems}
+                            onChange={e => setNoIllegalItems(e.target.checked)}
+                            className="sr-only"
+                          />
+                          <div className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all ${
+                            noIllegalItems ? 'bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-200' : 'border-gray-200 bg-white'
+                          }`}>
+                            {noIllegalItems && (
+                              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={3}>
+                                <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-bold text-gray-900 leading-snug">
+                            I confirm my luggage does not contain prohibited, illegal, hazardous, perishable, or restricted items.
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                            ⚠️ Luggo may refuse storage if luggage appears unsafe, leaking, damaged, suspicious, or against storage rules.
+                          </p>
+                        </div>
+                      </label>
+
+                      <div className="border-t border-gray-50 pt-3">
+                        <button
+                          type="button"
+                          onClick={() => setIsProhibitedExpanded(!isProhibitedExpanded)}
+                          className="text-xs text-brand font-black hover:underline tracking-tight flex items-center gap-1"
+                        >
+                          {isProhibitedExpanded ? 'Hide prohibited items' : 'View prohibited items'}
+                        </button>
+                        
+                        {isProhibitedExpanded && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mt-3 bg-red-50/50 border border-red-100/50 rounded-2xl p-4 text-xs text-red-900/80 space-y-1.5"
+                          >
+                            <p className="font-bold text-red-950 uppercase tracking-widest text-[9px] mb-1 pl-1">Prohibited Items List</p>
+                            <ul className="list-disc pl-4 space-y-1">
+                              <li>Illegal items</li>
+                              <li>Weapons</li>
+                              <li>Hazardous or flammable items</li>
+                              <li>Perishable food</li>
+                              <li>Strong-smelling items</li>
+                              <li>Leaking liquids</li>
+                              <li>Live animals</li>
+                              <li>Cash, jewellery, or high-value items</li>
+                              <li>Fragile items stored at customer’s own risk</li>
+                              <li>Any item restricted by law or hub policy</li>
+                            </ul>
+                          </motion.div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -716,7 +1104,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
         </div>
       </div>
 
-      {/* Error */}
+      {/* Error display */}
       {error && (
         <div className="mt-8 flex items-start gap-4 bg-red-50 border border-red-100 rounded-3xl p-5 shadow-sm max-w-2xl mx-auto lg:mx-0">
           <AlertCircle size={20} className="text-red-500 shrink-0 mt-0.5" />
@@ -732,27 +1120,31 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
         <div className="max-w-5xl mx-auto flex items-center gap-4">
           {/* Back button */}
           {wizardStep > 1 && (
-            <button onClick={back}
+            <button onClick={handleBack}
               className="flex items-center justify-center w-14 h-14 rounded-2xl border-2 border-gray-100 bg-white text-gray-900 hover:bg-gray-50 transition-all active:scale-95 shrink-0 shadow-sm">
               <ChevronLeft size={24} strokeWidth={2.5} />
             </button>
           )}
 
           {/* Live price pill (Mobile only) */}
-          {wizardStep < 3 && totalBags > 0 && totalPrice > 0 && (
+          {wizardStep < 2 && totalBags > 0 && totalPrice > 0 && (
             <div className="lg:hidden flex-1 min-w-0 bg-gray-50 rounded-2xl px-5 py-2.5 border border-gray-100 shadow-inner">
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">{totalBags} item{totalBags > 1 ? 's' : ''} · {hours}h</p>
-              <p className="text-lg font-black text-gray-900 tracking-tight tabular-nums">LKR {totalPrice.toLocaleString()}</p>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">
+                {totalBags} item{totalBags > 1 ? 's' : ''} · {hours}h
+              </p>
+              <p className="text-lg font-black text-gray-900 tracking-tight tabular-nums">
+                LKR {totalPrice.toLocaleString()}
+              </p>
             </div>
           )}
 
           {/* Next / Pay button */}
-          <div className={`${(wizardStep === 3 || (wizardStep < 3 && totalBags === 0)) ? 'flex-1' : 'w-auto'}`}>
-            {wizardStep < 3 ? (
+          <div className="flex-1">
+            {wizardStep === 1 ? (
               <Button
-                onClick={next}
-                className={`h-14 rounded-2xl font-black text-base shadow-xl transition-all active:scale-95 px-10 ${totalBags > 0 ? '' : 'w-full'}`}
-                disabled={wizardStep === 1 ? !timesValid : totalBags === 0}
+                onClick={handleContinue}
+                className="w-full h-14 rounded-2xl font-black text-base shadow-xl transition-all active:scale-95"
+                disabled={!timesValid || totalBags === 0}
               >
                 Continue <ArrowRight size={18} className="ml-2" />
               </Button>
@@ -760,97 +1152,15 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
               <Button
                 onClick={handlePayClick}
                 loading={loading}
-                className="w-full h-14 rounded-2xl font-black text-base shadow-xl shadow-brand/20 transition-all active:scale-95 tracking-tight px-10"
-                disabled={(!isLoggedIn && !detailsValid) || !noIllegalItems}
+                className="w-full h-14 rounded-2xl font-black text-base shadow-xl shadow-brand/20 transition-all active:scale-95 tracking-tight"
+                disabled={!isStep2Valid}
               >
-                {totalPrice > 0 ? `Complete Payment · LKR ${totalPrice.toLocaleString()}` : 'Confirm & Proceed'}
+                {totalPrice > 0 ? `Pay LKR ${totalPrice.toLocaleString()}` : 'Confirm & Proceed'}
               </Button>
             )}
           </div>
         </div>
       </div>
-
-      {/* ── OTP Verification Modal ── */}
-      <AnimatePresence>
-        {showVerify && (
-          <div className="fixed inset-0 z-[500] flex items-end sm:items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => { setShowVerify(false); setOtpStep('method'); setOtpValue('') }}
-              className="absolute inset-0 bg-gray-900/60 backdrop-blur-md" />
-
-            <motion.div initial={{ y: '100%', scale: 0.95 }} animate={{ y: 0, scale: 1 }} exit={{ y: '100%', scale: 0.95 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-sm bg-white rounded-[2.5rem] p-8 shadow-2xl">
-
-              {otpStep === 'method' ? (
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-brand/10 rounded-2xl flex items-center justify-center mx-auto mb-4 text-brand">
-                      <ShieldCheck size={32} />
-                    </div>
-                    <h3 className="text-xl font-black text-gray-900 tracking-tight">Security Check</h3>
-                    <p className="text-sm font-semibold text-gray-400 mt-2">Verify your identifier to proceed with the booking</p>
-                  </div>
-                  <div className="space-y-3">
-                    {[
-                      { method: 'email' as const, icon: Mail, label: 'Email Address', sub: email },
-                      { method: 'phone' as const, icon: Smartphone, label: 'Phone SMS', sub: formatPhone(phone) },
-                    ].map(({ method, icon: Icon, label, sub }) => (
-                      <button key={method} onClick={() => sendOtp(method)} disabled={loading}
-                        className="w-full flex items-center gap-4 p-4 rounded-3xl border-2 border-gray-50 hover:border-brand/20 hover:bg-brand/[0.02] transition-all text-left disabled:opacity-50 group">
-                        <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-brand/10 group-hover:text-brand transition-colors">
-                          <Icon size={20} strokeWidth={2.5} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-gray-900 text-sm">{label}</p>
-                          <p className="text-xs font-bold text-gray-400 truncate mt-0.5">{sub}</p>
-                        </div>
-                        <ArrowRight size={16} className="text-gray-300 group-hover:text-brand group-hover:translate-x-1 transition-all" />
-                      </button>
-                    ))}
-                  </div>
-                  {loading && <div className="flex justify-center"><Spinner className="text-brand" /></div>}
-                  {error && <p className="text-center text-xs text-red-500 font-bold bg-red-50 py-3 rounded-2xl">{error}</p>}
-                </div>
-              ) : (
-                <div className="space-y-6 text-center">
-                  <div>
-                    <div className="w-16 h-16 bg-brand/10 rounded-2xl flex items-center justify-center mx-auto mb-4 relative">
-                      <div className="absolute inset-0 rounded-2xl border-2 border-brand/20 animate-ping opacity-20" />
-                      {verifyMethod === 'email' ? <Mail size={30} className="text-brand" /> : <Smartphone size={30} className="text-brand" />}
-                    </div>
-                    <h3 className="text-xl font-black text-gray-900 tracking-tight">Enter Code</h3>
-                    <p className="text-sm font-semibold text-gray-400 mt-2">
-                      Sent to your registered {verifyMethod === 'email' ? 'email' : 'mobile'}
-                    </p>
-                  </div>
-                  <OtpInput value={otpValue} onChange={v => {
-                    setOtpValue(v)
-                    if (v.length === OTP_LENGTH) setTimeout(verifyOtp, 100)
-                  }} />
-                  {error && <p className="text-sm text-red-500 font-bold">{error}</p>}
-                  <Button fullWidth loading={loading} onClick={verifyOtp}
-                    disabled={otpValue.length < OTP_LENGTH}
-                    className="h-14 rounded-[1.25rem] font-black text-base shadow-xl shadow-brand/20">
-                    Verify & Pay Now
-                  </Button>
-                  <div className="flex flex-col gap-3">
-                    <button onClick={() => sendOtp(verifyMethod!)} disabled={countdown > 0 || loading}
-                      className="flex items-center justify-center gap-1.5 text-xs font-bold text-gray-400 hover:text-brand disabled:opacity-40 transition-colors uppercase tracking-widest">
-                      <RefreshCw size={14} className={countdown > 0 ? 'animate-spin' : ''} />
-                      {countdown > 0 ? `Resend in ${countdown}s` : 'Resend code'}
-                    </button>
-                    <button onClick={() => { setOtpStep('method'); setOtpValue(''); setError(null) }}
-                      className="text-xs font-bold text-gray-300 hover:text-gray-900 transition-colors uppercase tracking-widest">
-                      ← Use different method
-                    </button>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* Hidden PayHere form */}
       <form ref={payhereFormRef} method="POST" action={payhereData?.endpoint || ''} style={{ display: 'none' }}>

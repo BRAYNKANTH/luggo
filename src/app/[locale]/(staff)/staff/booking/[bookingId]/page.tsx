@@ -8,7 +8,8 @@ import { BookingStatusBadge } from '@/components/customer/BookingStatusBadge'
 import { RealtimeRefresher } from '@/components/shared/RealtimeRefresher'
 import { ChevronLeft, User, Clock, Package, Tag } from 'lucide-react'
 import { format, isPast } from 'date-fns'
-import { markArrivedAction, verifyIdentity } from '@/lib/staff/actions'
+import { markArrivedAction } from '@/lib/staff/actions'
+import { StaffVerificationForm } from '@/components/staff/StaffVerificationForm'
 import { CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react'
 import { type BookingStatus, type BagType } from '@/types/database'
 import { BAG_LABELS, calculateLateFee } from '@/lib/utils/pricing'
@@ -150,6 +151,11 @@ export default async function StaffBookingPage({
           </div>
         )}
 
+        {/* Verification Form */}
+        {!booking.id_verified && booking.status === 'arrived' && (
+          <StaffVerificationForm bookingId={booking.id} />
+        )}
+
         {/* Times */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white/10 rounded-2xl p-3">
@@ -234,29 +240,12 @@ export default async function StaffBookingPage({
       </div>
 
       {/* Sticky action footer */}
-      {(nextAction !== 'none' && nextAction !== 'waiting' && nextAction !== 'stored' && nextAction !== 'late_fee_pending') && (
+      {(nextAction === 'check-in' || nextAction === 'stickers' || nextAction === 'seal' || nextAction === 'pickup') && (
         <div className="fixed bottom-0 left-0 right-0 bg-ocean-900 border-t border-white/10 px-4 py-4 pb-safe">
           {nextAction === 'check-in' && (
             <form action={markArrivedAction.bind(null, booking.id)}>
               <Button type="submit" fullWidth size="lg">
                 ✓ Check in customer
-              </Button>
-            </form>
-          )}
-          {nextAction === 'verify_id' && (
-            <form action={async () => {
-              'use server'
-              const result = await verifyIdentity(booking.id)
-              if (result?.error) {
-                // identity verify failed — stay on same page, error visible in logs
-                console.error('[verifyIdentity]', result.error)
-                redirect(`/staff/booking/${booking.id}?error=verify_failed`)
-              } else {
-                redirect(`/staff/booking/${booking.id}`)
-              }
-            }}>
-              <Button type="submit" fullWidth size="lg" className="bg-green-600 hover:bg-green-500">
-                <ShieldCheck size={18} /> Approve Identity Match
               </Button>
             </form>
           )}
