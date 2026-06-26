@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { User, CheckCircle, Phone, Fingerprint, Mail, ShieldCheck, AlertTriangle, LogOut } from 'lucide-react'
+import { User, CheckCircle, Phone, Fingerprint, Mail, ShieldCheck, AlertTriangle, LogOut, ChevronRight } from 'lucide-react'
+import { Link } from '@/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Spinner } from '@/components/ui/Spinner'
@@ -148,6 +149,15 @@ export default function ProfilePage({ searchParams }: { searchParams: { welcome?
               Save Changes
             </Button>
           </form>
+        </div>
+
+        {/* General Options */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h2 className="font-bold text-gray-900 mb-3">General</h2>
+          <Link href="/" className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all text-sm font-semibold text-ocean-900 group">
+            <span className="group-hover:text-brand transition-colors">Visit Public Homepage</span>
+            <ChevronRight size={16} className="text-gray-400 group-hover:text-brand transition-colors" />
+          </Link>
         </div>
       </div>
     </div>

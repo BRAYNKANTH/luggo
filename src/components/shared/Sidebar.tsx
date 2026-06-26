@@ -1,13 +1,13 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/navigation'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, BookOpen, User, LogOut, LogIn } from 'lucide-react'
 import { Logo } from '@/components/ui/Logo'
 import { signOut } from '@/lib/auth/actions'
 
 const NAV_ALL = [
-  { label: 'Home',        href: '/dashboard', icon: LayoutDashboard, guestOk: true  },
+  { label: 'Dashboard',   href: '/dashboard', icon: LayoutDashboard, guestOk: true  },
   { label: 'My Bookings', href: '/bookings',  icon: BookOpen,        guestOk: false },
   { label: 'Profile',     href: '/profile',   icon: User,            guestOk: false },
 ]
@@ -20,7 +20,9 @@ export function Sidebar({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
     <aside className="hidden md:flex flex-col w-56 bg-white border-r border-gray-100 h-[100dvh] shrink-0">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-gray-50">
-        <Logo size="sm" />
+        <Link href="/">
+          <Logo size="sm" />
+        </Link>
       </div>
 
       {/* Nav */}
