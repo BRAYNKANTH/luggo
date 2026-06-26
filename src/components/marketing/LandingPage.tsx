@@ -183,7 +183,7 @@ function HeroSection() {
         <div className="absolute inset-0 bg-gradient-to-r from-ocean-900 via-ocean-900/40 to-transparent z-10" />
         <Image
           src="/images/marketing/srilanka-hero.png"
-          alt="Sri Lanka Scenery"
+          alt="Luggo Luggage Storage Sri Lanka"
           fill
           className="object-cover opacity-80"
           priority
@@ -250,7 +250,7 @@ function HeroSection() {
             <div className="absolute inset-0 rounded-[3rem] overflow-hidden border border-white/30 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] z-0">
                <Image
                  src="/images/marketing/srilanka-hero.png"
-                 alt="Explore Sri Lanka"
+                 alt="Explore Sri Lanka Hands-Free with Luggo Luggage Storage"
                  fill
                  className="object-cover scale-125 transition-transform duration-10000 ease-linear transform hover:scale-135"
                />
@@ -507,10 +507,10 @@ function LocationsSection() {
       </div>
       <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {CITY_LOCATIONS.map((c, i) => (
-          <Link key={i} href="/dashboard" className="group block text-center">
+          <Link key={i} href="/hubs" className="group block text-center">
             <div className="relative aspect-square rounded-full overflow-hidden mb-4 border-2 border-gray-100 p-1 group-hover:border-brand transition-colors">
               <div className="relative w-full h-full rounded-full overflow-hidden">
-                <Image src={c.img} alt={c.city} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
+                <Image src={c.img} alt={`Luggage storage in ${c.city} - Luggo`} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
               </div>
             </div>
             <p className="font-bold text-ocean-900 text-sm">{c.city}</p>

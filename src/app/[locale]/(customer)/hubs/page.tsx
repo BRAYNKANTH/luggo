@@ -1,6 +1,29 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { HubList } from '@/components/hubs/HubList'
 import { PageHeader } from '@/components/shared/PageHeader'
+
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string }
+}): Promise<Metadata> {
+  const path = '/hubs'
+  const canonicalPath = locale === 'en' ? path : `/${locale}${path}`
+
+  return {
+    title: 'Luggage Storage Locations in Sri Lanka',
+    description: 'Find trusted luggage storage hubs across Sri Lanka. Secure storage in Colombo, Kandy, Galle, Ella, Negombo, and Bandaranaike International Airport (BIA).',
+    alternates: {
+      canonical: canonicalPath,
+      languages: {
+        en: path,
+        si: `/si${path}`,
+        ta: `/ta${path}`,
+      },
+    },
+  }
+}
 
 type Hub = {
   id: string

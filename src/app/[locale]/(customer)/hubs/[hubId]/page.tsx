@@ -1,8 +1,10 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { HubDetailsUI } from '@/components/hubs/HubDetailsUI'
+import { siteUrl } from '@/lib/site-url'
 
-  type Hub = {
+type Hub = {
   id: string
   name: string
   alias: string
@@ -13,6 +15,8 @@ import { HubDetailsUI } from '@/components/hubs/HubDetailsUI'
   close_time: string
   active: boolean
   image_url?: string
+  latitude?: number | null
+  longitude?: number | null
 }
 
 type NearbyPlace = {
@@ -24,10 +28,41 @@ type NearbyPlace = {
   map_url: string | null
 }
 
+export async function generateMetadata({
+  params,
+}: {
+  params: { hubId: string; locale: string }
+}): Promise<Metadata> {
+  const supabase = await createClient()
+  const { data: hub } = await supabase
+    .from('hubs')
+    .select('name, location, address')
+    .eq('id', params.hubId)
+    .single() as { data: { name: string; location: string; address: string } | null }
+
+  if (!hub) return {}
+
+  const path = `/hubs/${params.hubId}`
+  const canonicalPath = params.locale === 'en' ? path : `/${params.locale}${path}`
+
+  return {
+    title: `Luggage Storage at ${hub.name}, ${hub.location} | Luggo`,
+    description: `Store your bags securely at ${hub.name} in ${hub.location} (${hub.address}). Fully verified, secure, and insured luggage storage network in Sri Lanka.`,
+    alternates: {
+      canonical: canonicalPath,
+      languages: {
+        en: path,
+        si: `/si${path}`,
+        ta: `/ta${path}`,
+      },
+    },
+  }
+}
+
 export default async function HubDetailPage({
   params,
 }: {
-  params: { hubId: string }
+  params: { hubId: string; locale: string }
 }) {
   const supabase = await createClient()
 
@@ -35,7 +70,7 @@ export default async function HubDetailPage({
     supabase.auth.getUser(),
     supabase
       .from('hubs')
-      .select('id, name, alias, location, address, capacity, open_time, close_time, active, image_url')
+      .select('id, name, alias, location, address, capacity, open_time, close_time, active, image_url, latitude, longitude')
       .eq('id', params.hubId)
       .single() as unknown as Promise<{ data: Hub | null }>,
   ])
@@ -66,12 +101,59 @@ export default async function HubDetailPage({
   })
   const categories = Object.keys(grouped).sort()
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    '@id': `${siteUrl}/hubs/${hub.id}`,
+    name: `Luggo Luggage Storage - ${hub.name}`,
+    image: hub.image_url || `${siteUrl}/images/hubs/bia.png`,
+    url: `${siteUrl}/hubs/${hub.id}`,
+    telephone: '+94770000000',
+    priceRange: 'LKR 200 - LKR 400',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: hub.address,
+      addressLocality: hub.location,
+      addressCountry: 'LK',
+    },
+    ...(hub.latitude && hub.longitude
+      ? {
+          geo: {
+            '@type': 'GeoCoordinates',
+            latitude: hub.latitude,
+            longitude: hub.longitude,
+          },
+        }
+      : {}),
+    openingHoursSpecification: {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+      ],
+      opens: hub.open_time || '00:00',
+      closes: hub.close_time || '23:59',
+    },
+  }
+
   return (
-    <HubDetailsUI
-      hub={hub}
-      activeCount={activeCount ?? 0}
-      categories={categories}
-      grouped={grouped}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <HubDetailsUI
+        hub={hub}
+        activeCount={activeCount ?? 0}
+        categories={categories}
+        grouped={grouped}
+      />
+    </>
   )
 }
+
