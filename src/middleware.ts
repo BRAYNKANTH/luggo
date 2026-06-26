@@ -20,7 +20,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl, 308)
   }
 
-  // 1. Handle locale routing
+  // 1. Bypass i18n for API routes
+  if (url.pathname.startsWith('/api/')) {
+    const response = NextResponse.next()
+    return await updateSession(request, response)
+  }
+
+  // 2. Handle locale routing
   const response = await intlMiddleware(request)
   
   // If the i18n middleware wants to redirect, do it immediately
