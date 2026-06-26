@@ -1,7 +1,6 @@
 'use client'
 
-import { Link } from '@/navigation'
-import { usePathname } from 'next/navigation'
+import { Link, usePathname } from '@/navigation'
 import { LayoutDashboard, BookOpen, User, LogOut, LogIn } from 'lucide-react'
 import { Logo } from '@/components/ui/Logo'
 import { signOut } from '@/lib/auth/actions'

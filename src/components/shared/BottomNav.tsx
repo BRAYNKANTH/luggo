@@ -1,7 +1,6 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { Link, usePathname } from '@/navigation'
 import { LayoutDashboard, MapPin, BookOpen, User, LogIn } from 'lucide-react'
 
 const NAV_ALL = [

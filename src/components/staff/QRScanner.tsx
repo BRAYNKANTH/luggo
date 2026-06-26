@@ -66,7 +66,9 @@ export function QRScanner({ onScan, disabled }: QRScannerProps) {
 
     return () => {
       mounted = false
-      scannerRef.current?.stop().catch(() => {})
+      if (scannerRef.current && (scannerRef.current as any).isScanning) {
+        scannerRef.current.stop().catch(() => {})
+      }
     }
   }, [disabled, onScan])
 

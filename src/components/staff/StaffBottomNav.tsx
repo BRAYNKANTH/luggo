@@ -1,8 +1,7 @@
 'use client'
 
 import React from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { Link, usePathname } from '@/navigation'
 import { LayoutDashboard, Calendar, History, BarChart3, Settings } from 'lucide-react'
 
 const NAV_ITEMS = [
