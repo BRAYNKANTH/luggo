@@ -8,11 +8,10 @@ import {
   User, Fingerprint, ChevronLeft, Package, Minus, Plus, ArrowRight
 } from 'lucide-react'
 import { Spinner } from '@/components/ui/Spinner'
-import { addHours, startOfHour, format, differenceInHours } from 'date-fns'
+import { addHours, startOfHour, format } from 'date-fns'
 import { Button } from '@/components/ui/Button'
 import { type BagCounts } from '@/components/customer/BagSelector'
 import { type PayhereFormData } from '@/lib/utils/payhere'
-import { createClient } from '@/lib/supabase/client'
 import { type BagType } from '@/types/database'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -320,6 +319,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
       setPickUpDate(d)
       setPickUpTime(t.substring(0, 5))
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Mount only
 
   function handleDropOffChange(date: string, time: string) {
