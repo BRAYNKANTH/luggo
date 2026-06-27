@@ -286,7 +286,7 @@ export default async function BookingDetailPage({
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100 p-2 flex items-center justify-between gap-2">
                {showExtendCTA && (
                  <div className="flex-1">
-                   <ExtendBookingCTA bookingId={booking.id} bags={booking.booking_bags} hourlyRate={hourlyRate} />
+                   <ExtendBookingCTA bookingId={booking.id} bags={booking.booking_bags} hourlyRate={hourlyRate} minimal />
                  </div>
                )}
                {showPickupCTA && (

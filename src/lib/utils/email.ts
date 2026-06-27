@@ -272,3 +272,69 @@ export async function sendLateFeeReceiptEmail(
     ),
   })
 }
+
+export async function sendOverstayedAlertEmail(
+  to: string,
+  name: string,
+  hubName: string,
+  bookingId: string
+) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+  
+  const contentHtml = `
+    <p style="margin-top: 0;">Hi <strong>${name}</strong>,</p>
+    <p>Your luggage storage at <strong>${hubName}</strong> has passed its scheduled check-out time.</p>
+    <div style="background-color: #fef2f2; border: 1px solid #fca5a5; border-radius: 16px; padding: 20px; margin: 20px 0; text-align: center;">
+      <p style="margin: 0; color: #b91c1c; font-weight: 700; font-size: 15px;">⚠️ Storage Period Ended</p>
+      <p style="margin: 6px 0 0 0; color: #7f1d1d; font-size: 13px;">Late storage fees are now accruing. Please collect your bags as soon as possible to avoid further charges.</p>
+    </div>
+    <p style="margin-bottom: 0; font-size: 13px; color: #6b7280;">Late fees are calculated at the same standard hourly rate as your original booking.</p>
+  `
+
+  await sendEmail({
+    to,
+    subject: 'Your Luggo Storage has Expired — Late Fees Apply ⚠️',
+    html: getPremiumLayout(
+      'Storage Expired',
+      'Overstay Alert',
+      '#ef4444',
+      contentHtml,
+      `${appUrl}/booking/${bookingId}`,
+      'Request Pickup Now'
+    ),
+  })
+}
+
+export async function sendPickupReminderEmail(
+  to: string,
+  name: string,
+  hubName: string,
+  bookingId: string,
+  endFormatted: string,
+  minutesLeft: number
+) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+
+  const contentHtml = `
+    <p style="margin-top: 0;">Hi <strong>${name}</strong>,</p>
+    <p>This is a friendly reminder that your luggage storage at <strong>${hubName}</strong> ends at <strong>${endFormatted}</strong> (in approximately <strong>${minutesLeft} minutes</strong>).</p>
+    <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 16px; padding: 20px; margin: 20px 0; text-align: center;">
+      <p style="margin: 0; color: #b45309; font-weight: 700; font-size: 15px;">⏰ Pickup Reminder</p>
+      <p style="margin: 6px 0 0 0; color: #78350f; font-size: 13px;">Please make your way to the hub counter to collect your bags on time and prevent any overstay charges.</p>
+    </div>
+    <p style="margin-bottom: 0; font-size: 13px; color: #6b7280;">If you need more time, you can extend your booking duration directly in the app before it expires.</p>
+  `
+
+  await sendEmail({
+    to,
+    subject: `Luggage Pickup Reminder — ${endFormatted} ⏰`,
+    html: getPremiumLayout(
+      'Pickup Reminder',
+      'Upcoming Retrieval',
+      '#f59e0b',
+      contentHtml,
+      `${appUrl}/booking/${bookingId}`,
+      'View Booking Details'
+    ),
+  })
+}

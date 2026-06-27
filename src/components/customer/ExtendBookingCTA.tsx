@@ -11,6 +11,7 @@ interface ExtendBookingCTAProps {
   bookingId: string
   bags: { bag_type: BagType }[]
   hourlyRate: number
+  minimal?: boolean
 }
 
 const EXTENSION_OPTIONS = [
@@ -20,7 +21,7 @@ const EXTENSION_OPTIONS = [
   { hours: 24, label: '+24 hours' },
 ]
 
-export function ExtendBookingCTA({ bookingId, bags, hourlyRate }: ExtendBookingCTAProps) {
+export function ExtendBookingCTA({ bookingId, bags, hourlyRate, minimal = false }: ExtendBookingCTAProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedHours, setSelectedHours] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
@@ -57,16 +58,7 @@ export function ExtendBookingCTA({ bookingId, bags, hourlyRate }: ExtendBookingC
 
   return (
     <>
-      <div className="card border-brand/20 bg-brand/5">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="p-2 bg-brand/10 text-brand rounded-xl">
-            <Clock size={20} />
-          </div>
-          <div>
-            <p className="font-bold text-ocean-900 text-sm">Need more time?</p>
-            <p className="text-xs text-gray-500">Extend your storage before it expires</p>
-          </div>
-        </div>
+      {minimal ? (
         <Button 
           variant="outline" 
           fullWidth 
@@ -74,9 +66,30 @@ export function ExtendBookingCTA({ bookingId, bags, hourlyRate }: ExtendBookingC
           className="bg-white border-brand/20 text-brand hover:bg-brand hover:text-white transition-all rounded-2xl"
         >
           <Plus size={16} className="mr-1" />
-          Extend Booking
+          Extend
         </Button>
-      </div>
+      ) : (
+        <div className="card border-brand/20 bg-brand/5">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-brand/10 text-brand rounded-xl">
+              <Clock size={20} />
+            </div>
+            <div>
+              <p className="font-bold text-ocean-900 text-sm">Need more time?</p>
+              <p className="text-xs text-gray-500">Extend your storage before it expires</p>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            fullWidth 
+            onClick={() => setIsOpen(true)}
+            className="bg-white border-brand/20 text-brand hover:bg-brand hover:text-white transition-all rounded-2xl"
+          >
+            <Plus size={16} className="mr-1" />
+            Extend Booking
+          </Button>
+        </div>
+      )}
 
       <AnimatePresence>
         {isOpen && (

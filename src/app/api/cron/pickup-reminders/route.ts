@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { verifyCron } from '@/lib/utils/cron'
 import { sendSMS } from '@/lib/utils/sms'
-import { sendEmail } from '@/lib/utils/email'
+import { sendPickupReminderEmail } from '@/lib/utils/email'
 import { format } from 'date-fns'
 
 /**
@@ -90,24 +90,7 @@ export async function GET(req: NextRequest) {
 
     // Email
     if (booking.users?.email) {
-      sendEmail({
-        to: booking.users.email,
-        subject: `Pickup reminder — your storage ends at ${endFormatted}`,
-        html: `
-          <div style="font-family:sans-serif;max-width:480px;margin:auto">
-            <h2 style="color:#0a3d5c">Hi ${userName},</h2>
-            <p>This is a reminder that your luggage storage at <strong>${hubName}</strong> ends at <strong>${endFormatted}</strong> (in approximately ${minutesLeft} minutes).</p>
-            <p>Please collect your bags before then to avoid late storage fees.</p>
-            <a href="${process.env.NEXT_PUBLIC_APP_URL}/booking/${booking.id}"
-               style="display:inline-block;background:#0077b6;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">
-              View Booking
-            </a>
-            <p style="color:#888;font-size:12px;margin-top:24px">
-              If you need more time, you can request a pickup now and a late fee will be calculated at collection.
-            </p>
-          </div>
-        `,
-      }).catch(console.error)
+      sendPickupReminderEmail(booking.users.email, userName, hubName, booking.id, endFormatted, minutesLeft).catch(console.error)
     }
 
     sent++

@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { verifyCron } from '@/lib/utils/cron'
 import { sendSMS } from '@/lib/utils/sms'
-import { sendEmail } from '@/lib/utils/email'
+import { sendOverstayedAlertEmail } from '@/lib/utils/email'
 
 /**
  * Cron: mark-overstayed
@@ -92,24 +92,7 @@ export async function GET(req: NextRequest) {
 
     // Email
     if (booking.users?.email) {
-      sendEmail({
-        to: booking.users.email,
-        subject: 'Your Luggo storage period has ended — late fees apply',
-        html: `
-          <div style="font-family:sans-serif;max-width:480px;margin:auto">
-            <h2 style="color:#0a3d5c">Hi ${userName},</h2>
-            <p>Your luggage storage at <strong>${hubName}</strong> has passed its scheduled end time.</p>
-            <p><strong>Late storage fees are now accruing.</strong> To avoid further charges, please collect your bags as soon as possible.</p>
-            <a href="${process.env.NEXT_PUBLIC_APP_URL}/booking/${booking.id}"
-               style="display:inline-block;background:#0077b6;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">
-              Request Pickup
-            </a>
-            <p style="color:#888;font-size:12px;margin-top:24px">
-              Late fees are charged at the same hourly rate as your booking.
-            </p>
-          </div>
-        `,
-      }).catch(console.error)
+      sendOverstayedAlertEmail(booking.users.email, userName, hubName, booking.id).catch(console.error)
     }
   }
 
