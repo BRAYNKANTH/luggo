@@ -2,11 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
   CalendarDays, Clock, AlertCircle, Shield,
-  ShieldCheck, Mail, Smartphone, RefreshCw, CheckCircle2,
-  User, Fingerprint, ChevronLeft, Package, Minus, Plus, ArrowRight,
+  ShieldCheck, Mail, Smartphone, CheckCircle2,
+  User, Fingerprint, Package, Minus, Plus,
   CreditCard
 } from 'lucide-react'
 import { Spinner } from '@/components/ui/Spinner'
@@ -173,38 +173,7 @@ function OtpInput({ value, onChange }: { value: string; onChange: (v: string) =>
   )
 }
 
-function StepProgress({ current, isLoggedIn }: { current: 1 | 2; isLoggedIn: boolean }) {
-  const steps = ['Booking', isLoggedIn ? 'Review & Pay' : 'Pay']
-  return (
-    <div className="flex items-center justify-center gap-0 mb-6">
-      {steps.map((label, i) => {
-        const n = i + 1
-        const done = n < current
-        const active = n === current
-        return (
-          <div key={n} className="flex items-center">
-            <div className="flex flex-col items-center gap-1">
-              <div className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center transition-all ${
-                done ? 'bg-emerald-500' : active ? 'bg-gray-900' : 'bg-gray-100'
-              }`}>
-                {done
-                  ? <CheckCircle2 size={14} className="text-white" />
-                  : <span className={`text-[10px] md:text-xs font-bold ${active ? 'text-white' : 'text-gray-400'}`}>{n}</span>
-                }
-              </div>
-              <span className={`text-[9px] md:text-[10px] font-semibold ${active ? 'text-gray-900' : done ? 'text-emerald-600' : 'text-gray-300'}`}>
-                {label}
-              </span>
-            </div>
-            {i < steps.length - 1 && (
-              <div className={`w-12 md:w-24 h-px mx-1 md:mx-2 mb-3.5 transition-colors ${n < current ? 'bg-emerald-400' : 'bg-gray-200'}`} />
-            )}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
+
 
 function FieldInput({ label, icon: Icon, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string; icon?: React.ElementType }) {
   return (
@@ -221,13 +190,7 @@ function FieldInput({ label, icon: Icon, ...props }: React.InputHTMLAttributes<H
   )
 }
 
-// ── Slide animation variants ───────────────────────────────────────────────────
 
-const slideVariants = {
-  enter: (dir: number) => ({ x: dir > 0 ? '60%' : '-60%', opacity: 0 }),
-  center: { x: 0, opacity: 1 },
-  exit: (dir: number) => ({ x: dir > 0 ? '-60%' : '60%', opacity: 0 }),
-}
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 
@@ -240,8 +203,6 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
   const defaultEnd = addHours(defaultStart, 4)
 
   // Core state
-  const [wizardStep, setWizardStep] = useState<1 | 2>(1)
-  const [direction, setDirection] = useState(1)
   const [paymentMethod, setPaymentMethod] = useState<'pay_online' | 'pay_at_hub'>('pay_online')
   const [startValue, setStartValue] = useState(toLocalDatetimeValue(defaultStart))
   const [endValue, setEndValue] = useState(toLocalDatetimeValue(defaultEnd))
@@ -319,21 +280,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
   const hours = calculateBillableHours(startDate, endDate)
   const totalPrice = computeTotal(bags, startDate, endDate)
 
-  const detailsValid =
-    name.trim().length >= 2 &&
-    isEmail(email) &&
-    isValidSriLankanPhone(phone) &&
-    (!idNumber.trim() || (idType && isValidId(idType, idNumber)))
 
-  const isPhoneVerified = phoneVerificationStatus === 'verified'
-
-  const isStep2Valid =
-    detailsValid &&
-    isPhoneVerified &&
-    noIllegalItems &&
-    timesValid &&
-    totalBags > 0 &&
-    totalPrice > 0
 
   // Split DateTime handling
   useEffect(() => {
@@ -428,7 +375,6 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
         if (s.idNumber) setIdNumber(s.idNumber)
       }
       if (s.autoSubmit && isLoggedIn) {
-        setWizardStep(2)
         localStorage.setItem(`luggo_booking_${hub.id}`, JSON.stringify({ ...s, autoSubmit: false }))
         setTimeout(() => submitBooking({ bags: s.bags, start: s.start, end: s.end }), 800)
       }
@@ -450,28 +396,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
     }
   }, [payhereData, hub.id])
 
-  // Navigation
-  function goTo(step: 1 | 2) {
-    setDirection(step > wizardStep ? 1 : -1)
-    setError(null)
-    setWizardStep(step)
-  }
 
-  function handleContinue() {
-    if (!timesValid) {
-      setError('Please select valid drop-off and pick-up times within operating hours.')
-      return
-    }
-    if (totalBags === 0) {
-      setError('Please add at least one bag.')
-      return
-    }
-    goTo(2)
-  }
-
-  function handleBack() {
-    if (wizardStep === 2) goTo(1)
-  }
 
   // Booking submission
   async function submitBooking(overridePayload?: { bags: Record<string, number>; start: string; end: string }) {
@@ -609,8 +534,38 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
 
   function handlePayClick() {
     setError(null)
-    if (!isStep2Valid) {
-      setError('Please fill in all your details, verify your phone number and confirm the prohibited items declaration.')
+    if (!timesValid) {
+      setError('Please select valid drop-off and pick-up times within operating hours.')
+      return
+    }
+    if (totalBags === 0) {
+      setError('Please add at least one bag.')
+      return
+    }
+    if (!isLoggedIn) {
+      if (name.trim().length < 2) {
+        setError('Please enter your full name (minimum 2 characters).')
+        return
+      }
+      if (!isEmail(email)) {
+        setError('Please enter a valid email address.')
+        return
+      }
+      if (!isValidSriLankanPhone(phone)) {
+        setError('Please enter a valid Sri Lankan phone number (e.g. +94 77 123 4567).')
+        return
+      }
+      if (phoneVerificationStatus !== 'verified') {
+        setError('Please verify your phone number with the SMS OTP code.')
+        return
+      }
+      if (idNumber.trim() && !isValidId(idType, idNumber)) {
+        setError(`Please enter a valid ${idType} number.`)
+        return
+      }
+    }
+    if (!noIllegalItems) {
+      setError('Please confirm the prohibited items declaration.')
       return
     }
     submitBooking()
@@ -706,8 +661,8 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
         )}
       </div>
 
-      {/* Guest Summary in Step 2 */}
-      {wizardStep === 2 && (name || phone || email || idNumber) && (
+      {/* Guest Summary */}
+      {!isLoggedIn && (name || phone || email || idNumber) && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Booking Guest</p>
           {name && <p className="text-xs font-bold text-gray-700">Name: <span className="text-gray-900 font-semibold">{name}</span></p>}
@@ -718,7 +673,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
       )}
 
       {/* Secure Payment Note */}
-      {wizardStep === 2 && (
+      {paymentMethod === 'pay_online' && (
         <p className="text-[10px] text-center text-gray-400 font-medium">
           🔒 Secure payment. Booking confirmation will be sent after payment.
         </p>
@@ -730,28 +685,12 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
     <div className="pb-32">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
         {/* Left Column: Form Content */}
-        <div className="lg:col-span-7 xl:col-span-8">
-          <StepProgress current={wizardStep} isLoggedIn={isLoggedIn} />
-
-          <div className="overflow-hidden relative min-h-[420px]">
-            <AnimatePresence initial={false} custom={direction} mode="wait">
-              <motion.div
-                key={wizardStep}
-                custom={direction}
-                variants={slideVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ type: 'tween', duration: 0.22, ease: 'easeInOut' }}
-              >
-
-                {/* ── STEP 1: BOOKING ─────────────────────────────────────────── */}
-                {wizardStep === 1 && (
-                  <div className="space-y-6">
-                    <div>
-                      <h2 className="text-2xl font-black text-gray-900 mb-1 tracking-tight">Book your storage</h2>
-                      <p className="text-sm text-gray-400">Choose your time and luggage items</p>
-                    </div>
+        <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-black text-gray-900 mb-1 tracking-tight">Book your storage</h2>
+              <p className="text-sm text-gray-400">Choose your time, luggage items, and payment method</p>
+            </div>
 
                     {/* Hub Card */}
                     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-2">
@@ -925,115 +864,77 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                         </p>
                       )}
                     </div>
-                  </div>
-                )}
 
-                {/* ── STEP 2: PAY / REVIEW & PAY ──────────────────────────────── */}
-                {wizardStep === 2 && (
-                  <div className="space-y-6">
-                    <div>
-                      <h2 className="text-2xl font-black text-gray-900 mb-1 tracking-tight">
-                        {isLoggedIn ? 'Review & Pay' : 'Guest details & payment'}
-                      </h2>
-                      <p className="text-sm text-gray-400">
-                        {isLoggedIn ? 'Check your booking details before payment.' : 'Enter your details and verify your phone number'}
-                      </p>
-                    </div>
-
-                    {/* Summary card (Mobile only) */}
-                    <div className="lg:hidden">
-                      {summaryBlock}
-                    </div>
-
-                    {/* Customer details form */}
-                    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 lg:p-8 space-y-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-brand/10 rounded-xl flex items-center justify-center text-brand">
-                          <User size={20} />
+                    {!isLoggedIn && (
+                      <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 lg:p-8 space-y-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-brand/10 rounded-xl flex items-center justify-center text-brand">
+                            <User size={20} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Customer Details</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Required for luggage drop-off</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Customer Details</p>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Required for luggage drop-off</p>
-                        </div>
-                      </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <FieldInput label="Full name" icon={User} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. John Doe" />
-                        <div className="space-y-1">
-                          <label className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
-                            <Smartphone size={12} className="text-brand" />
-                            Phone number
-                          </label>
-                          <div className="relative">
-                            <input
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                          <FieldInput label="Full name" icon={User} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. John Doe" />
+                          <FieldInput label="Email address" icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="e.g. john@example.com" />
+                          
+                          <div className="space-y-1">
+                            <label className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+                              <Shield size={12} className="text-brand" />
+                              ID type
+                            </label>
+                            <select
+                              value={idType}
+                              onChange={e => setIdType(e.target.value as 'NIC' | 'Passport')}
+                              className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all"
+                            >
+                              <option value="NIC">NIC</option>
+                              <option value="Passport">Passport</option>
+                            </select>
+                          </div>
+
+                          <div className="space-y-1">
+                            <FieldInput
+                              label="NIC / Passport number (Optional)"
+                              icon={Fingerprint}
+                              value={idNumber}
+                              onChange={e => setIdNumber(e.target.value)}
+                              placeholder={idType === 'NIC' ? 'e.g. 981234567V or 199812345678' : 'e.g. N1234567'}
+                            />
+                            <p className="text-[10px] text-gray-400 font-semibold pl-1 leading-relaxed">
+                              💡 This will be checked against your physical ID at drop-off. If left blank, you can present it directly at the hub counter.
+                            </p>
+                          </div>
+
+                          <div className="sm:col-span-2 space-y-1">
+                            <FieldInput
+                              label="Phone number (SMS OTP verification)"
+                              icon={Smartphone}
                               type="tel"
                               value={phone}
                               onChange={e => handlePhoneChange(e.target.value)}
-                              placeholder="e.g. 0771234567"
-                              className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-3 py-2.5 pr-28 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all font-mono"
+                              placeholder="e.g. +94 77 123 4567"
+                              disabled={phoneVerificationStatus === 'verified'}
                             />
-                            {isPhoneVerified && (
-                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] bg-emerald-50 text-emerald-600 font-bold border border-emerald-200 px-2 py-1 rounded-lg">
-                                Verified ✓
-                              </span>
-                            )}
+                            <p className="text-[10px] text-gray-400 font-semibold pl-1 leading-relaxed">
+                              🔒 A 6-digit SMS code will be sent to verify your phone number.
+                            </p>
                           </div>
                         </div>
-                        <FieldInput label="Email address" icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="e.g. john@example.com" />
-                        
-                        <div className="space-y-1">
-                          <label className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
-                            <Shield size={12} className="text-brand" />
-                            ID type
-                          </label>
-                          <select
-                            value={idType}
-                            onChange={e => setIdType(e.target.value as 'NIC' | 'Passport')}
-                            className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all"
-                          >
-                            <option value="NIC">NIC</option>
-                            <option value="Passport">Passport</option>
-                          </select>
-                        </div>
 
-                        <div className="sm:col-span-2 space-y-1">
-                          <FieldInput
-                            label="NIC / Passport number (Optional)"
-                            icon={Fingerprint}
-                            value={idNumber}
-                            onChange={e => setIdNumber(e.target.value)}
-                            placeholder={idType === 'NIC' ? 'e.g. 981234567V or 199812345678' : 'e.g. N1234567'}
-                          />
-                          <p className="text-[10px] text-gray-400 font-semibold pl-1 leading-relaxed">
-                            💡 This will be checked against your physical ID at drop-off. If left blank, you can present it directly at the hub counter.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Inline Phone OTP Verification Card */}
-                    {!isPhoneVerified && isValidSriLankanPhone(phone) && (
-                      <div className="bg-white rounded-[2rem] border border-brand/20 bg-brand/[0.02] shadow-sm p-6 space-y-4">
-                        <div className="text-center space-y-1">
-                          <h3 className="text-lg font-black text-gray-900 tracking-tight">Confirm your phone number</h3>
-                          <p className="text-xs text-gray-500">
-                            {phoneVerificationStatus === 'otp_sent' || phoneVerificationStatus === 'otp_verifying'
-                              ? `Enter the OTP sent to ${formatPhone(phone)} to continue.`
-                              : `Verify your phone number with SMS code to complete your booking.`}
-                          </p>
-                        </div>
-
-                        {/* Sending/Verify state */}
-                        {(phoneVerificationStatus === 'not_verified' || phoneVerificationStatus === 'error') && (
-                          <div className="flex justify-center">
-                            <Button onClick={handleSendPhoneOtp} loading={loading} className="px-6 py-2.5 rounded-xl font-bold">
-                              Verify phone
+                        {phoneVerificationStatus === 'not_verified' && phone.trim().length >= 9 && (
+                          <div className="flex justify-center pt-2">
+                            <Button onClick={handleSendPhoneOtp} className="px-6 py-2.5 rounded-xl font-bold">
+                              Send Verification Code
                             </Button>
                           </div>
                         )}
 
                         {phoneVerificationStatus === 'otp_sending' && (
-                          <div className="flex flex-col items-center justify-center gap-2 py-3">
+                          <div className="flex items-center justify-center gap-2 py-4">
                             <Spinner className="text-brand" />
                             <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Sending OTP...</p>
                           </div>
@@ -1044,7 +945,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                             <OtpInput value={otpValue} onChange={v => {
                               setOtpValue(v)
                               if (v.length === OTP_LENGTH) {
-                                setTimeout(handleVerifyPhoneOtp, 100)
+                                  setTimeout(handleVerifyPhoneOtp, 100)
                               }
                             }} />
                             
@@ -1055,26 +956,14 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                                 disabled={otpValue.length < OTP_LENGTH}
                                 className="px-6 py-2 rounded-xl font-bold"
                               >
-                                Verify & Confirm
+                                Verify Phone
                               </Button>
-                            </div>
-
-                            <div className="flex justify-center">
-                              <button
-                                onClick={handleSendPhoneOtp}
-                                disabled={countdown > 0 || loading}
-                                className="flex items-center gap-1 text-[11px] font-bold text-gray-400 hover:text-brand disabled:opacity-40 transition-colors uppercase tracking-widest"
-                              >
-                                <RefreshCw size={12} className={countdown > 0 ? 'animate-spin' : ''} />
-                                {countdown > 0 ? `Resend in ${countdown}s` : 'Resend code'}
-                              </button>
                             </div>
                           </div>
                         )}
                       </div>
                     )}
 
-                    {/* Payment Method Selector */}
                     <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 space-y-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-brand/10 rounded-xl flex items-center justify-center text-brand">
@@ -1123,7 +1012,6 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                       </div>
                     </div>
 
-                    {/* Prohibited items declaration */}
                     <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 space-y-4">
                       <label className={`flex items-start gap-4 cursor-pointer transition-all`}>
                         <div className="relative shrink-0 mt-1">
@@ -1187,12 +1075,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                       </div>
                     </div>
                   </div>
-                )}
-
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
+                </div>
 
         {/* Right Column: Desktop Summary Sidebar */}
         <div className="hidden lg:block lg:col-span-5 xl:col-span-4 sticky top-24">
@@ -1216,16 +1099,9 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
       {/* ── Fixed bottom action bar ── */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-5 pb-safe z-[200] shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
         <div className="max-w-5xl mx-auto flex items-center gap-4">
-          {/* Back button */}
-          {wizardStep > 1 && (
-            <button onClick={handleBack}
-              className="flex items-center justify-center w-14 h-14 rounded-2xl border-2 border-gray-100 bg-white text-gray-900 hover:bg-gray-50 transition-all active:scale-95 shrink-0 shadow-sm">
-              <ChevronLeft size={24} strokeWidth={2.5} />
-            </button>
-          )}
 
           {/* Live price pill (Mobile only) */}
-          {wizardStep < 2 && totalBags > 0 && totalPrice > 0 && (
+          {totalBags > 0 && totalPrice > 0 && (
             <div className="lg:hidden flex-1 min-w-0 bg-gray-50 rounded-2xl px-5 py-2.5 border border-gray-100 shadow-inner">
               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">
                 {totalBags} item{totalBags > 1 ? 's' : ''} · {hours}h
@@ -1238,24 +1114,14 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
 
           {/* Next / Pay button */}
           <div className="flex-1">
-            {wizardStep === 1 ? (
-              <Button
-                onClick={handleContinue}
-                className="w-full h-14 rounded-2xl font-black text-base shadow-xl transition-all active:scale-95"
-                disabled={!timesValid || totalBags === 0}
-              >
-                Continue <ArrowRight size={18} className="ml-2" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handlePayClick}
-                loading={loading}
-                className="w-full h-14 rounded-2xl font-black text-base shadow-xl shadow-brand/20 transition-all active:scale-95 tracking-tight"
-                disabled={!isStep2Valid}
-              >
-                {paymentMethod === 'pay_at_hub' ? 'Confirm Reservation (Pay Cash at Hub)' : (totalPrice > 0 ? `Pay LKR ${totalPrice.toLocaleString()} Online` : 'Confirm & Proceed')}
-              </Button>
-            )}
+            <Button
+              onClick={handlePayClick}
+              loading={loading}
+              className="w-full h-14 rounded-2xl font-black text-base shadow-xl shadow-brand/20 transition-all active:scale-95 tracking-tight"
+              disabled={!timesValid || totalBags === 0}
+            >
+              {paymentMethod === 'pay_at_hub' ? 'Confirm Reservation (Pay Cash at Hub)' : (totalPrice > 0 ? `Pay LKR ${totalPrice.toLocaleString()} Online` : 'Confirm & Proceed')}
+            </Button>
           </div>
         </div>
       </div>
