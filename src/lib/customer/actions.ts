@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { generatePayhereHash, PAYHERE_ENDPOINT, type PayhereFormData } from '@/lib/utils/payhere'
 import { sendSMS } from '@/lib/utils/sms'
 import { sendPickupRequestedEmail } from '@/lib/utils/email'
@@ -162,8 +163,9 @@ export async function createLateFeePayment(
   }
 
   // Create pending late_fee payment record
+  const serviceClient = createServiceClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: payment, error: paymentError } = await (supabase as any)
+  const { data: payment, error: paymentError } = await (serviceClient as any)
     .from('payments')
     .insert({
       booking_id: bookingId,

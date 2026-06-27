@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { createBookingSchema } from '@/lib/validators/booking'
 import { calculateBookingPrice } from '@/lib/utils/pricing'
 import { generatePayhereHash, PAYHERE_ENDPOINT, type PayhereFormData } from '@/lib/utils/payhere'
@@ -101,8 +102,9 @@ export async function POST(req: NextRequest) {
     await (supabase.from('booking_bags') as any).insert(bagRows)
 
     // Create pending payment record
+    const serviceClient = createServiceClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('payments') as any).insert({
+    await (serviceClient.from('payments') as any).insert({
       booking_id: booking.id,
       amount: totalPrice,
       status: 'pending',

@@ -400,6 +400,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
         if (s.idNumber) setIdNumber(s.idNumber)
       }
       if (s.autoSubmit && isLoggedIn) {
+        setWizardStep(2)
         localStorage.setItem(`luggo_booking_${hub.id}`, JSON.stringify({ ...s, autoSubmit: false }))
         setTimeout(() => submitBooking({ bags: s.bags, start: s.start, end: s.end }), 800)
       }
