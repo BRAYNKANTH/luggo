@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Logo } from '@/components/ui/Logo'
 import { SignOutButton } from '@/components/shared/SignOutButton'
+import { RealtimeDashboardRefresher } from '@/components/staff/RealtimeDashboardRefresher'
 import {
   QrCode, Package, Clock, AlertTriangle, CheckCircle2,
   User, ChevronRight, Inbox, ArrowRight, Tag, Camera,
@@ -114,6 +115,7 @@ export default async function StaffDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#0f1923] text-white">
+      <RealtimeDashboardRefresher hubId={staffRow.hub_id} />
 
       {/* ── Top bar ───────────────────────────────────────── */}
       <div className="sticky top-0 z-50 bg-[#0f1923]/95 backdrop-blur border-b border-white/8 px-4 py-3 flex items-center justify-between">

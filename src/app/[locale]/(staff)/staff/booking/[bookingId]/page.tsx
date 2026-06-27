@@ -20,6 +20,7 @@ type BookingFull = {
   start_time: string
   end_time: string
   total_price: number
+  qr_code: string
   id_verified: boolean
   users: { name: string; email: string; phone: string | null; nic_passport: string | null } | null
   booking_bags: { id: string; bag_type: BagType; sticker_number: string | null }[]
@@ -70,6 +71,7 @@ export default async function StaffBookingPage({
 
   const start = new Date(booking.start_time)
   const end = new Date(booking.end_time)
+  const hasInsurance = booking.qr_code.endsWith('_ins')
   const isOverdue = isPast(end)
   const lateFeeAmount = isOverdue && booking.status === 'overstayed' ? calculateLateFee(booking.booking_bags, end) : 0
 
@@ -128,6 +130,19 @@ export default async function StaffBookingPage({
             <p className="text-white/50 text-xs">{booking.users?.phone ?? booking.users?.email}</p>
           </div>
         </div>
+
+        {/* Luggage Protection Active Banner */}
+        {hasInsurance && (
+          <div className="bg-emerald-500/10 border border-emerald-400/20 rounded-2xl p-4 flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0 text-emerald-400">
+              <ShieldCheck size={18} />
+            </div>
+            <div>
+              <p className="font-bold text-emerald-400 text-xs uppercase tracking-wider">🛡️ Luggage Protection Covered</p>
+              <p className="text-white/60 text-xs mt-0.5">Protected up to LKR 40,000 against theft, loss, or damage.</p>
+            </div>
+          </div>
+        )}
 
         {/* Pay at Hub Cash Alert */}
         {bookingPayment?.status === 'pending' && bookingPayment?.gateway_ref === 'PAY_AT_HUB' && booking.status === 'confirmed' && (

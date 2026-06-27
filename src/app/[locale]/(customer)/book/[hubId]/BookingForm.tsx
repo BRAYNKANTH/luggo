@@ -204,6 +204,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
 
   // Core state
   const [paymentMethod, setPaymentMethod] = useState<'pay_online' | 'pay_at_hub'>('pay_online')
+  const [hasInsurance, setHasInsurance] = useState(false)
   const [startValue, setStartValue] = useState(toLocalDatetimeValue(defaultStart))
   const [endValue, setEndValue] = useState(toLocalDatetimeValue(defaultEnd))
 
@@ -278,7 +279,9 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
   )
 
   const hours = calculateBillableHours(startDate, endDate)
-  const totalPrice = computeTotal(bags, startDate, endDate)
+  const basePrice = computeTotal(bags, startDate, endDate)
+  const insurancePrice = hasInsurance ? (totalBags * 150) : 0
+  const totalPrice = basePrice + insurancePrice
 
 
 
@@ -420,6 +423,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
           end_time: activeEnd?.toISOString(),
           bags: bagArray,
           payment_method: paymentMethod,
+          has_insurance: hasInsurance,
         }),
       })
       const data = await res.json()
@@ -642,11 +646,17 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
           <div className="p-4 bg-gray-50/50">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 opacity-60">Price Breakdown</p>
             {(Object.entries(bags) as [BagType, number][]).filter(([, q]) => q > 0).map(([type, qty]) => (
-              <div key={type} className="flex justify-between text-xs mb-1.5 last:mb-0">
+              <div key={type} className="flex justify-between text-xs mb-1.5">
                 <span className="text-gray-500 font-medium">{qty}× {LOCAL_BAG_LABELS[type]} × {hours}h</span>
                 <span className="font-bold text-gray-900 tabular-nums font-mono">LKR {(LOCAL_BAG_RATES[type] * qty * hours).toLocaleString()}</span>
               </div>
             ))}
+            {hasInsurance && (
+              <div className="flex justify-between text-xs mb-1.5">
+                <span className="text-gray-500 font-medium">🛡️ Luggage Protection ({totalBags} bag{totalBags > 1 ? 's' : ''})</span>
+                <span className="font-bold text-gray-900 tabular-nums font-mono">LKR {insurancePrice.toLocaleString()}</span>
+              </div>
+            )}
             <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-end">
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Total Amount</p>
@@ -963,6 +973,40 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                         )}
                       </div>
                     )}
+
+                    {/* Luggage Protection Add-on */}
+                    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 space-y-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                            <Shield size={20} className="stroke-[2.5]" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Luggage Protection</p>
+                            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-0.5">Covered up to LKR 40,000 / bag</p>
+                          </div>
+                        </div>
+                        
+                        <label className="relative inline-flex items-center cursor-pointer mt-1 select-none">
+                          <input
+                            type="checkbox"
+                            checked={hasInsurance}
+                            onChange={e => setHasInsurance(e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                      </div>
+
+                      <div className="pl-13 text-xs text-gray-500 leading-relaxed space-y-1.5">
+                        <p className="font-semibold text-gray-700">
+                          🛡️ Opt-in for Luggo Guarantee protection for just <span className="font-black text-emerald-600">LKR 150 per bag</span>.
+                        </p>
+                        <p>
+                          Provides comprehensive coverage up to <span className="font-extrabold text-gray-800">LKR 40,000</span> against accidental damage, loss, or theft during storage.
+                        </p>
+                      </div>
+                    </div>
 
                     <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 space-y-4">
                       <div className="flex items-center gap-3">

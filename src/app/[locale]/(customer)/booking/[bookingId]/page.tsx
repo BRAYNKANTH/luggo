@@ -55,6 +55,7 @@ export default async function BookingDetailPage({
 
   const start = new Date(booking.start_time)
   const end   = new Date(booking.end_time)
+  const hasInsurance = booking.qr_code.endsWith('_ins')
   const isCancellable   = CANCELLABLE.includes(booking.status)
   const showQR          = !['cancelled', 'expired', 'pending_payment'].includes(booking.status)
   const showConfirmSeal = booking.status === 'sealed_waiting_user_confirmation'
@@ -154,6 +155,23 @@ export default async function BookingDetailPage({
 
         {/* ── Progress Tracker ── */}
         <BookingProgressTracker status={booking.status} />
+
+        {/* ── Luggage Protection Covered Banner ── */}
+        {hasInsurance && (
+          <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex items-center gap-3.5 shadow-sm">
+            <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shrink-0 text-white shadow-md shadow-emerald-100">
+              <CheckCircle size={22} className="stroke-[2.5]" />
+            </div>
+            <div>
+              <p className="font-black text-emerald-900 text-sm tracking-tight">
+                🛡️ Luggage Protection Active
+              </p>
+              <p className="text-xs text-emerald-700 font-semibold mt-0.5 leading-relaxed">
+                Your bags are protected by Luggo Guarantee with comprehensive coverage up to <span className="font-extrabold text-emerald-800">LKR 40,000</span> against loss, damage, or theft.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* ── QR Code ── */}
         {showQR && (

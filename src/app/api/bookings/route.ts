@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { hub_id, start_time, end_time, bags, payment_method = 'pay_online' } = parsed.data
+    const { hub_id, start_time, end_time, bags, payment_method = 'pay_online', has_insurance = false } = parsed.data
 
     // Fetch hub
     const { data: hub } = await supabase
@@ -70,7 +70,11 @@ export async function POST(req: NextRequest) {
       }
 
     // Calculate price
-    const totalPrice = calculateBookingPrice(bags, new Date(start_time), new Date(end_time))
+    const basePrice = calculateBookingPrice(bags, new Date(start_time), new Date(end_time))
+    const insurancePrice = has_insurance ? (bags.length * 150) : 0
+    const totalPrice = basePrice + insurancePrice
+    const uuid = crypto.randomUUID().replace(/-/g, '')
+    const qrCode = has_insurance ? `${uuid}_ins` : uuid
 
     // Create booking
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -82,7 +86,7 @@ export async function POST(req: NextRequest) {
         start_time,
         end_time,
         total_price: totalPrice,
-        qr_code: crypto.randomUUID().replace(/-/g, ''),
+        qr_code: qrCode,
       })
       .select('id, qr_code')
       .single() as { data: { id: string; qr_code: string } | null; error: unknown }
@@ -111,6 +115,17 @@ export async function POST(req: NextRequest) {
       type: 'booking',
       gateway_ref: payment_method === 'pay_at_hub' ? 'PAY_AT_HUB' : null
     })
+
+    if (has_insurance) {
+      await serviceClient.rpc('write_audit_log', {
+        p_actor_id: user.id,
+        p_actor_role: 'customer',
+        p_action: 'booking_insurance_purchased',
+        p_entity: 'bookings',
+        p_entity_id: booking.id,
+        p_metadata: { insurance_fee: insurancePrice, coverage_limit: 40000 }
+      })
+    }
 
     if (payment_method === 'pay_at_hub') {
       return NextResponse.json({ bookingId: booking.id })
