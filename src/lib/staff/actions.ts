@@ -95,6 +95,15 @@ export async function markArrived(
 
   if (error) return { error: (error as { message: string }).message }
 
+  // If this booking has a pending Pay at Hub payment, mark it as paid since staff is checking them in (collecting cash)
+  await svc
+    .from('payments' as never)
+    .update({ status: 'paid', gateway_ref: 'CASH_PAYMENT_AT_HUB' })
+    .eq('booking_id', bookingId)
+    .eq('status', 'pending')
+    .eq('type', 'booking')
+    .eq('gateway_ref', 'PAY_AT_HUB')
+
   // Audit
   await svc.rpc('write_audit_log', {
     p_actor_id: userId,

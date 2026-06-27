@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { hub_id, start_time, end_time, bags } = parsed.data
+    const { hub_id, start_time, end_time, bags, payment_method = 'pay_online' } = parsed.data
 
     // Fetch hub
     const { data: hub } = await supabase
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       .insert({
         user_id: user.id,
         hub_id,
-        status: 'pending_payment',
+        status: payment_method === 'pay_at_hub' ? 'confirmed' : 'pending_payment',
         start_time,
         end_time,
         total_price: totalPrice,
@@ -109,7 +109,12 @@ export async function POST(req: NextRequest) {
       amount: totalPrice,
       status: 'pending',
       type: 'booking',
+      gateway_ref: payment_method === 'pay_at_hub' ? 'PAY_AT_HUB' : null
     })
+
+    if (payment_method === 'pay_at_hub') {
+      return NextResponse.json({ bookingId: booking.id })
+    }
 
     // Build PayHere form data
     const merchantId = process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID!

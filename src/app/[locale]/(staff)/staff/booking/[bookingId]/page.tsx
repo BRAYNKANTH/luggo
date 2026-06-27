@@ -61,6 +61,13 @@ export default async function StaffBookingPage({
 
   if (!booking) notFound()
 
+  const { data: bookingPayment } = await supabase
+    .from('payments')
+    .select('status, gateway_ref')
+    .eq('booking_id', booking.id)
+    .eq('type', 'booking')
+    .single() as { data: { status: string; gateway_ref: string | null } | null; error: unknown }
+
   const start = new Date(booking.start_time)
   const end = new Date(booking.end_time)
   const isOverdue = isPast(end)
@@ -121,6 +128,17 @@ export default async function StaffBookingPage({
             <p className="text-white/50 text-xs">{booking.users?.phone ?? booking.users?.email}</p>
           </div>
         </div>
+
+        {/* Pay at Hub Cash Alert */}
+        {bookingPayment?.status === 'pending' && bookingPayment?.gateway_ref === 'PAY_AT_HUB' && booking.status === 'confirmed' && (
+          <div className="bg-amber-500/10 border border-amber-400/20 rounded-2xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-amber-400 font-bold text-sm mb-0.5">💵 Collect Booking Payment (Cash)</p>
+              <p className="text-white/50 text-xs">Customer chose Cash on Arrival. Collect LKR {booking.total_price.toLocaleString()} at counter.</p>
+            </div>
+            <p className="text-xl font-bold text-amber-400">LKR {booking.total_price.toLocaleString()}</p>
+          </div>
+        )}
 
         {/* Identity Verification Info */}
         {(booking.status === 'arrived' || booking.status === 'confirmed') && (

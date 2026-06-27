@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   CalendarDays, Clock, AlertCircle, Shield,
   ShieldCheck, Mail, Smartphone, RefreshCw, CheckCircle2,
-  User, Fingerprint, ChevronLeft, Package, Minus, Plus, ArrowRight
+  User, Fingerprint, ChevronLeft, Package, Minus, Plus, ArrowRight,
+  CreditCard
 } from 'lucide-react'
 import { Spinner } from '@/components/ui/Spinner'
 import { addHours, startOfHour, format } from 'date-fns'
@@ -241,6 +242,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
   // Core state
   const [wizardStep, setWizardStep] = useState<1 | 2>(1)
   const [direction, setDirection] = useState(1)
+  const [paymentMethod, setPaymentMethod] = useState<'pay_online' | 'pay_at_hub'>('pay_online')
   const [startValue, setStartValue] = useState(toLocalDatetimeValue(defaultStart))
   const [endValue, setEndValue] = useState(toLocalDatetimeValue(defaultEnd))
 
@@ -492,6 +494,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
           start_time: activeStart?.toISOString(),
           end_time: activeEnd?.toISOString(),
           bags: bagArray,
+          payment_method: paymentMethod,
         }),
       })
       const data = await res.json()
@@ -500,7 +503,11 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
         setLoading(false)
         return
       }
-      setPayhereData(data.payhere)
+      if (paymentMethod === 'pay_at_hub') {
+        router.push(`/booking/${data.bookingId}?payment=success`)
+      } else {
+        setPayhereData(data.payhere)
+      }
     } catch {
       setError('Network error. Please check your connection.')
       setLoading(false)
@@ -1067,6 +1074,55 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                       </div>
                     )}
 
+                    {/* Payment Method Selector */}
+                    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-brand/10 rounded-xl flex items-center justify-center text-brand">
+                          <CreditCard size={20} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Payment Method</p>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Select how you want to pay</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('pay_online')}
+                          className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-start text-left gap-1 ${
+                            paymentMethod === 'pay_online'
+                              ? 'border-brand bg-brand/[0.04] text-gray-900 ring-1 ring-brand/10'
+                              : 'border-gray-100 bg-white text-gray-600 hover:border-gray-200'
+                          }`}
+                        >
+                          <p className="font-bold text-sm flex items-center gap-1.5">
+                            💳 Pay Online (Card / Wallet)
+                          </p>
+                          <p className="text-[10px] opacity-70 leading-normal mt-1">
+                            Pay securely online using credit/debit card, Genie, or mobile wallets via PayHere.
+                          </p>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('pay_at_hub')}
+                          className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-start text-left gap-1 ${
+                            paymentMethod === 'pay_at_hub'
+                              ? 'border-brand bg-brand/[0.04] text-gray-900 ring-1 ring-brand/10'
+                              : 'border-gray-100 bg-white text-gray-600 hover:border-gray-200'
+                          }`}
+                        >
+                          <p className="font-bold text-sm flex items-center gap-1.5">
+                            💵 Pay at Hub (Cash on Arrival)
+                          </p>
+                          <p className="text-[10px] opacity-70 leading-normal mt-1">
+                            Reserve online now, and pay in cash directly to our counter staff when you walk in to drop off your bags.
+                          </p>
+                        </button>
+                      </div>
+                    </div>
+
                     {/* Prohibited items declaration */}
                     <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 space-y-4">
                       <label className={`flex items-start gap-4 cursor-pointer transition-all`}>
@@ -1197,7 +1253,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                 className="w-full h-14 rounded-2xl font-black text-base shadow-xl shadow-brand/20 transition-all active:scale-95 tracking-tight"
                 disabled={!isStep2Valid}
               >
-                {totalPrice > 0 ? `Pay LKR ${totalPrice.toLocaleString()}` : 'Confirm & Proceed'}
+                {paymentMethod === 'pay_at_hub' ? 'Confirm Reservation (Pay Cash at Hub)' : (totalPrice > 0 ? `Pay LKR ${totalPrice.toLocaleString()} Online` : 'Confirm & Proceed')}
               </Button>
             )}
           </div>
