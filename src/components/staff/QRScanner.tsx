@@ -18,7 +18,7 @@ export function QRScanner({ onScan, disabled }: QRScannerProps) {
   const [cameraError, setCameraError] = useState<string | null>(null)
   const [manualCode, setManualCode] = useState('')
   const [showManual, setShowManual] = useState(false)
-  const scannerRef = useRef<{ stop: () => Promise<void> } | null>(null)
+  const scannerRef = useRef<{ stop: () => Promise<void>; isScanning?: boolean } | null>(null)
   const scannedRef = useRef(false)
   const ELEMENT_ID = 'luggo-qr-scanner'
 
@@ -66,7 +66,7 @@ export function QRScanner({ onScan, disabled }: QRScannerProps) {
 
     return () => {
       mounted = false
-      if (scannerRef.current && (scannerRef.current as any).isScanning) {
+      if (scannerRef.current && scannerRef.current.isScanning) {
         scannerRef.current.stop().catch(() => {})
       }
     }
