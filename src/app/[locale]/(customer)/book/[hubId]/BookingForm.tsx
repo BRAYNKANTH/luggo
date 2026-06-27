@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   CalendarDays, Clock, AlertCircle, Shield,
@@ -51,9 +52,9 @@ const LOCAL_BAG_LABELS: Record<BagType, string> = {
 }
 
 const LOCAL_BAG_DESC: Record<BagType, string> = {
-  small: 'Backpack / hand luggage',
-  regular: 'Cabin bag / carry-on',
-  large: 'Check-in suitcase',
+  small: 'Backpack, handbag, laptop bag, or briefcases',
+  regular: 'Cabin luggage, standard carry-on suitcase, or duffel bag',
+  large: 'Large check-in suitcase, backpacker pack, golf clubs, or oversized gear',
 }
 
 const LOCAL_BAG_RATES: Record<BagType, number> = {
@@ -230,6 +231,7 @@ const slideVariants = {
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export function BookingForm({ hub, initialProfile }: BookingFormProps) {
+  const router = useRouter()
   const payhereFormRef = useRef<HTMLFormElement>(null)
   const [payhereData, setPayhereData] = useState<PayhereFormData | null>(null)
 
@@ -319,8 +321,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
     name.trim().length >= 2 &&
     isEmail(email) &&
     isValidSriLankanPhone(phone) &&
-    idType &&
-    isValidId(idType, idNumber)
+    (!idNumber.trim() || (idType && isValidId(idType, idNumber)))
 
   const isPhoneVerified = phoneVerificationStatus === 'verified'
 
@@ -590,7 +591,8 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
         return
       }
       setPhoneVerificationStatus('verified')
-      window.location.reload()
+      router.refresh()
+      submitBooking()
     } catch {
       setLoading(false)
       setPhoneVerificationStatus('error')
@@ -771,9 +773,14 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {/* Drop-off Date/Time */}
                         <div className="space-y-3">
-                          <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">
-                            <CalendarDays size={14} className="text-brand" /> Drop-off
-                          </label>
+                          <div className="flex justify-between items-center pr-1">
+                            <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">
+                              <CalendarDays size={14} className="text-brand" /> Drop-off
+                            </label>
+                            <span className="text-[9px] font-extrabold text-gray-400 bg-gray-100/80 px-2 py-0.5 rounded-full uppercase">
+                              Open {hub.open_time.slice(0, 5)} - {hub.close_time.slice(0, 5)}
+                            </span>
+                          </div>
                           <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
                             <input
                               type="date"
@@ -795,9 +802,14 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
 
                         {/* Pick-up Date/Time */}
                         <div className="space-y-3">
-                          <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">
-                            <Clock size={14} className="text-brand" /> Pick-up
-                          </label>
+                          <div className="flex justify-between items-center pr-1">
+                            <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">
+                              <Clock size={14} className="text-brand" /> Pick-up
+                            </label>
+                            <span className="text-[9px] font-extrabold text-gray-400 bg-gray-100/80 px-2 py-0.5 rounded-full uppercase">
+                              Open {hub.open_time.slice(0, 5)} - {hub.close_time.slice(0, 5)}
+                            </span>
+                          </div>
                           <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
                             <input
                               type="date"
@@ -979,14 +991,14 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
 
                         <div className="sm:col-span-2 space-y-1">
                           <FieldInput
-                            label="NIC / Passport number"
+                            label="NIC / Passport number (Optional)"
                             icon={Fingerprint}
                             value={idNumber}
                             onChange={e => setIdNumber(e.target.value)}
                             placeholder={idType === 'NIC' ? 'e.g. 981234567V or 199812345678' : 'e.g. N1234567'}
                           />
                           <p className="text-[10px] text-gray-400 font-semibold pl-1 leading-relaxed">
-                            💡 This will be checked against your physical ID at drop-off. Please bring the same NIC or passport when dropping off your luggage.
+                            💡 This will be checked against your physical ID at drop-off. If left blank, you can present it directly at the hub counter.
                           </p>
                         </div>
                       </div>

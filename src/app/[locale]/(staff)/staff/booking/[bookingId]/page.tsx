@@ -8,7 +8,7 @@ import { BookingStatusBadge } from '@/components/customer/BookingStatusBadge'
 import { RealtimeRefresher } from '@/components/shared/RealtimeRefresher'
 import { ChevronLeft, User, Clock, Package, Tag } from 'lucide-react'
 import { format, isPast } from 'date-fns'
-import { markArrivedAction } from '@/lib/staff/actions'
+import { markArrivedAction, bypassSealConfirmationAction, completePickupWithCashAction } from '@/lib/staff/actions'
 import { StaffVerificationForm } from '@/components/staff/StaffVerificationForm'
 import { CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react'
 import { type BookingStatus, type BagType } from '@/types/database'
@@ -179,12 +179,19 @@ export default async function StaffBookingPage({
         </div>
 
         {lateFeeAmount > 0 && booking.status === 'overstayed' && (
-          <div className="bg-red-500/10 border border-red-400/20 rounded-2xl p-4 flex items-center justify-between">
-            <div>
-              <p className="text-red-300 font-semibold text-sm mb-0.5">Pending Late Fee</p>
-              <p className="text-red-200/60 text-xs">Customer must pay this in their app</p>
+          <div className="bg-red-500/10 border border-red-400/20 rounded-2xl p-4 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-red-300 font-semibold text-sm mb-0.5">Pending Late Fee</p>
+                <p className="text-red-200/60 text-xs">Customer can pay online in their app</p>
+              </div>
+              <p className="text-xl font-bold text-red-300">LKR {lateFeeAmount.toLocaleString()}</p>
             </div>
-            <p className="text-xl font-bold text-red-300">LKR {lateFeeAmount.toLocaleString()}</p>
+            <form action={completePickupWithCashAction.bind(null, booking.id)}>
+              <Button type="submit" fullWidth size="sm" className="bg-brand-accent text-brand-dark hover:bg-brand-accent/90">
+                💵 Collect LKR {lateFeeAmount.toLocaleString()} Cash & Release Bags
+              </Button>
+            </form>
           </div>
         )}
 
@@ -214,11 +221,18 @@ export default async function StaffBookingPage({
 
         {/* Waiting for customer message */}
         {nextAction === 'waiting' && booking.status === 'sealed_waiting_user_confirmation' && (
-          <div className="bg-yellow-500/10 border border-yellow-400/20 rounded-2xl p-4">
-            <p className="text-yellow-300 font-semibold text-sm">Waiting for customer</p>
-            <p className="text-yellow-200/60 text-xs mt-1">
-              Customer needs to review and confirm the seal photo in the Luggo app.
-            </p>
+          <div className="bg-yellow-500/10 border border-yellow-400/20 rounded-2xl p-4 space-y-3">
+            <div>
+              <p className="text-yellow-300 font-semibold text-sm">Waiting for customer</p>
+              <p className="text-yellow-200/60 text-xs mt-1">
+                Customer needs to review and confirm the seal photo in the Luggo app.
+              </p>
+            </div>
+            <form action={bypassSealConfirmationAction.bind(null, booking.id)}>
+              <Button type="submit" variant="outline" fullWidth size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+                🗣️ Customer verbally confirmed (No Internet)
+              </Button>
+            </form>
           </div>
         )}
         {nextAction === 'seal' && booking.status === 'disputed' && (

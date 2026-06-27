@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { type PostgrestError } from '@supabase/supabase-js'
 import { uuidSchema } from '@/lib/validators/common'
+import { type BagType } from '@/types/database'
+import { calculateLateFee } from '@/lib/utils/pricing'
 
 
 // ─────────────────────────────────────────────
@@ -581,4 +583,157 @@ export async function rejectBookingIdentity(bookingId: string, reason: string) {
   })
 
   return { success: true }
+}
+
+// ─────────────────────────────────────────────
+// BYPASS CUSTOMER SEAL CONFIRMATION (VERBAL)
+// ─────────────────────────────────────────────
+export async function bypassSealConfirmationAction(bookingId: string): Promise<void> {
+  await bypassSealConfirmation(bookingId)
+  redirect(`/staff/booking/${bookingId}`)
+}
+
+export async function bypassSealConfirmation(
+  bookingId: string
+): Promise<{ error?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, hubId, userId } = await requireStaff()
+
+  const { data: booking } = await svc
+    .from('bookings' as never)
+    .select('id, status')
+    .eq('id', bookingId)
+    .eq('hub_id', hubId)
+    .single() as { data: { id: string; status: string } | null }
+
+  if (!booking) return { error: 'Booking not found.' }
+  if (booking.status !== 'sealed_waiting_user_confirmation') {
+    return { error: `Seal confirmation bypass is only valid for sealed bookings waiting for customer confirmation. Current status: ${booking.status}` }
+  }
+
+  // 1. Mark seal proof as verbally confirmed
+  await svc
+    .from('seal_proofs' as never)
+    .update({ confirmed_by_user_at: new Date().toISOString() })
+    .eq('booking_id', bookingId)
+
+  // 2. Advance status → active_storage
+  await svc
+    .from('bookings' as never)
+    .update({ status: 'active_storage' })
+    .eq('id', bookingId)
+
+  // Audit
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'seal_confirmed_verbally_by_staff',
+    p_entity: 'bookings',
+    p_entity_id: bookingId
+  })
+
+  return {}
+}
+
+// ─────────────────────────────────────────────
+// COMPLETE PICKUP WITH CASH PAYMENT (LATE FEES)
+// ─────────────────────────────────────────────
+export async function completePickupWithCashAction(bookingId: string): Promise<void> {
+  await completePickupWithCash(bookingId)
+  redirect(`/staff/booking/${bookingId}`)
+}
+
+export async function completePickupWithCash(
+  bookingId: string
+): Promise<{ error?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, hubId, userId } = await requireStaff()
+
+  // Fetch booking with bags
+  const { data: booking } = await svc
+    .from('bookings' as never)
+    .select('id, status, end_time, user_id, hubs(name), users(name, phone, email), booking_bags(id, bag_type)')
+    .eq('id', bookingId)
+    .eq('hub_id', hubId)
+    .single() as {
+      data: {
+        id: string
+        status: string
+        end_time: string
+        user_id: string
+        hubs: { name: string } | null
+        users: { name: string; phone: string | null; email: string } | null
+        booking_bags: { id: string; bag_type: BagType }[]
+      } | null
+    }
+
+  if (!booking) return { error: 'Booking not found.' }
+  if (booking.status !== 'overstayed') {
+    return { error: `Cash payment bypass is only valid for overstayed bookings. Current status: ${booking.status}` }
+  }
+
+  // Calculate late fee
+  const end = new Date(booking.end_time)
+  const lateFeeAmount = calculateLateFee(booking.booking_bags, end)
+
+  if (lateFeeAmount > 0) {
+    // 1. Create a paid payment record for cash
+    await svc
+      .from('payments' as never)
+      .insert({
+        booking_id: bookingId,
+        amount: lateFeeAmount,
+        status: 'paid',
+        type: 'late_fee',
+        gateway_ref: 'CASH_PAYMENT_BYPASS'
+      })
+
+    // 2. Cancel/fail any pending online payments for this late_fee
+    await svc
+      .from('payments' as never)
+      .update({ status: 'failed' })
+      .eq('booking_id', bookingId)
+      .eq('type', 'late_fee')
+      .eq('status', 'pending')
+  }
+
+  // 3. Mark booking as completed
+  await svc
+    .from('bookings' as never)
+    .update({ status: 'completed' })
+    .eq('id', bookingId)
+
+  // Audit log
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'late_fee_paid_cash_and_pickup_completed',
+    p_entity: 'bookings',
+    p_entity_id: bookingId,
+    p_metadata: { cashPaid: lateFeeAmount }
+  })
+
+  const hubName = booking.hubs?.name ?? 'the hub'
+
+  // Notifications
+  await svc.from('notifications' as never).insert({
+    user_id: booking.user_id,
+    type: 'general',
+    message: `Your bags have been collected from ${hubName}. Late fee of LKR ${lateFeeAmount.toLocaleString()} was paid in cash. Thank you!`,
+    read: false,
+  })
+
+  if (booking.users?.phone) {
+    const { sendSMS } = await import('@/lib/utils/sms')
+    sendSMS(
+      booking.users.phone,
+      `Luggo: Your bags have been collected from ${hubName}. LKR ${lateFeeAmount.toLocaleString()} late fee paid in cash. Thank you! 🧳`
+    ).catch(console.error)
+  }
+
+  return {}
 }
