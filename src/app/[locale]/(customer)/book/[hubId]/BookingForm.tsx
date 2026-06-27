@@ -274,6 +274,30 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
   const endDate = endValue ? new Date(endValue) : null
   const totalBags = Object.values(bags).reduce((s, n) => s + n, 0)
   const minDatetime = toLocalDatetimeValue(new Date())
+  const todayStr = minDatetime.split('T')[0]
+  const isFutureStart = startDate ? startDate.getTime() > Date.now() - 5 * 60 * 1000 : false
+
+  // Calculate minimum time for drop-off time input
+  const getMinDropOffTime = () => {
+    if (dropOffDate === todayStr) {
+      const now = new Date()
+      // Add a 5-minute buffer and format as HH:MM
+      const nowBuffer = new Date(now.getTime() + 5 * 60 * 1000)
+      const nowStr = `${String(nowBuffer.getHours()).padStart(2, '0')}:${String(nowBuffer.getMinutes()).padStart(2, '0')}`
+      // If current time is past closing time, or before opening time, handle it
+      return nowStr > hub.open_time.slice(0, 5) ? nowStr : hub.open_time.slice(0, 5)
+    }
+    return hub.open_time.slice(0, 5)
+  }
+
+  // Calculate minimum time for pick-up time input
+  const getMinPickUpTime = () => {
+    if (pickUpDate === dropOffDate) {
+      // If pick-up is on the same day as drop-off, it must be after drop-off time
+      return dropOffTime || hub.open_time.slice(0, 5)
+    }
+    return hub.open_time.slice(0, 5)
+  }
 
   const isStartWithinOps = isWithinOperatingHours(startDate, hub.open_time, hub.close_time)
   const isEndWithinOps = isWithinOperatingHours(endDate, hub.open_time, hub.close_time)
@@ -284,7 +308,8 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
     pickUpDate && pickUpTime &&
     startDate && endDate &&
     endDate > startDate &&
-    timesWithinOperating
+    timesWithinOperating &&
+    isFutureStart
   )
 
   const hours = calculateBillableHours(startDate, endDate)
@@ -759,6 +784,8 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                             />
                             <input
                               type="time"
+                              min={getMinDropOffTime()}
+                              max={hub.close_time.slice(0, 5)}
                               value={dropOffTime}
                               onChange={e => handleDropOffChange(dropOffDate, e.target.value)}
                               className="w-full px-3 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all shadow-inner"
@@ -781,6 +808,8 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                             />
                             <input
                               type="time"
+                              min={getMinPickUpTime()}
+                              max={hub.close_time.slice(0, 5)}
                               value={pickUpTime}
                               onChange={e => handlePickUpChange(pickUpDate, e.target.value)}
                               className="w-full px-3 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all shadow-inner"
@@ -802,7 +831,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                           <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-2xl py-2.5 px-4">
                             <AlertCircle size={14} className="text-amber-500 shrink-0" />
                             <p className="text-xs font-bold text-amber-700">
-                              {!timesWithinOperating ? 'Selected times must be within hub operating hours.' : 'Pick-up time must be after drop-off time.'}
+                              {!isFutureStart ? 'Drop-off time must be in the future.' : !timesWithinOperating ? 'Selected times must be within hub operating hours.' : 'Pick-up time must be after drop-off time.'}
                             </p>
                           </div>
                         )
