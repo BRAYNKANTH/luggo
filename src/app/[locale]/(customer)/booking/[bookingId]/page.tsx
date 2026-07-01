@@ -10,7 +10,7 @@ import { ExtendBookingCTA } from '@/components/customer/ExtendBookingCTA'
 import { cancelBooking } from '@/lib/auth/actions'
 import {
   MapPin, Clock, Package, AlertTriangle, CheckCircle,
-  ShoppingBag, CreditCard, QrCode
+  ShoppingBag, CreditCard, QrCode, ShieldCheck
 } from 'lucide-react'
 import { BookingProgressTracker } from '@/components/customer/BookingProgressTracker'
 import { format } from 'date-fns'
@@ -52,6 +52,21 @@ export default async function BookingDetailPage({
     .single() as { data: BookingDetail | null; error: unknown }
 
   if (!booking) notFound()
+
+  // Fetch seal proof if it exists
+  const { data: sealProof } = await supabase
+    .from('seal_proofs')
+    .select('photo_url')
+    .eq('booking_id', booking.id)
+    .maybeSingle() as { data: { photo_url: string } | null; error: unknown }
+
+  let signedSealPhotoUrl: string | null = null
+  if (sealProof) {
+    const { data: signedData } = await supabase.storage
+      .from('seal-proofs')
+      .createSignedUrl(sealProof.photo_url, 3600)
+    signedSealPhotoUrl = signedData?.signedUrl ?? null
+  }
 
   const start = new Date(booking.start_time)
   const end   = new Date(booking.end_time)
@@ -184,6 +199,31 @@ export default async function BookingDetailPage({
               <BookingQR qrCode={booking.qr_code} bookingId={booking.id} />
             </div>
             <p className="text-[10px] md:text-xs text-gray-400 text-center">Show this at the hub desk for drop-off and collection</p>
+          </div>
+        )}
+
+        {/* ── Seal Proof Photo ── */}
+        {signedSealPhotoUrl && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 md:p-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={16} className="text-emerald-500" />
+                <span className="text-sm font-semibold text-gray-700">Storage Seal Proof</span>
+              </div>
+              <span className="text-[10px] bg-green-50 text-green-700 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                Sealed & Secure
+              </span>
+            </div>
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-gray-100 bg-gray-50 flex items-center justify-center">
+              <img
+                src={signedSealPhotoUrl}
+                alt="Luggage storage seal proof"
+                className="object-cover w-full h-full"
+              />
+            </div>
+            <p className="text-[10px] md:text-xs text-gray-400 text-center">
+              This photo confirms that your luggage zip ties/locks are sealed and secure in our hub.
+            </p>
           </div>
         )}
 

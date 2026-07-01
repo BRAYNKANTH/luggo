@@ -226,15 +226,20 @@ export async function saveSealProof(
     return { error: `Expected "sealing_in_progress" or "disputed" status. Got: ${booking.status}` }
   }
 
-  // Save seal proof record
+  // Save seal proof record with automated customer confirmation
   const { error: proofError } = await svc
     .from('seal_proofs' as never)
-    .insert({ booking_id: bookingId, photo_url: photoPath, uploaded_by_staff_id: userId }) as { error: { message: string } | null }
+    .insert({
+      booking_id: bookingId,
+      photo_url: photoPath,
+      uploaded_by_staff_id: userId,
+      confirmed_by_user_at: new Date().toISOString()
+    }) as { error: { message: string } | null }
 
   if (proofError) return { error: proofError.message }
 
-  // Advance booking status
-  await svc.from('bookings' as never).update({ status: 'sealed_waiting_user_confirmation' }).eq('id', bookingId)
+  // Advance booking status directly to active_storage
+  await svc.from('bookings' as never).update({ status: 'active_storage' }).eq('id', bookingId)
 
   // Audit
   await svc.rpc('write_audit_log', {
@@ -249,20 +254,20 @@ export async function saveSealProof(
   const hubName = booking.hubs?.name ?? 'the hub'
   const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
-  // In-app notification
+  // In-app notification (seal is ready & active in storage)
   await svc.from('notifications' as never).insert({
     user_id: booking.user_id,
     type: 'seal_ready',
-    message: `Your bags at ${hubName} have been sealed. Please review and confirm the seal in the app.`,
+    message: `Your bags at ${hubName} have been sealed and are now in secure storage. You can view the seal photo in the app.`,
     read: false,
   })
 
-  // SMS — let customer know to check the app
+  // SMS — let customer know their bags are in secure storage
   if (booking.users?.phone) {
     const { sendSMS } = await import('@/lib/utils/sms')
     sendSMS(
       booking.users.phone,
-      `Luggo: Your bags at ${hubName} have been sealed! Please open the app to review the seal photo and confirm. ${appUrl}/booking/${bookingId}`
+      `Luggo: Your bags at ${hubName} have been sealed and are in secure storage! View details: ${appUrl}/booking/${bookingId}`
     ).catch(console.error)
   }
 

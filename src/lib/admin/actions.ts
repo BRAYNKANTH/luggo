@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { type ComplaintStatus, type UserRole } from '@/types/database'
 import { uuidSchema, capacitySchema } from '@/lib/validators/common'
+import { z } from 'zod'
 
 // ---------------------------------------------------------------------------
 // Guard: caller must be an admin role
@@ -277,4 +278,82 @@ export async function adminUpdateBookingStatus(
 
   revalidatePath('/admin/bookings')
   return {}
+}
+
+// ---------------------------------------------------------------------------
+// Create Hub
+// ---------------------------------------------------------------------------
+const createHubSchema = z.object({
+  name: z.string().min(3, 'Name must be at least 3 characters'),
+  alias: z.string().regex(/^[A-Z]{2,6}$/, 'Alias must be 2-6 uppercase letters (e.g. CMB)'),
+  location: z.string().min(2, 'Location must be at least 2 characters'),
+  address: z.string().min(5, 'Address must be at least 5 characters'),
+  capacity: z.number().int().min(1, 'Capacity must be at least 1').max(1000, 'Capacity cannot exceed 1000'),
+  openTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Open time must be in HH:MM format'),
+  closeTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Close time must be in HH:MM format'),
+  latitude: z.number().min(-90).max(90, 'Latitude must be between -90 and 90'),
+  longitude: z.number().min(-180).max(180, 'Longitude must be between -180 and 180'),
+})
+
+export async function createHub(data: {
+  name: string
+  alias: string
+  location: string
+  address: string
+  capacity: number
+  openTime: string
+  closeTime: string
+  latitude: number
+  longitude: number
+}): Promise<{ error?: string; success?: boolean }> {
+  const { svc, userId, role, error: authError } = await requireAdmin()
+  if (authError || !svc) return { error: authError ?? 'Auth error' }
+
+  const parsed = createHubSchema.safeParse(data)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const { name, alias, location, address, capacity, openTime, closeTime, latitude, longitude } = parsed.data
+
+  const { data: newHub, error: insertError } = await svc
+    .from('hubs' as never)
+    .insert({
+      name: name.trim(),
+      alias: alias.toUpperCase(),
+      location: location.trim(),
+      address: address.trim(),
+      capacity,
+      open_time: openTime,
+      close_time: closeTime,
+      latitude,
+      longitude,
+      active: true,
+    })
+    .select('id')
+    .single() as { data: { id: string } | null; error: { message: string } | null }
+
+  if (insertError) {
+    if (insertError.message.includes('unique_violation') || insertError.message.includes('duplicate key value') || insertError.message.toLowerCase().includes('unique')) {
+      return { error: `Hub with alias "${alias}" already exists.` }
+    }
+    return { error: insertError.message }
+  }
+
+  if (newHub) {
+    await svc.rpc('write_audit_log', {
+      p_actor_id: userId,
+      p_actor_role: role,
+      p_action: 'hub_created',
+      p_entity: 'hubs',
+      p_entity_id: newHub.id,
+      p_metadata: { name, alias: alias.toUpperCase() }
+    })
+  }
+
+  revalidatePath('/admin/hubs')
+  revalidatePath('/hubs')
+  revalidatePath('/')
+
+  return { success: true }
 }

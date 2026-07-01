@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { HubToggle } from '@/components/admin/HubToggle'
 import { HubImageUpload } from '@/components/admin/HubImageUpload'
+import { HubForm } from '@/components/admin/HubForm'
 import { MapPin, Clock, Users } from 'lucide-react'
 import { type UserRole } from '@/types/database'
 
@@ -55,6 +56,15 @@ export default async function AdminHubsPage() {
       <div className="px-6 py-8 max-w-5xl mx-auto">
         <h1 className="text-2xl font-extrabold text-ocean-900 mb-1">Hubs</h1>
         <p className="text-sm text-gray-400 mb-8">{hubs?.length ?? 0} hubs registered</p>
+
+        {/* Add new hub */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-8">
+          <h2 className="font-bold text-ocean-900 mb-1">Add New Hub</h2>
+          <p className="text-xs text-gray-400 mb-5">
+            Configure the name, alias prefix, location coordinates, capacity, and business hours for a new luggage hub.
+          </p>
+          <HubForm />
+        </div>
 
         <div className="space-y-4">
           {hubs?.map((hub) => {
