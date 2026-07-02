@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Logo } from '@/components/ui/Logo'
 import { BagRegistrationForm } from '@/components/staff/BagRegistrationForm'
 import { type BagType } from '@/types/database'
+import { allocateSlotForBooking } from '@/lib/staff/actions'
 
 type Bag = { 
   id: string
@@ -20,6 +21,7 @@ type BookingDetail = {
   status: string
   walk_in_name: string | null
   walk_in_phone: string | null
+  slot_number: number | null
   users: { name: string; phone: string | null } | null
   booking_bags: Bag[]
 }
@@ -52,6 +54,7 @@ export default async function BagRegistrationPage({
       status, 
       walk_in_name,
       walk_in_phone,
+      slot_number,
       users(name, phone),
       booking_bags(id, bag_type, seal_number, bag_tag_id, seal_status, notes)
     `)
@@ -68,6 +71,17 @@ export default async function BagRegistrationPage({
   const allowed = ['arrived', 'sealing_in_progress', 'identity_verified', 'confirmed']
   if (!allowed.includes(booking.status)) {
     redirect(`/staff/booking/${params.bookingId}`)
+  }
+
+  // Allocate slot number on load if it is missing
+  let slotNumber = booking.slot_number
+  if (!slotNumber) {
+    try {
+      slotNumber = await allocateSlotForBooking(supabase, staffRow.hub_id, booking.id)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Slot allocation failed'
+      redirect(`/staff/booking/${params.bookingId}?error=${encodeURIComponent(msg)}`)
+    }
   }
 
   const customerName = booking.walk_in_name || booking.users?.name || 'Walk-In Guest'
@@ -90,15 +104,16 @@ export default async function BagRegistrationPage({
       <div className="px-4 py-5 space-y-4 max-w-4xl mx-auto">
         <div>
           <span className="text-[10px] font-black uppercase tracking-widest text-brand-light">Step 2 of 2</span>
-          <h1 className="text-2xl font-extrabold mb-1 tracking-tight">Register Reusable Bag Tags & Seals</h1>
+          <h1 className="text-2xl font-extrabold mb-1 tracking-tight">Register Bag Seals</h1>
           <p className="text-white/50 text-xs">
-            Assign a physical reusable tag, select bag type, and enter/scan physical seals for customer **{customerName}**.
+            Verify and enter/scan physical zip-lock seals for customer **{customerName}**.
           </p>
         </div>
 
         <BagRegistrationForm
           bookingId={booking.id}
           initialBags={booking.booking_bags}
+          slotNumber={slotNumber}
         />
       </div>
     </div>

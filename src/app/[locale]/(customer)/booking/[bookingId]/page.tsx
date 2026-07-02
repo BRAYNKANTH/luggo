@@ -25,6 +25,7 @@ type BookingDetail = {
   total_price: number
   qr_code: string
   created_at: string
+  slot_number: number | null
   hubs: { name: string; alias: string; address: string } | null
   booking_bags: { id: string; bag_type: BagType; sticker_number: string | null; seal_number: string | null }[]
 }
@@ -46,7 +47,7 @@ export default async function BookingDetailPage({
 
   const { data: booking } = await supabase
     .from('bookings')
-    .select('id, status, start_time, end_time, total_price, qr_code, created_at, hubs(name, alias, address), booking_bags(id, bag_type, sticker_number, seal_number)')
+    .select('id, status, start_time, end_time, total_price, qr_code, created_at, slot_number, hubs(name, alias, address), booking_bags(id, bag_type, sticker_number, seal_number)')
     .eq('id', params.bookingId)
     .eq('user_id', user.id)
     .single() as { data: BookingDetail | null; error: unknown }
@@ -230,15 +231,25 @@ export default async function BookingDetailPage({
         {/* ── Details grid ── */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
           {/* Location */}
-          <div className="flex items-center gap-3 p-4">
-            <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center text-brand shrink-0">
-              <MapPin size={16} />
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center text-brand shrink-0">
+                <MapPin size={16} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-gray-400 font-medium">Hub</p>
+                <p className="text-sm font-semibold text-gray-900 truncate">{booking.hubs?.name}</p>
+                <p className="text-xs text-gray-500 truncate">{booking.hubs?.address}</p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-xs text-gray-400 font-medium">Hub</p>
-              <p className="text-sm font-semibold text-gray-900 truncate">{booking.hubs?.name}</p>
-              <p className="text-xs text-gray-500 truncate">{booking.hubs?.address}</p>
-            </div>
+            {booking.slot_number && (
+              <div className="text-right shrink-0">
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-wider">Storage Slot</p>
+                <p className="text-sm font-black text-brand bg-brand/10 border border-brand/20 px-3 py-1 rounded-xl">
+                  Slot #{booking.slot_number}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Timing */}
@@ -268,21 +279,14 @@ export default async function BookingDetailPage({
             </div>
             <div className="space-y-2 pl-12">
               {booking.booking_bags.map((bag) => (
-                <div key={bag.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                  <div className="flex flex-col">
-                    <span className="text-sm text-gray-700">{BAG_LABELS[bag.bag_type]}</span>
-                    {bag.seal_number && (
-                      <span className="text-[10px] text-gray-400 font-mono font-semibold">
-                        🔒 Seal: {bag.seal_number}
-                      </span>
-                    )}
-                  </div>
-                  {bag.sticker_number ? (
-                    <span className="text-xs font-mono font-bold text-brand bg-brand/10 px-2 py-0.5 rounded-lg">
-                      {booking.hubs?.alias}-{bag.sticker_number}
+                <div key={bag.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0 text-sm text-gray-700">
+                  <span>{BAG_LABELS[bag.bag_type]}</span>
+                  {bag.seal_number ? (
+                    <span className="font-mono font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg text-xs">
+                      🔒 Seal: {bag.seal_number}
                     </span>
                   ) : (
-                    <span className="text-xs text-gray-300">No sticker yet</span>
+                    <span className="text-xs text-gray-400 font-semibold italic">Unsealable</span>
                   )}
                 </div>
               ))}

@@ -46,6 +46,7 @@ type BookingDetail = {
   total_price: number
   qr_code: string
   created_at: string
+  slot_number: number | null
   users: { id: string; name: string; email: string; phone: string | null } | null
   hubs: { name: string; alias: string; address: string } | null
   booking_bags: { id: string; bag_type: BagType; sticker_number: string | null; seal_number: string | null }[]
@@ -87,7 +88,7 @@ export default async function AdminBookingDetailPage({
   const { data: booking } = await svc
     .from('bookings' as never)
     .select(`
-      id, status, start_time, end_time, total_price, qr_code, created_at,
+      id, status, start_time, end_time, total_price, qr_code, created_at, slot_number,
       users ( id, name, email, phone ),
       hubs ( name, alias, address ),
       booking_bags ( id, bag_type, sticker_number, seal_number )
@@ -163,12 +164,22 @@ export default async function AdminBookingDetailPage({
 
             {/* Hub + timing */}
             <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-              <div>
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                  <MapPin size={13} /> Hub
-                </h2>
-                <p className="font-semibold text-ocean-900">{booking.hubs?.name}</p>
-                <p className="text-sm text-gray-500">{booking.hubs?.address}</p>
+              <div className="flex items-start justify-between w-full">
+                <div>
+                  <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <MapPin size={13} /> Hub
+                  </h2>
+                  <p className="font-semibold text-ocean-900">{booking.hubs?.name}</p>
+                  <p className="text-sm text-gray-500">{booking.hubs?.address}</p>
+                </div>
+                {booking.slot_number && (
+                  <div className="text-right shrink-0">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Assigned Slot</p>
+                    <span className="text-xs font-black bg-brand/10 border border-brand/20 text-brand px-3 py-1.5 rounded-xl">
+                      Slot #{booking.slot_number}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="border-t border-gray-50 pt-4 grid grid-cols-2 gap-4">
                 <div>

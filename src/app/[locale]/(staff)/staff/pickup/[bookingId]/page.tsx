@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, Package, AlertTriangle, ShieldAlert } from 'lucide-react'
+import { ChevronLeft, Package, AlertTriangle, ShieldAlert, MapPin } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { Logo } from '@/components/ui/Logo'
 import { Button } from '@/components/ui/Button'
@@ -30,6 +30,7 @@ type Booking = {
   walk_in_name: string | null
   walk_in_phone: string | null
   walk_in_nic_passport_ref: string | null
+  slot_number: number | null
   users: { name: string; phone: string | null } | null
   booking_bags: Bag[]
   hubs: { alias: string } | null
@@ -67,7 +68,7 @@ export default async function StaffPickupPage({
   const { data: booking } = await supabase
     .from('bookings')
     .select(`
-      id, status, end_time, total_price,
+      id, status, end_time, total_price, slot_number,
       walk_in_name, walk_in_phone, walk_in_nic_passport_ref,
       users ( name, phone ),
       booking_bags ( id, bag_type, sticker_number, seal_number, bag_tag_id, seal_status, status, bag_tags ( tag_code ) ),
@@ -189,6 +190,24 @@ export default async function StaffPickupPage({
           )}
         </div>
 
+        {/* Storage Slot Retrieval Banner */}
+        {booking.slot_number && (
+          <div className="bg-amber-500/10 border border-amber-400/20 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-ocean-900 shrink-0">
+                <MapPin size={18} className="stroke-[2.5]" />
+              </div>
+              <div>
+                <p className="text-[10px] text-amber-400 font-black uppercase tracking-widest">Retrieve Location</p>
+                <p className="text-sm font-extrabold text-white">Storage Slot #{booking.slot_number}</p>
+              </div>
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-widest bg-amber-400/20 text-amber-300 px-3 py-1 rounded-full border border-amber-400/20">
+              Assigned Shelf
+            </span>
+          </div>
+        )}
+
         {/* Live ticking countdown timer */}
         <LiveStorageCountdown endTime={booking.end_time} status={booking.status} />
 
@@ -240,7 +259,7 @@ export default async function StaffPickupPage({
         <div className="bg-white/10 rounded-2xl p-4">
           <h2 className="font-bold text-sm mb-3 flex items-center gap-2">
             <Package size={15} className="text-brand-accent" />
-            Checklist: Retrieve bags using Reusable Tags
+            Checklist: Retrieve bags from allocated slot
           </h2>
           <div className="space-y-2">
             {booking.booking_bags.map((bag) => (
@@ -255,16 +274,6 @@ export default async function StaffPickupPage({
                     <span className="text-[10px] text-white/40 font-bold italic mt-0.5">
                       Unsealable (No Seal Applied)
                     </span>
-                  )}
-                </div>
-                
-                <div className="flex items-center gap-3 shrink-0">
-                  {bag.bag_tags?.tag_code ? (
-                    <span className="font-mono text-xs bg-brand-accent/20 text-brand-accent px-2 py-1 rounded-lg font-black tracking-wider">
-                      🏷️ {bag.bag_tags.tag_code}
-                    </span>
-                  ) : (
-                    <span className="text-white/30 text-xs italic">No tag</span>
                   )}
                 </div>
               </div>

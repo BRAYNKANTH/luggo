@@ -639,12 +639,83 @@ export async function createWalkInBooking(input: {
 }
 
 // ─────────────────────────────────────────────
-// REGISTER REUSABLE BAG TAGS & SEALS
+// ALLOCATE STORAGE SLOT FOR BOOKING (Timezone-safe)
+// ─────────────────────────────────────────────
+export async function allocateSlotForBooking(
+  supabase: SupabaseClient,
+  hubId: string,
+  bookingId: string
+): Promise<number> {
+  // 1. Fetch occupied slot numbers
+  const { data: bookings, error } = await supabase
+    .from('bookings')
+    .select('slot_number, status, end_time')
+    .eq('hub_id', hubId)
+    .not('slot_number', 'is', null)
+    .in('status', [
+      'confirmed',
+      'pending_payment',
+      'arrived',
+      'identity_verified',
+      'sealing_in_progress',
+      'sealed_waiting_user_confirmation',
+      'active_storage',
+      'pickup_requested',
+      'overstayed',
+      'late_fee_pending'
+    ])
+
+  if (error) {
+    throw new Error(`Failed to query slots: ${error.message}`)
+  }
+
+  const now = new Date()
+  const occupiedSlots = new Set<number>()
+  if (bookings) {
+    for (const b of bookings) {
+      if (b.status === 'confirmed' || b.status === 'pending_payment') {
+        // If booking pickup time has passed, release slot (meaning we don't count it as occupied)
+        const pickupTime = new Date(b.end_time)
+        if (pickupTime <= now) {
+          continue
+        }
+      }
+      occupiedSlots.add(b.slot_number)
+    }
+  }
+
+  // 2. Find first free slot between 1 and 20
+  let allocatedSlot = 0
+  for (let i = 1; i <= 20; i++) {
+    if (!occupiedSlots.has(i)) {
+      allocatedSlot = i
+      break
+    }
+  }
+
+  if (allocatedSlot === 0) {
+    throw new Error('All 20 storage slots are currently occupied at this hub.')
+  }
+
+  // 3. Save allocated slot
+  const { error: updateError } = await supabase
+    .from('bookings')
+    .update({ slot_number: allocatedSlot })
+    .eq('id', bookingId)
+
+  if (updateError) {
+    throw new Error(`Failed to save slot allocation: ${updateError.message}`)
+  }
+
+  return allocatedSlot
+}
+
+// ─────────────────────────────────────────────
+// REGISTER REUSABLE BAG TAGS & SEALS (Slot-Based)
 // ─────────────────────────────────────────────
 export async function registerBags(
   bookingId: string,
   bags: Array<{
-    tag_code: string
     bag_type: BagType
     seal_number?: string
     seal_status: 'sealed' | 'seal_not_applicable'
@@ -659,55 +730,37 @@ export async function registerBags(
   // 1. Fetch booking
   const { data: booking } = await svc
     .from('bookings' as never)
-    .select('id, status, user_id, booking_bags(id, bag_tag_id)')
+    .select('id, status, user_id, slot_number')
     .eq('id', bookingId)
     .eq('hub_id', hubId)
     .single() as {
-      data: { id: string; status: string; user_id: string; booking_bags: { id: string; bag_tag_id: string | null }[] } | null
+      data: { id: string; status: string; user_id: string; slot_number: number | null } | null
     }
 
   if (!booking) return { error: 'Booking not found.' }
 
-  // 2. Clear any previously assigned tags for this booking (if re-registering)
-  for (const b of booking.booking_bags) {
-    if (b.bag_tag_id) {
-      await svc
-        .from('bag_tags' as never)
-        .update({ status: 'available', current_booking_id: null })
-        .eq('id', b.bag_tag_id)
+  // 2. Auto allocate slot if missing
+  let slotNumber = booking.slot_number
+  if (!slotNumber) {
+    try {
+      slotNumber = await allocateSlotForBooking(svc, hubId, bookingId)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Slot allocation failed'
+      return { error: msg }
     }
   }
 
   // Delete all existing bags for this booking first, so we can clean-slate insert
   await svc.from('booking_bags' as never).delete().eq('booking_id', bookingId)
 
-  // 3. Register bags and assign tags
+  // 3. Register bags
   for (const bag of bags) {
-    const { data: tag } = await svc
-      .from('bag_tags' as never)
-      .select('id, status, hub_id')
-      .eq('tag_code', bag.tag_code.trim())
-      .single() as { data: { id: string; status: string; hub_id: string } | null }
-
-    if (!tag) {
-      return { error: `Bag Tag "${bag.tag_code}" does not exist in the system.` }
-    }
-
-    if (tag.hub_id !== hubId) {
-      return { error: `Bag Tag "${bag.tag_code}" is registered to a different hub.` }
-    }
-
-    if (tag.status !== 'available') {
-      return { error: `Bag Tag "${bag.tag_code}" is currently not available (Status: ${tag.status}).` }
-    }
-
-    // B. Insert booking bag
+    // Insert booking bag (no bag_tag_id needed now!)
     const { data: insertedBag, error: insertError } = await svc
       .from('booking_bags' as never)
       .insert({
         booking_id: bookingId,
         bag_type: bag.bag_type,
-        bag_tag_id: tag.id,
         seal_number: bag.seal_status === 'sealed' ? (bag.seal_number?.trim() || null) : null,
         seal_status: bag.seal_status,
         notes: bag.notes?.trim() || null,
@@ -720,28 +773,7 @@ export async function registerBags(
       return { error: `Failed to insert bag: ${insertError?.message || 'Null result'}` }
     }
 
-    // C. Lock bag tag
-    const { data: updatedTags, error: updateTagError } = await svc
-      .from('bag_tags' as never)
-      .update({ status: 'in_storage', current_booking_id: bookingId })
-      .eq('id', tag.id)
-      .eq('status', 'available')
-      .select('id') as { data: { id: string }[] | null; error: PostgrestError | null }
-
-    if (updateTagError || !updatedTags || updatedTags.length === 0) {
-      return { error: `Bag Tag "${bag.tag_code}" is no longer available (assigned concurrently).` }
-    }
-
     // D. Audit
-    await svc.rpc('write_audit_log', {
-      p_actor_id: userId,
-      p_actor_role: 'hub_staff',
-      p_action: 'bag_tag_assigned',
-      p_entity: 'booking_bags',
-      p_entity_id: insertedBag.id,
-      p_metadata: { tag_code: bag.tag_code }
-    })
-
     if (bag.seal_status === 'sealed') {
       await svc.rpc('write_audit_log', {
         p_actor_id: userId,
@@ -775,7 +807,8 @@ export async function registerBags(
     p_actor_role: 'hub_staff',
     p_action: 'booking_moved_to_active_storage',
     p_entity: 'bookings',
-    p_entity_id: bookingId
+    p_entity_id: bookingId,
+    p_metadata: { slot_number: slotNumber }
   })
 
   // Notifications & SMS

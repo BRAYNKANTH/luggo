@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Logo } from '@/components/ui/Logo'
-import { CheckCircle, MapPin, Clock, Package, CreditCard, ArrowLeft, Tag } from 'lucide-react'
+import { CheckCircle, MapPin, Clock, Package, CreditCard, ArrowLeft } from 'lucide-react'
 import { formatDateSLT, formatInSLT } from '@/lib/utils/timezone'
 import { BAG_LABELS, BAG_RATES } from '@/lib/utils/pricing'
 import { type BagType } from '@/types/database'
@@ -22,7 +22,7 @@ export default async function BookingReceiptPage({
   const { data: booking } = await supabase
     .from('bookings')
     .select(`
-      id, status, start_time, end_time, total_price, created_at,
+      id, status, start_time, end_time, total_price, created_at, slot_number,
       hubs ( name, alias, address ),
       booking_bags ( id, bag_type, sticker_number, seal_number )
     `)
@@ -36,6 +36,7 @@ export default async function BookingReceiptPage({
         end_time: string
         total_price: number
         created_at: string
+        slot_number: number | null
         hubs: { name: string; alias: string; address: string } | null
         booking_bags: Bag[]
       } | null
@@ -116,14 +117,21 @@ export default async function BookingReceiptPage({
 
             {/* Hub & timing */}
             <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
-                  <MapPin size={14} className="text-brand" />
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
+                    <MapPin size={14} className="text-brand" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">{booking.hubs?.name}</p>
+                    <p className="text-xs text-gray-400">{booking.hubs?.address}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm">{booking.hubs?.name}</p>
-                  <p className="text-xs text-gray-400">{booking.hubs?.address}</p>
-                </div>
+                {booking.slot_number && (
+                  <span className="text-xs font-black bg-brand/10 border border-brand/20 text-brand px-3 py-1 rounded-xl shrink-0">
+                    Slot #{booking.slot_number}
+                  </span>
+                )}
               </div>
 
               <div className="flex items-start gap-3">
@@ -167,14 +175,13 @@ export default async function BookingReceiptPage({
                       <p className="font-medium text-gray-800">{item.label}</p>
                       <p className="text-xs text-gray-400 flex flex-wrap items-center gap-1.5 mt-0.5">
                         <span>LKR {item.rate.toLocaleString()} × {hours}h</span>
-                        {item.sticker && (
-                          <span className="font-mono font-bold text-brand bg-brand/10 px-1.5 py-0.5 rounded text-[10px] flex items-center gap-0.5">
-                            <Tag size={8} /> {booking.hubs?.alias}-{item.sticker}
-                          </span>
-                        )}
-                        {item.seal && (
+                        {item.seal ? (
                           <span className="font-mono font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">
                             🔒 Seal: {item.seal}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-gray-400 font-semibold italic">
+                            Unsealable
                           </span>
                         )}
                       </p>

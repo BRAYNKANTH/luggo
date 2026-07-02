@@ -6,7 +6,7 @@ import { SignOutButton } from '@/components/shared/SignOutButton'
 import { Button } from '@/components/ui/Button'
 import { BookingStatusBadge } from '@/components/customer/BookingStatusBadge'
 import { RealtimeRefresher } from '@/components/shared/RealtimeRefresher'
-import { ChevronLeft, User, Clock, Package, Tag, ShieldAlert } from 'lucide-react'
+import { ChevronLeft, User, Clock, Package, Tag, ShieldAlert, MapPin } from 'lucide-react'
 import { isPast } from 'date-fns'
 import { formatInSLT } from '@/lib/utils/timezone'
 import { markArrivedAction, bypassSealConfirmationAction, completePickupWithCashAction } from '@/lib/staff/actions'
@@ -27,6 +27,7 @@ type BookingFull = {
   walk_in_name: string | null
   walk_in_phone: string | null
   walk_in_nic_passport_ref: string | null
+  slot_number: number | null
   users: { name: string; email: string; phone: string | null; nic_passport: string | null } | null
   booking_bags: { 
     id: string
@@ -67,7 +68,7 @@ export default async function StaffBookingPage({
   const { data: booking } = await supabase
     .from('bookings')
     .select(`
-      id, status, start_time, end_time, total_price, qr_code, id_verified,
+      id, status, start_time, end_time, total_price, qr_code, id_verified, slot_number,
       walk_in_name, walk_in_phone, walk_in_nic_passport_ref,
       users ( name, email, phone, nic_passport ),
       booking_bags ( id, bag_type, sticker_number, seal_number, bag_tag_id, seal_status, notes, status, bag_tags ( tag_code ) )
@@ -182,6 +183,24 @@ export default async function StaffBookingPage({
           </div>
         )}
 
+        {/* Storage Slot Assignment Banner */}
+        {booking.slot_number && (
+          <div className="bg-amber-500/10 border border-amber-400/20 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-ocean-900 shrink-0">
+                <MapPin size={18} className="stroke-[2.5]" />
+              </div>
+              <div>
+                <p className="text-[10px] text-amber-400 font-black uppercase tracking-widest">Storage Location Slot</p>
+                <p className="text-sm font-extrabold text-white">Slot #{booking.slot_number}</p>
+              </div>
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-widest bg-amber-400/20 text-amber-300 px-3 py-1 rounded-full border border-amber-400/20">
+              Assigned Shelf
+            </span>
+          </div>
+        )}
+
         {/* Live ticking countdown timer */}
         <LiveStorageCountdown endTime={booking.end_time} status={booking.status} />
 
@@ -281,7 +300,7 @@ export default async function StaffBookingPage({
             {booking.booking_bags.map((bag) => (
               <div key={bag.id} className="flex items-center justify-between text-sm py-1.5 border-b border-white/5 last:border-0">
                 <div className="flex flex-col">
-                  <span className="text-white/80">{BAG_LABELS[bag.bag_type]}</span>
+                  <span className="text-white/80 font-medium">{BAG_LABELS[bag.bag_type]}</span>
                   {bag.seal_number && (
                     <span className="text-[10px] text-brand-accent font-mono font-bold">
                       🔒 Seal: {bag.seal_number}
@@ -293,15 +312,6 @@ export default async function StaffBookingPage({
                     </span>
                   )}
                 </div>
-                {bag.bag_tags?.tag_code ? (
-                  <span className="font-mono text-xs bg-brand-accent/20 text-brand-accent px-2 py-0.5 rounded-lg font-bold shrink-0">
-                    🏷️ {bag.bag_tags.tag_code}
-                  </span>
-                ) : (
-                  <span className="text-white/30 text-xs flex items-center gap-1 shrink-0">
-                    <Tag size={11} /> No Tag
-                  </span>
-                )}
               </div>
             ))}
           </div>
