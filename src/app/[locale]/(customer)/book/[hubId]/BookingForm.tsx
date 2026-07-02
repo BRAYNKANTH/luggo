@@ -302,9 +302,19 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
 
   function handleDropOffChange(date: string, time: string) {
     setDropOffDate(date)
-    setDropOffTime(time)
-    if (date && time) {
-      const combined = `${date}T${time}`
+    
+    let finalTime = time
+    if (date === todayStr && time) {
+      const minTime = getMinDropOffTime()
+      if (time < minTime) {
+        finalTime = minTime
+      }
+    }
+    
+    setDropOffTime(finalTime)
+    
+    if (date && finalTime) {
+      const combined = `${date}T${finalTime}`
       setStartValue(combined)
       const dt = new Date(combined)
       const currentEnd = endValue ? new Date(endValue) : null
@@ -321,9 +331,17 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
 
   function handlePickUpChange(date: string, time: string) {
     setPickUpDate(date)
-    setPickUpTime(time)
-    if (date && time) {
-      setEndValue(`${date}T${time}`)
+    
+    let finalTime = time
+    if (date === dropOffDate && time && dropOffTime) {
+      if (time < dropOffTime) {
+        finalTime = dropOffTime
+      }
+    }
+    
+    setPickUpTime(finalTime)
+    if (date && finalTime) {
+      setEndValue(`${date}T${finalTime}`)
     }
   }
 
