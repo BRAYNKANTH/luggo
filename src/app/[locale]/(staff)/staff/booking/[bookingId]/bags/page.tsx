@@ -3,12 +3,28 @@ import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { Logo } from '@/components/ui/Logo'
-import { StickersAndSealForm } from '@/components/staff/StickersAndSealForm'
+import { BagRegistrationForm } from '@/components/staff/BagRegistrationForm'
 import { type BagType } from '@/types/database'
 
-type Bag = { id: string; bag_type: BagType; sticker_number: string | null }
+type Bag = { 
+  id: string
+  bag_type: BagType
+  seal_number: string | null
+  bag_tag_id: string | null
+  seal_status: 'sealed' | 'seal_not_applicable'
+  notes: string | null
+}
 
-export default async function StaffStickersPage({
+type BookingDetail = {
+  id: string
+  status: string
+  walk_in_name: string | null
+  walk_in_phone: string | null
+  users: { name: string; phone: string | null } | null
+  booking_bags: Bag[]
+}
+
+export default async function BagRegistrationPage({
   params,
 }: {
   params: { bookingId: string }
@@ -31,20 +47,30 @@ export default async function StaffStickersPage({
 
   const { data: booking } = await supabase
     .from('bookings')
-    .select('id, status, booking_bags(id, bag_type, sticker_number)')
+    .select(`
+      id, 
+      status, 
+      walk_in_name,
+      walk_in_phone,
+      users(name, phone),
+      booking_bags(id, bag_type, seal_number, bag_tag_id, seal_status, notes)
+    `)
     .eq('id', params.bookingId)
     .eq('hub_id', staffRow.hub_id)
     .single() as {
-      data: { id: string; status: string; booking_bags: Bag[] } | null
+      data: BookingDetail | null
       error: unknown
     }
 
   if (!booking) notFound()
-  if (booking.status !== 'arrived') {
+
+  // Allowed statuses to enter bag registration: arrived, sealing_in_progress, identity_verified
+  const allowed = ['arrived', 'sealing_in_progress', 'identity_verified', 'confirmed']
+  if (!allowed.includes(booking.status)) {
     redirect(`/staff/booking/${params.bookingId}`)
   }
 
-  const hubAlias = staffRow.hubs?.alias ?? ''
+  const customerName = booking.walk_in_name || booking.users?.name || 'Walk-In Guest'
 
   return (
     <div className="min-h-screen bg-ocean-900 text-white pb-32">
@@ -61,18 +87,18 @@ export default async function StaffStickersPage({
         <div className="w-10" />
       </div>
 
-      <div className="px-4 py-5 space-y-4">
+      <div className="px-4 py-5 space-y-4 max-w-4xl mx-auto">
         <div>
-          <h1 className="text-xl font-extrabold mb-1">Apply Stickers & Seals</h1>
-          <p className="text-white/50 text-sm">
-            Paste the pre-assigned stickers and lock zipper seals on each bag, then scan the seal barcodes below.
+          <span className="text-[10px] font-black uppercase tracking-widest text-brand-light">Step 2 of 2</span>
+          <h1 className="text-2xl font-extrabold mb-1 tracking-tight">Register Reusable Bag Tags & Seals</h1>
+          <p className="text-white/50 text-xs">
+            Assign a physical reusable tag, select bag type, and enter/scan physical seals for customer **{customerName}**.
           </p>
         </div>
 
-        <StickersAndSealForm
+        <BagRegistrationForm
           bookingId={booking.id}
-          bags={booking.booking_bags}
-          hubAlias={hubAlias}
+          initialBags={booking.booking_bags}
         />
       </div>
     </div>

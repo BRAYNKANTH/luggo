@@ -26,7 +26,7 @@ type BookingDetail = {
   qr_code: string
   created_at: string
   hubs: { name: string; alias: string; address: string } | null
-  booking_bags: { id: string; bag_type: BagType; sticker_number: string | null }[]
+  booking_bags: { id: string; bag_type: BagType; sticker_number: string | null; seal_number: string | null }[]
 }
 
 const CANCELLABLE: BookingStatus[] = ['pending_payment', 'confirmed']
@@ -46,7 +46,7 @@ export default async function BookingDetailPage({
 
   const { data: booking } = await supabase
     .from('bookings')
-    .select('id, status, start_time, end_time, total_price, qr_code, created_at, hubs(name, alias, address), booking_bags(id, bag_type, sticker_number)')
+    .select('id, status, start_time, end_time, total_price, qr_code, created_at, hubs(name, alias, address), booking_bags(id, bag_type, sticker_number, seal_number)')
     .eq('id', params.bookingId)
     .eq('user_id', user.id)
     .single() as { data: BookingDetail | null; error: unknown }
@@ -269,7 +269,14 @@ export default async function BookingDetailPage({
             <div className="space-y-2 pl-12">
               {booking.booking_bags.map((bag) => (
                 <div key={bag.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                  <span className="text-sm text-gray-700">{BAG_LABELS[bag.bag_type]}</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm text-gray-700">{BAG_LABELS[bag.bag_type]}</span>
+                    {bag.seal_number && (
+                      <span className="text-[10px] text-gray-400 font-mono font-semibold">
+                        🔒 Seal: {bag.seal_number}
+                      </span>
+                    )}
+                  </div>
                   {bag.sticker_number ? (
                     <span className="text-xs font-mono font-bold text-brand bg-brand/10 px-2 py-0.5 rounded-lg">
                       {booking.hubs?.alias}-{bag.sticker_number}

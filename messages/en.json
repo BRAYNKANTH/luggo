@@ -80,7 +80,12 @@
     "cancelled": "Cancelled",
     "expired": "Expired",
     "overstayed": "Time Exceeded",
-    "disputed": "Under Review"
+    "disputed": "Under Review",
+    "draft": "Created",
+    "identity_verified": "Identity Verified",
+    "late_fee_pending": "Late Fee Pending",
+    "ready_for_release": "Ready for Release",
+    "exception_hold": "Incident Hold"
   },
   "Sections": {
     "how": {

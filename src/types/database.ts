@@ -7,15 +7,20 @@ export type BookingStatus =
   | 'pending_payment'
   | 'confirmed'
   | 'arrived'
+  | 'identity_verified'
   | 'sealing_in_progress'
   | 'sealed_waiting_user_confirmation'
   | 'active_storage'
   | 'pickup_requested'
+  | 'overstayed'
+  | 'late_fee_pending'
+  | 'ready_for_release'
   | 'completed'
   | 'cancelled'
   | 'expired'
-  | 'overstayed'
   | 'disputed'
+  | 'exception_hold'
+export type BagTagStatus = 'available' | 'assigned' | 'in_storage' | 'released' | 'lost' | 'damaged' | 'retired'
 export type PaymentType = 'booking' | 'late_fee' | 'extension'
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
 export type RefundStatus = 'pending' | 'approved' | 'rejected' | 'processed'
@@ -87,6 +92,9 @@ export interface Database {
           qr_code: string
           id_verified: boolean
           created_at: string
+          walk_in_name: string | null
+          walk_in_phone: string | null
+          walk_in_nic_passport_ref: string | null
         }
         Insert: Omit<Database['public']['Tables']['bookings']['Row'], 'id' | 'created_at'> & { id_verified?: boolean }
         Update: Partial<Database['public']['Tables']['bookings']['Insert']>
@@ -99,9 +107,45 @@ export interface Database {
           sticker_number: string | null
           hub_alias: string | null
           created_at: string
+          seal_number: string | null
+          bag_tag_id: string | null
+          seal_status: string
+          notes: string | null
+          status: string
         }
         Insert: Omit<Database['public']['Tables']['booking_bags']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['booking_bags']['Insert']>
+      }
+      bag_tags: {
+        Row: {
+          id: string
+          tag_code: string
+          qr_code_value: string
+          hub_id: string
+          status: BagTagStatus
+          current_booking_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['bag_tags']['Row'], 'id' | 'created_at' | 'updated_at'> & { status?: BagTagStatus }
+        Update: Partial<Database['public']['Tables']['bag_tags']['Insert']>
+      }
+      incident_reports: {
+        Row: {
+          id: string
+          booking_id: string
+          bag_id: string | null
+          incident_type: string
+          description: string
+          status: string
+          reported_by_staff_id: string
+          resolved_by_supervisor_id: string | null
+          resolution_note: string | null
+          created_at: string
+          resolved_at: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['incident_reports']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['incident_reports']['Insert']>
       }
       sticker_batches: {
         Row: {

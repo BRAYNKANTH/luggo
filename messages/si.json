@@ -80,7 +80,12 @@
     "cancelled": "අවලංගු කර ඇත",
     "expired": "කාලය ඉකුත් වී ඇත",
     "overstayed": "අමතර කාලය",
-    "disputed": "පරීක්ෂාවට ලක්වෙමින් පවතී"
+    "disputed": "පරීක්ෂාවට ලක්වෙමින් පවතී",
+    "draft": "නිර්මාණය කරන ලදි",
+    "identity_verified": "අනන්‍යතාවය තහවුරු කර ඇත",
+    "late_fee_pending": "අමතර ගාස්තු අපේක්ෂාවෙන්",
+    "ready_for_release": "නිදහස් කිරීමට සූදානම්",
+    "exception_hold": "විශේෂ රඳවා ගැනීම"
   },
   "Sections": {
     "how": {

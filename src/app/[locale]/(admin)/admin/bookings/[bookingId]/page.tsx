@@ -47,7 +47,7 @@ type BookingDetail = {
   created_at: string
   users: { id: string; name: string; email: string; phone: string | null } | null
   hubs: { name: string; alias: string; address: string } | null
-  booking_bags: { id: string; bag_type: BagType; sticker_number: string | null }[]
+  booking_bags: { id: string; bag_type: BagType; sticker_number: string | null; seal_number: string | null }[]
 }
 
 type Payment = {
@@ -89,7 +89,7 @@ export default async function AdminBookingDetailPage({
       id, status, start_time, end_time, total_price, qr_code, created_at,
       users ( id, name, email, phone ),
       hubs ( name, alias, address ),
-      booking_bags ( id, bag_type, sticker_number )
+      booking_bags ( id, bag_type, sticker_number, seal_number )
     `)
     .eq('id', params.bookingId)
     .single() as { data: BookingDetail | null }
@@ -201,14 +201,21 @@ export default async function AdminBookingDetailPage({
               </h2>
               <div className="space-y-2">
                 {booking.booking_bags.map((bag) => (
-                  <div key={bag.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                    <span className="text-sm text-gray-700">{BAG_LABELS[bag.bag_type]}</span>
+                  <div key={bag.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0 font-medium">
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-700">{BAG_LABELS[bag.bag_type]}</span>
+                      {bag.seal_number && (
+                        <span className="text-[10px] font-mono text-gray-400">
+                          🔒 Seal: {bag.seal_number}
+                        </span>
+                      )}
+                    </div>
                     {bag.sticker_number ? (
-                      <span className="font-mono text-xs font-bold bg-brand/10 text-brand px-2.5 py-1 rounded-lg flex items-center gap-1">
+                      <span className="font-mono text-xs font-bold bg-brand/10 text-brand px-2.5 py-1 rounded-lg flex items-center gap-1 shrink-0">
                         <Tag size={10} /> {booking.hubs?.alias}-{bag.sticker_number}
                       </span>
                     ) : (
-                      <span className="text-xs text-gray-300">No sticker</span>
+                      <span className="text-xs text-gray-300 shrink-0">No sticker</span>
                     )}
                   </div>
                 ))}

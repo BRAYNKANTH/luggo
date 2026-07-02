@@ -1,10 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AdminShell } from '@/components/admin/AdminShell'
-import { HubToggle } from '@/components/admin/HubToggle'
-import { HubImageUpload } from '@/components/admin/HubImageUpload'
+import { HubCard } from '@/components/admin/HubCard'
 import { HubForm } from '@/components/admin/HubForm'
-import { MapPin, Clock, Users } from 'lucide-react'
 import { type UserRole } from '@/types/database'
 
 export default async function AdminHubsPage() {
@@ -21,18 +19,21 @@ export default async function AdminHubsPage() {
   // Hubs with current booking counts
   const { data: hubs } = await supabase
     .from('hubs')
-    .select('id, name, alias, address, capacity, open_time, close_time, active, image_url')
+    .select('id, name, alias, location, address, capacity, open_time, close_time, active, image_url, latitude, longitude')
     .order('name') as {
       data: {
         id: string
         name: string
         alias: string
+        location: string
         address: string
         capacity: number
         open_time: string
         close_time: string
         active: boolean
         image_url: string | null
+        latitude: number | null
+        longitude: number | null
       }[] | null
       error: unknown
     }
@@ -58,8 +59,8 @@ export default async function AdminHubsPage() {
         <p className="text-sm text-gray-400 mb-8">{hubs?.length ?? 0} hubs registered</p>
 
         {/* Add new hub */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-8">
-          <h2 className="font-bold text-ocean-900 mb-1">Add New Hub</h2>
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-8 shadow-sm">
+          <h2 className="font-bold text-ocean-900 mb-1 text-base">Add New Hub</h2>
           <p className="text-xs text-gray-400 mb-5">
             Configure the name, alias prefix, location coordinates, capacity, and business hours for a new luggage hub.
           </p>
@@ -68,75 +69,13 @@ export default async function AdminHubsPage() {
 
         <div className="space-y-4">
           {hubs?.map((hub) => {
-            const bags    = bagsByHub[hub.id] ?? 0
-            const pct     = Math.min(100, Math.round((bags / hub.capacity) * 100))
-            const isHigh  = pct >= 80
-
+            const bags = bagsByHub[hub.id] ?? 0
             return (
-              <div key={hub.id} className="bg-white rounded-2xl border border-gray-100 p-5">
-                <div className="flex items-start justify-between gap-4">
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h2 className="font-bold text-ocean-900">{hub.name}</h2>
-                      <span className="text-xs font-mono bg-gray-100 text-gray-500 px-2 py-0.5 rounded-lg">
-                        {hub.alias}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400 mb-4">
-                      <span className="flex items-center gap-1">
-                        <MapPin size={11} />
-                        {hub.address}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock size={11} />
-                        {hub.open_time} – {hub.close_time}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Users size={11} />
-                        Capacity {hub.capacity} bags
-                      </span>
-                    </div>
-
-                    {/* Capacity bar */}
-                    <div>
-                      <div className="flex justify-between text-xs text-gray-500 mb-1">
-                        <span>{bags} bags in storage</span>
-                        <span className={isHigh ? 'text-red-500 font-semibold' : ''}>
-                          {pct}%
-                        </span>
-                      </div>
-                      <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${
-                            isHigh ? 'bg-red-400' : 'bg-brand'
-                          }`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Toggle */}
-                  <div className="flex flex-col items-end gap-2 shrink-0">
-                    <HubToggle hubId={hub.id} initialActive={hub.active} />
-                    <span className="text-xs text-gray-400">
-                      {hub.active ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Image upload */}
-                <div className="border-t border-gray-50 mt-4 pt-4">
-                  <p className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Hub Photo</p>
-                  <HubImageUpload
-                    hubId={hub.id}
-                    hubName={hub.name}
-                    currentImageUrl={hub.image_url ?? null}
-                  />
-                </div>
-              </div>
+              <HubCard
+                key={hub.id}
+                hub={hub}
+                bags={bags}
+              />
             )
           })}
         </div>

@@ -6,7 +6,7 @@ import { SignOutButton } from '@/components/shared/SignOutButton'
 import { Button } from '@/components/ui/Button'
 import { BookingStatusBadge } from '@/components/customer/BookingStatusBadge'
 import { RealtimeRefresher } from '@/components/shared/RealtimeRefresher'
-import { ChevronLeft, User, Clock, Package, Tag } from 'lucide-react'
+import { ChevronLeft, User, Clock, Package, Tag, ShieldAlert } from 'lucide-react'
 import { format, isPast } from 'date-fns'
 import { markArrivedAction, bypassSealConfirmationAction, completePickupWithCashAction } from '@/lib/staff/actions'
 import { StaffVerificationForm } from '@/components/staff/StaffVerificationForm'
@@ -22,8 +22,21 @@ type BookingFull = {
   total_price: number
   qr_code: string
   id_verified: boolean
+  walk_in_name: string | null
+  walk_in_phone: string | null
+  walk_in_nic_passport_ref: string | null
   users: { name: string; email: string; phone: string | null; nic_passport: string | null } | null
-  booking_bags: { id: string; bag_type: BagType; sticker_number: string | null }[]
+  booking_bags: { 
+    id: string
+    bag_type: BagType
+    sticker_number: string | null
+    seal_number: string | null
+    bag_tag_id: string | null
+    seal_status: 'sealed' | 'seal_not_applicable'
+    notes: string | null
+    status: string
+    bag_tags: { tag_code: string } | null
+  }[]
 }
 
 export default async function StaffBookingPage({
@@ -53,8 +66,9 @@ export default async function StaffBookingPage({
     .from('bookings')
     .select(`
       id, status, start_time, end_time, total_price, qr_code, id_verified,
+      walk_in_name, walk_in_phone, walk_in_nic_passport_ref,
       users ( name, email, phone, nic_passport ),
-      booking_bags ( id, bag_type, sticker_number )
+      booking_bags ( id, bag_type, sticker_number, seal_number, bag_tag_id, seal_status, notes, status, bag_tags ( tag_code ) )
     `)
     .eq('id', params.bookingId)
     .eq('hub_id', staffRow.hub_id)
@@ -73,22 +87,27 @@ export default async function StaffBookingPage({
   const end = new Date(booking.end_time)
   const hasInsurance = booking.qr_code.endsWith('_ins')
   const isOverdue = isPast(end)
-  const lateFeeAmount = isOverdue && booking.status === 'overstayed' ? calculateLateFee(booking.booking_bags, end) : 0
+  const lateFeeAmount = isOverdue && (booking.status === 'overstayed' || booking.status === 'late_fee_pending') ? calculateLateFee(booking.booking_bags, end) : 0
 
   // Determine next action
   const nextAction = (() => {
     switch (booking.status) {
       case 'confirmed': return 'check-in'
-      case 'arrived': return booking.id_verified ? 'stickers' : 'verify_id'
-      case 'sealing_in_progress': return 'seal'
+      case 'arrived': return booking.id_verified ? 'bags' : 'verify_id'
+      case 'identity_verified': return 'bags'
+      case 'sealing_in_progress': return 'bags'
       case 'sealed_waiting_user_confirmation': return 'waiting'
       case 'active_storage': return 'stored'
       case 'pickup_requested': return 'pickup'
       case 'overstayed': return 'late_fee_pending'
-      case 'disputed': return 'seal'
+      case 'late_fee_pending': return 'pickup'
+      case 'ready_for_release': return 'pickup'
       default: return 'none'
     }
   })()
+
+  const customerName = booking.walk_in_name || booking.users?.name || 'Walk-In Guest'
+  const customerPhone = booking.walk_in_phone || booking.users?.phone || 'No phone'
 
   return (
     <div className="min-h-screen bg-ocean-900 text-white pb-32">
@@ -105,13 +124,13 @@ export default async function StaffBookingPage({
         <SignOutButton portal="staff" iconOnly />
       </div>
 
-      {/* Realtime refresher — page auto-refreshes when customer confirms seal */}
+      {/* Realtime refresher */}
       <RealtimeRefresher
         bookingId={booking.id}
-        watchStatuses={['active_storage', 'disputed', 'pickup_requested', 'completed']}
+        watchStatuses={['active_storage', 'disputed', 'pickup_requested', 'completed', 'exception_hold']}
       />
 
-      <div className="px-4 py-5 space-y-4">
+      <div className="px-4 py-5 space-y-4 max-w-2xl mx-auto">
         {/* Status + ref */}
         <div className="flex items-center justify-between">
           <p className="font-mono text-white/40 text-xs">
@@ -126,10 +145,27 @@ export default async function StaffBookingPage({
             <User size={18} className="text-brand" />
           </div>
           <div>
-            <p className="font-bold">{booking.users?.name ?? '—'}</p>
-            <p className="text-white/50 text-xs">{booking.users?.phone ?? booking.users?.email}</p>
+            <p className="font-bold">{customerName}</p>
+            <p className="text-white/50 text-xs">{customerPhone}</p>
           </div>
         </div>
+
+        {/* Exception hold block */}
+        {booking.status === 'exception_hold' && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 space-y-2">
+            <h3 className="text-red-300 font-extrabold text-sm flex items-center gap-1.5">
+              <ShieldAlert size={16} /> Incident Hold Active
+            </h3>
+            <p className="text-white/60 text-xs">
+              This booking is locked in operations hold due to active incident. Supervisor action required.
+            </p>
+            <Link href={`/staff/pickup/${booking.id}`}>
+              <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white mt-2">
+                Process Incident & Release
+              </Button>
+            </Link>
+          </div>
+        )}
 
         {/* Luggage Protection Active Banner */}
         {hasInsurance && (
@@ -156,7 +192,7 @@ export default async function StaffBookingPage({
         )}
 
         {/* Identity Verification Info */}
-        {(booking.status === 'arrived' || booking.status === 'confirmed') && (
+        {(booking.status === 'arrived' || booking.status === 'confirmed' || booking.status === 'identity_verified') && (
           <div className={`p-4 rounded-2xl border transition-all ${booking.id_verified ? 'bg-green-500/10 border-green-500/20' : 'bg-brand/10 border-brand/20'}`}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -173,7 +209,9 @@ export default async function StaffBookingPage({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-0.5">NIC / Passport</p>
-                <p className="font-mono text-sm tracking-widest">{booking.users?.nic_passport ?? 'Not provided'}</p>
+                <p className="font-mono text-sm tracking-widest">
+                  {booking.walk_in_nic_passport_ref || booking.users?.nic_passport || 'Not provided'}
+                </p>
               </div>
               {!booking.id_verified && booking.status === 'arrived' && (
                 <div className="flex items-center gap-1.5 text-[10px] font-bold text-brand-light animate-pulse">
@@ -211,18 +249,18 @@ export default async function StaffBookingPage({
           </div>
         </div>
 
-        {lateFeeAmount > 0 && booking.status === 'overstayed' && (
+        {lateFeeAmount > 0 && (booking.status === 'overstayed' || booking.status === 'late_fee_pending') && (
           <div className="bg-red-500/10 border border-red-400/20 rounded-2xl p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-red-300 font-semibold text-sm mb-0.5">Pending Late Fee</p>
-                <p className="text-red-200/60 text-xs">Customer can pay online in their app</p>
+                <p className="text-red-200/60 text-xs">Collect cash or customer pays online</p>
               </div>
               <p className="text-xl font-bold text-red-300">LKR {lateFeeAmount.toLocaleString()}</p>
             </div>
             <form action={completePickupWithCashAction.bind(null, booking.id)}>
               <Button type="submit" fullWidth size="sm" className="bg-brand-accent text-brand-dark hover:bg-brand-accent/90">
-                💵 Collect LKR {lateFeeAmount.toLocaleString()} Cash & Release Bags
+                💵 Collect LKR {lateFeeAmount.toLocaleString()} Cash & Complete Handover
               </Button>
             </form>
           </div>
@@ -236,15 +274,27 @@ export default async function StaffBookingPage({
           </h2>
           <div className="space-y-2">
             {booking.booking_bags.map((bag) => (
-              <div key={bag.id} className="flex items-center justify-between text-sm">
-                <span className="text-white/80">{BAG_LABELS[bag.bag_type]}</span>
-                {bag.sticker_number ? (
-                  <span className="font-mono text-xs bg-brand-accent/20 text-brand-accent px-2 py-0.5 rounded-lg font-bold">
-                    {staffRow.hubs?.alias}-{bag.sticker_number}
+              <div key={bag.id} className="flex items-center justify-between text-sm py-1.5 border-b border-white/5 last:border-0">
+                <div className="flex flex-col">
+                  <span className="text-white/80">{BAG_LABELS[bag.bag_type]}</span>
+                  {bag.seal_number && (
+                    <span className="text-[10px] text-brand-accent font-mono font-bold">
+                      🔒 Seal: {bag.seal_number}
+                    </span>
+                  )}
+                  {bag.seal_status === 'seal_not_applicable' && (
+                    <span className="text-[10px] text-white/40 font-bold italic">
+                      Unsealable
+                    </span>
+                  )}
+                </div>
+                {bag.bag_tags?.tag_code ? (
+                  <span className="font-mono text-xs bg-brand-accent/20 text-brand-accent px-2 py-0.5 rounded-lg font-bold shrink-0">
+                    🏷️ {bag.bag_tags.tag_code}
                   </span>
                 ) : (
-                  <span className="text-white/30 text-xs flex items-center gap-1">
-                    <Tag size={11} /> No sticker
+                  <span className="text-white/30 text-xs flex items-center gap-1 shrink-0">
+                    <Tag size={11} /> No Tag
                   </span>
                 )}
               </div>
@@ -252,7 +302,6 @@ export default async function StaffBookingPage({
           </div>
         </div>
 
-        {/* Waiting for customer message */}
         {nextAction === 'waiting' && booking.status === 'sealed_waiting_user_confirmation' && (
           <div className="bg-yellow-500/10 border border-yellow-400/20 rounded-2xl p-4 space-y-3">
             <div>
@@ -268,14 +317,6 @@ export default async function StaffBookingPage({
             </form>
           </div>
         )}
-        {nextAction === 'seal' && booking.status === 'disputed' && (
-          <div className="bg-amber-500/10 border border-amber-400/20 rounded-2xl p-4">
-            <p className="text-amber-400 font-semibold text-sm">Dispute Action Required</p>
-            <p className="text-amber-200/60 text-xs mt-1">
-              Customer disputed the seal photo. Please verify the bags and upload a new, clear photo to resolve.
-            </p>
-          </div>
-        )}
         {nextAction === 'stored' && (
           <div className="bg-green-500/10 border border-green-400/20 rounded-2xl p-4">
             <p className="text-green-300 font-semibold text-sm">Bags in storage ✓</p>
@@ -287,7 +328,7 @@ export default async function StaffBookingPage({
       </div>
 
       {/* Sticky action footer */}
-      {(nextAction === 'check-in' || nextAction === 'stickers' || nextAction === 'seal' || nextAction === 'pickup') && (
+      {(nextAction === 'check-in' || nextAction === 'verify_id' || nextAction === 'bags' || nextAction === 'pickup') && (
         <div className="fixed bottom-0 left-0 right-0 bg-ocean-900 border-t border-white/10 px-4 py-4 pb-safe">
           {nextAction === 'check-in' && (
             <form action={markArrivedAction.bind(null, booking.id)}>
@@ -296,22 +337,20 @@ export default async function StaffBookingPage({
               </Button>
             </form>
           )}
-          {nextAction === 'stickers' && (
-            <Link href={`/staff/booking/${booking.id}/stickers`}>
-              <Button fullWidth size="lg">
-                <Tag size={16} /> Apply stickers & seal
-              </Button>
-            </Link>
+          {nextAction === 'verify_id' && (
+            <div className="text-center text-xs text-white/50 bg-white/5 p-3 rounded-xl mx-4">
+              Verify customer ID document above to continue
+            </div>
           )}
-          {nextAction === 'seal' && (
-            <Link href={`/staff/booking/${booking.id}/seal`}>
+          {nextAction === 'bags' && (
+            <Link href={`/staff/booking/${booking.id}/bags`} className="block mx-4">
               <Button fullWidth size="lg">
-                📸 Upload seal photo
+                <Tag size={16} /> Register Bag Tags & Seals
               </Button>
             </Link>
           )}
           {nextAction === 'pickup' && (
-            <Link href={`/staff/pickup/${booking.id}`}>
+            <Link href={`/staff/pickup/${booking.id}`} className="block mx-4">
               <Button fullWidth size="lg">
                 📦 Process pickup
               </Button>

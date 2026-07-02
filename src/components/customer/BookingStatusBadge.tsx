@@ -20,6 +20,10 @@ const STATUS_CONFIG: Record<
   expired:                          { variant: 'danger'  },
   overstayed:                       { variant: 'danger'  },
   disputed:                         { variant: 'danger'  },
+  identity_verified:                { variant: 'info'    },
+  late_fee_pending:                 { variant: 'warning' },
+  ready_for_release:                { variant: 'success' },
+  exception_hold:                   { variant: 'danger'  },
 }
 
 export function BookingStatusBadge({ status }: { status: BookingStatus }) {

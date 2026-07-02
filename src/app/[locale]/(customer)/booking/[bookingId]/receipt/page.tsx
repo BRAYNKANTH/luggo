@@ -7,7 +7,7 @@ import { format } from 'date-fns'
 import { BAG_LABELS, BAG_RATES } from '@/lib/utils/pricing'
 import { type BagType } from '@/types/database'
 
-type Bag = { id: string; bag_type: BagType; sticker_number: string | null }
+type Bag = { id: string; bag_type: BagType; sticker_number: string | null; seal_number: string | null }
 type Payment = { id: string; amount: number; status: string; type: string; created_at: string }
 
 export default async function BookingReceiptPage({
@@ -24,7 +24,7 @@ export default async function BookingReceiptPage({
     .select(`
       id, status, start_time, end_time, total_price, created_at,
       hubs ( name, alias, address ),
-      booking_bags ( id, bag_type, sticker_number )
+      booking_bags ( id, bag_type, sticker_number, seal_number )
     `)
     .eq('id', params.bookingId)
     .eq('user_id', user.id)
@@ -69,6 +69,7 @@ export default async function BookingReceiptPage({
     hours,
     total: BAG_RATES[bag.bag_type] * hours,
     sticker: bag.sticker_number,
+    seal: bag.seal_number,
   }))
 
   const subtotal   = lineItems.reduce((s, l) => s + l.total, 0)
@@ -153,8 +154,6 @@ export default async function BookingReceiptPage({
               </div>
             </div>
 
-            <div className="border-t border-dashed border-gray-100" />
-
             {/* Line items */}
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -163,19 +162,24 @@ export default async function BookingReceiptPage({
               </div>
               <div className="space-y-2">
                 {lineItems.map((item, i) => (
-                  <div key={i} className="flex items-start justify-between text-sm">
+                  <div key={i} className="flex items-start justify-between text-sm py-1 border-b border-gray-50 last:border-0">
                     <div>
                       <p className="font-medium text-gray-800">{item.label}</p>
-                      <p className="text-xs text-gray-400">
-                        LKR {item.rate.toLocaleString()} × {hours}h
+                      <p className="text-xs text-gray-400 flex flex-wrap items-center gap-1.5 mt-0.5">
+                        <span>LKR {item.rate.toLocaleString()} × {hours}h</span>
                         {item.sticker && (
-                          <span className="ml-2 font-mono font-bold text-brand">
-                            · <Tag size={9} className="inline" /> {booking.hubs?.alias}-{item.sticker}
+                          <span className="font-mono font-bold text-brand bg-brand/10 px-1.5 py-0.5 rounded text-[10px] flex items-center gap-0.5">
+                            <Tag size={8} /> {booking.hubs?.alias}-{item.sticker}
+                          </span>
+                        )}
+                        {item.seal && (
+                          <span className="font-mono font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">
+                            🔒 Seal: {item.seal}
                           </span>
                         )}
                       </p>
                     </div>
-                    <span className="font-semibold text-gray-900">LKR {item.total.toLocaleString()}</span>
+                    <span className="font-semibold text-gray-900 shrink-0">LKR {item.total.toLocaleString()}</span>
                   </div>
                 ))}
               </div>

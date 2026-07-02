@@ -3,19 +3,36 @@
 import { useState, useTransition } from 'react'
 import { Button } from '@/components/ui/Button'
 import { PlusCircle, AlertCircle, CheckCircle, MapPin, Clock, Users, Globe } from 'lucide-react'
-import { createHub } from '@/lib/admin/actions'
+import { createHub, updateHub } from '@/lib/admin/actions'
 
-export function HubForm() {
+interface HubFormProps {
+  hub?: {
+    id: string
+    name: string
+    alias: string
+    location: string
+    address: string
+    capacity: number
+    open_time: string
+    close_time: string
+    latitude: number | null
+    longitude: number | null
+  }
+  onSuccess?: () => void
+  onCancel?: () => void
+}
+
+export function HubForm({ hub, onSuccess, onCancel }: HubFormProps) {
   const [isPending, startTransition] = useTransition()
-  const [name, setName] = useState('')
-  const [alias, setAlias] = useState('')
-  const [location, setLocation] = useState('')
-  const [address, setAddress] = useState('')
-  const [capacity, setCapacity] = useState(50)
-  const [openTime, setOpenTime] = useState('06:00')
-  const [closeTime, setCloseTime] = useState('22:00')
-  const [latitude, setLatitude] = useState('')
-  const [longitude, setLongitude] = useState('')
+  const [name, setName] = useState(hub?.name ?? '')
+  const [alias, setAlias] = useState(hub?.alias ?? '')
+  const [location, setLocation] = useState(hub?.location ?? '')
+  const [address, setAddress] = useState(hub?.address ?? '')
+  const [capacity, setCapacity] = useState(hub?.capacity ?? 50)
+  const [openTime, setOpenTime] = useState(hub?.open_time ? hub.open_time.slice(0, 5) : '06:00')
+  const [closeTime, setCloseTime] = useState(hub?.close_time ? hub.close_time.slice(0, 5) : '22:00')
+  const [latitude, setLatitude] = useState(hub?.latitude != null ? String(hub.latitude) : '')
+  const [longitude, setLongitude] = useState(hub?.longitude != null ? String(hub.longitude) : '')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
@@ -44,7 +61,7 @@ export function HubForm() {
     }
 
     startTransition(async () => {
-      const result = await createHub({
+      const hubData = {
         name: name.trim(),
         alias: alias.toUpperCase().trim(),
         location: location.trim(),
@@ -54,22 +71,40 @@ export function HubForm() {
         closeTime,
         latitude: latNum,
         longitude: lngNum,
-      })
+      }
+
+      const result = hub
+        ? await updateHub(hub.id, hubData)
+        : await createHub(hubData)
 
       if (result.error) {
         setError(result.error)
       } else {
-        setSuccess(`Hub "${name}" created successfully. You can now assign staff members to it.`)
-        // Reset form
-        setName('')
-        setAlias('')
-        setLocation('')
-        setAddress('')
-        setCapacity(50)
-        setOpenTime('06:00')
-        setCloseTime('22:00')
-        setLatitude('')
-        setLongitude('')
+        setSuccess(
+          hub
+            ? `Hub "${name}" updated successfully.`
+            : `Hub "${name}" created successfully. You can now assign staff members to it.`
+        )
+        
+        if (!hub) {
+          // Reset form on creation
+          setName('')
+          setAlias('')
+          setLocation('')
+          setAddress('')
+          setCapacity(50)
+          setOpenTime('06:00')
+          setCloseTime('22:00')
+          setLatitude('')
+          setLongitude('')
+        }
+
+        if (onSuccess) {
+          // Trigger success callback after a brief delay for user to read success message
+          setTimeout(() => {
+            onSuccess()
+          }, 800)
+        }
       }
     })
   }
@@ -236,10 +271,17 @@ export function HubForm() {
         </div>
       )}
 
-      <Button type="submit" loading={isPending} className="gap-2">
-        <PlusCircle size={15} />
-        Create Hub
-      </Button>
+      <div className="flex gap-2">
+        <Button type="submit" loading={isPending} className="gap-2">
+          {!hub && <PlusCircle size={15} />}
+          {hub ? 'Save changes' : 'Create Hub'}
+        </Button>
+        {onCancel && (
+          <Button type="button" variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+      </div>
     </form>
   )
 }

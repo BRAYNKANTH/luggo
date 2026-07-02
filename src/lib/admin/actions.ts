@@ -357,3 +357,107 @@ export async function createHub(data: {
 
   return { success: true }
 }
+
+export async function updateHub(
+  hubId: string,
+  data: {
+    name: string
+    alias: string
+    location: string
+    address: string
+    capacity: number
+    openTime: string
+    closeTime: string
+    latitude: number
+    longitude: number
+  }
+): Promise<{ error?: string; success?: boolean }> {
+  const { svc, userId, role, error: authError } = await requireAdmin()
+  if (authError || !svc) return { error: authError ?? 'Auth error' }
+
+  const parsed = createHubSchema.safeParse(data)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message }
+  }
+
+  const { name, alias, location, address, capacity, openTime, closeTime, latitude, longitude } = parsed.data
+
+  const { error: updateError } = await svc
+    .from('hubs' as never)
+    .update({
+      name: name.trim(),
+      alias: alias.toUpperCase(),
+      location: location.trim(),
+      address: address.trim(),
+      capacity,
+      open_time: openTime,
+      close_time: closeTime,
+      latitude,
+      longitude,
+    })
+    .eq('id', hubId)
+
+  if (updateError) {
+    if (updateError.message.includes('unique_violation') || updateError.message.includes('duplicate key value') || updateError.message.toLowerCase().includes('unique')) {
+      return { error: `Hub with alias "${alias}" already exists.` }
+    }
+    return { error: updateError.message }
+  }
+
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: role,
+    p_action: 'hub_updated',
+    p_entity: 'hubs',
+    p_entity_id: hubId,
+    p_metadata: { name, alias: alias.toUpperCase() }
+  })
+
+  revalidatePath('/admin/hubs')
+  revalidatePath('/hubs')
+  revalidatePath('/')
+
+  return { success: true }
+}
+
+export async function updateUserRole(
+  targetUserId: string,
+  newRole: UserRole
+): Promise<{ error?: string; success?: boolean }> {
+  const { svc, userId, role: adminRole, error: authError } = await requireAdmin()
+  if (authError || !svc) return { error: authError ?? 'Auth error' }
+
+  // Prevent self-demotion/self-modification
+  if (targetUserId === userId) {
+    return { error: 'You cannot change your own role.' }
+  }
+
+  const validRoles: UserRole[] = ['customer', 'hub_staff', 'support_admin', 'ops_admin', 'master_admin']
+  if (!validRoles.includes(newRole)) {
+    return { error: 'Invalid role' }
+  }
+
+  const { error: updateError } = await svc
+    .from('users' as never)
+    .update({ role: newRole })
+    .eq('id', targetUserId)
+
+  if (updateError) {
+    return { error: updateError.message }
+  }
+
+  // Audit log
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: adminRole,
+    p_action: 'user_role_updated',
+    p_entity: 'users',
+    p_entity_id: targetUserId,
+    p_metadata: { role: newRole }
+  })
+
+  revalidatePath('/admin/users')
+  return { success: true }
+}
+
+

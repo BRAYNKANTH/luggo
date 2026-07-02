@@ -78,20 +78,20 @@ export async function createStaffMember({
 
     userId = authData.user.id
 
-    // Insert users row
-    const { error: userInsertError } = await svc
+    // Upsert users row (trigger on_auth_user_created automatically inserts it as customer on auth signup)
+    const { error: userUpsertError } = await svc
       .from('users' as never)
-      .insert({
+      .upsert({
         id: userId,
         name: name.trim(),
         email: email.toLowerCase(),
-        phone: null,
         role: 'hub_staff',
-      }) as { error: { message: string } | null }
+      }, { onConflict: 'id' }) as { error: { message: string } | null }
 
-    if (userInsertError) {
-      return { error: userInsertError.message }
+    if (userUpsertError) {
+      return { error: userUpsertError.message }
     }
+
 
     // Send magic link so they can set up login
     await svc.auth.admin.generateLink({

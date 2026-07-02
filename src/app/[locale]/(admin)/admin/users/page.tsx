@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AdminShell } from '@/components/admin/AdminShell'
+import { UserRoleSelector } from '@/components/admin/UserRoleSelector'
 import { type UserRole } from '@/types/database'
 import { format } from 'date-fns'
 
@@ -92,6 +93,7 @@ export default async function AdminUsersPage({
                     <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400">Bookings</th>
                   )}
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Joined</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Role / Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -110,11 +112,18 @@ export default async function AdminUsersPage({
                     <td className="px-5 py-3 text-xs text-gray-400">
                       {format(new Date(u.created_at), 'dd MMM yyyy')}
                     </td>
+                    <td className="px-5 py-3">
+                      <UserRoleSelector
+                        userId={u.id}
+                        currentRole={u.role}
+                        disabled={u.id === user?.id}
+                      />
+                    </td>
                   </tr>
                 ))}
                 {!users?.length && (
                   <tr>
-                    <td colSpan={5} className="px-5 py-10 text-center text-gray-400 text-sm">
+                    <td colSpan={6} className="px-5 py-10 text-center text-gray-400 text-sm">
                       No users found.
                     </td>
                   </tr>
