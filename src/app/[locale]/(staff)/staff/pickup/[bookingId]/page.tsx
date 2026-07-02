@@ -9,6 +9,7 @@ import { completePickupAction, waiveAndCompletePickupAction, resolveIncidentRepo
 import { BAG_LABELS } from '@/lib/utils/pricing'
 import { type BookingStatus, type BagType } from '@/types/database'
 import { isPast } from 'date-fns'
+import { LiveStorageCountdown } from '@/components/staff/LiveStorageCountdown'
 
 type Bag = { 
   id: string
@@ -187,6 +188,9 @@ export default async function StaffPickupPage({
             </p>
           )}
         </div>
+
+        {/* Live ticking countdown timer */}
+        <LiveStorageCountdown endTime={booking.end_time} status={booking.status} />
 
         {/* Incidents resolver console */}
         {booking.status === 'exception_hold' && incidents.length > 0 && (

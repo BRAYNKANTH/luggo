@@ -234,6 +234,11 @@ export function WalkInForm({ hubId }: WalkInFormProps) {
             required
             value={expectedPickup}
             onChange={(e) => setExpectedPickup(e.target.value)}
+            min={(() => {
+              const now = new Date()
+              const tzOffset = now.getTimezoneOffset() * 60000
+              return new Date(now.getTime() - tzOffset).toISOString().slice(0, 16)
+            })()}
             className="w-full px-4 py-3 rounded-xl bg-white/15 border border-white/20 text-white text-sm focus:outline-none focus:ring-1 focus:ring-brand-light focus:border-transparent"
           />
         </div>

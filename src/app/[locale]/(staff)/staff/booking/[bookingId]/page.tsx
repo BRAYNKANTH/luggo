@@ -13,6 +13,7 @@ import { StaffVerificationForm } from '@/components/staff/StaffVerificationForm'
 import { CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react'
 import { type BookingStatus, type BagType } from '@/types/database'
 import { BAG_LABELS, calculateLateFee } from '@/lib/utils/pricing'
+import { LiveStorageCountdown } from '@/components/staff/LiveStorageCountdown'
 
 type BookingFull = {
   id: string
@@ -179,6 +180,9 @@ export default async function StaffBookingPage({
             </div>
           </div>
         )}
+
+        {/* Live ticking countdown timer */}
+        <LiveStorageCountdown endTime={booking.end_time} status={booking.status} />
 
         {/* Pay at Hub Cash Alert */}
         {bookingPayment?.status === 'pending' && bookingPayment?.gateway_ref === 'PAY_AT_HUB' && booking.status === 'confirmed' && (
