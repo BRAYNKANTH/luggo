@@ -591,6 +591,7 @@ export async function createWalkInBooking(input: {
 
   const { error: bagsError } = await svc.from('booking_bags' as never).insert(bagsToInsert)
   if (bagsError) {
+    await svc.from('bookings' as never).delete().eq('id', booking.id)
     return { error: bagsError.message }
   }
 
@@ -720,10 +721,16 @@ export async function registerBags(
     }
 
     // C. Lock bag tag
-    await svc
+    const { data: updatedTags, error: updateTagError } = await svc
       .from('bag_tags' as never)
       .update({ status: 'in_storage', current_booking_id: bookingId })
       .eq('id', tag.id)
+      .eq('status', 'available')
+      .select('id') as { data: { id: string }[] | null; error: PostgrestError | null }
+
+    if (updateTagError || !updatedTags || updatedTags.length === 0) {
+      return { error: `Bag Tag "${bag.tag_code}" is no longer available (assigned concurrently).` }
+    }
 
     // D. Audit
     await svc.rpc('write_audit_log', {
