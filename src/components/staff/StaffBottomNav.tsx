@@ -15,8 +15,9 @@ const NAV_ITEMS = [
 export function StaffBottomNav() {
   const pathname = usePathname()
 
-  // Hide nav on login page
-  if (pathname === '/staff/login') return null
+  // Only show bottom navigation on top-level pages
+  const showNav = NAV_ITEMS.some((item) => pathname === item.href)
+  if (!showNav) return null
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-[60] bg-[#0f1923]/90 backdrop-blur-xl border-t border-white/5 pb-safe">

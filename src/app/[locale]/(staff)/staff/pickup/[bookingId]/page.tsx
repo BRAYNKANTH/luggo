@@ -305,7 +305,7 @@ export default async function StaffPickupPage({
       </div>
 
       {/* Handover action CTAs */}
-      <div className="fixed bottom-0 left-0 right-0 bg-ocean-900 border-t border-white/10 px-4 py-4 pb-safe space-y-2">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-ocean-900 border-t border-white/10 px-4 py-4 pb-safe space-y-2">
         <p className="text-white/40 text-xs text-center mb-1 leading-normal max-w-md mx-auto">
           Confirm that Reusable Tag codes and zipper Seal numbers match this screen perfectly before cutting seals.
         </p>

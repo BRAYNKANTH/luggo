@@ -329,7 +329,7 @@ export default async function StaffBookingPage({
 
       {/* Sticky action footer */}
       {(nextAction === 'check-in' || nextAction === 'verify_id' || nextAction === 'bags' || nextAction === 'pickup') && (
-        <div className="fixed bottom-0 left-0 right-0 bg-ocean-900 border-t border-white/10 px-4 py-4 pb-safe">
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-ocean-900 border-t border-white/10 px-4 py-4 pb-safe">
           {nextAction === 'check-in' && (
             <form action={markArrivedAction.bind(null, booking.id)}>
               <Button type="submit" fullWidth size="lg">
