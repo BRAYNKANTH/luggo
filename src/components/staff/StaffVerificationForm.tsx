@@ -16,14 +16,8 @@ export function StaffVerificationForm({ bookingId }: StaffVerificationFormProps)
 
   // Checklist items
   const [checklist, setChecklist] = useState({
-    qrScanned: true, // starts checked as they are viewing the page
-    phoneConfirmed: false,
-    idTypeMatched: false,
-    idNumberMatched: false,
-    idNameMatched: false,
-    idPhotoMatched: false,
-    bagCountMatched: false,
-    bagConditionChecked: false,
+    identityVerified: false,
+    luggageChecked: false,
     prohibitedConfirmed: false,
   })
 
@@ -35,21 +29,21 @@ export function StaffVerificationForm({ bookingId }: StaffVerificationFormProps)
     setChecklist(prev => ({ ...prev, [key]: !prev[key] }))
   }
 
-  // All checklist items are helper guidelines (pre-approved to speed up counter operations)
-  const allTicked = true
+  // All checklist items must be ticked to approve
+  const allTicked = checklist.identityVerified && checklist.luggageChecked && checklist.prohibitedConfirmed
 
   async function handleApprove() {
     setError(null)
     setLoading(true)
     try {
       const result = await verifyIdentity(bookingId, {
-        verifiedPhone: checklist.phoneConfirmed,
-        idTypeMatched: checklist.idTypeMatched,
-        idNumberMatched: checklist.idNumberMatched,
-        idNameMatched: checklist.idNameMatched,
-        idPhotoMatchedPerson: checklist.idPhotoMatched,
-        bagCountMatched: checklist.bagCountMatched,
-        bagConditionChecked: checklist.bagConditionChecked,
+        verifiedPhone: checklist.identityVerified,
+        idTypeMatched: checklist.identityVerified,
+        idNumberMatched: checklist.identityVerified,
+        idNameMatched: checklist.identityVerified,
+        idPhotoMatchedPerson: checklist.identityVerified,
+        bagCountMatched: checklist.luggageChecked,
+        bagConditionChecked: checklist.luggageChecked,
         prohibitedItemsConfirmed: checklist.prohibitedConfirmed,
         acceptedAt: new Date().toISOString(),
       })
@@ -113,27 +107,20 @@ export function StaffVerificationForm({ bookingId }: StaffVerificationFormProps)
       )}
 
       {/* Checklist Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { key: 'qrScanned' as const, label: 'Booking QR/code scanned & matched' },
-          { key: 'phoneConfirmed' as const, label: 'Phone SMS OTP verified or phone confirmed' },
-          { key: 'idTypeMatched' as const, label: 'Physical ID type matches booking ID type' },
-          { key: 'idNumberMatched' as const, label: 'Physical ID number matches booking ID number' },
-          { key: 'idNameMatched' as const, label: 'ID name matches/reasonably matches full name' },
-          { key: 'idPhotoMatched' as const, label: 'ID photo matches the person dropping off' },
-          { key: 'bagCountMatched' as const, label: 'Bag count matches booking quantity' },
-          { key: 'bagConditionChecked' as const, label: 'Bag exterior condition checked (no leaks/damage)' },
-          { key: 'prohibitedConfirmed' as const, label: 'Prohibited-items declaration confirmed verbally' },
+          { key: 'identityVerified' as const, label: 'ID Check: Physical ID matches booking document reference' },
+          { key: 'luggageChecked' as const, label: 'Luggage Check: Quantity matches & exterior condition verified' },
+          { key: 'prohibitedConfirmed' as const, label: 'Safety Check: Prohibited-items declaration confirmed verbally' },
         ].map(item => (
-          <label key={item.key} className="flex items-start gap-3 cursor-pointer text-xs select-none">
+          <label key={item.key} className="flex items-start gap-3 cursor-pointer text-xs select-none bg-white/5 hover:bg-white/10 p-4 rounded-2xl border border-white/5 transition-all">
             <input
               type="checkbox"
               checked={checklist[item.key]}
               onChange={() => handleCheckboxChange(item.key)}
-              disabled={item.key === 'qrScanned'} // always true
               className="mt-0.5 w-4 h-4 rounded text-brand border-white/20 bg-white/10 checked:bg-brand focus:ring-0 focus:ring-offset-0 shrink-0"
             />
-            <span className={`${checklist[item.key] ? 'text-white font-bold' : 'text-white/50'}`}>
+            <span className={`${checklist[item.key] ? 'text-white font-bold' : 'text-white/50'} leading-snug`}>
               {item.label}
             </span>
           </label>
