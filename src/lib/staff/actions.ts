@@ -1066,7 +1066,34 @@ export async function rejectBookingIdentity(bookingId: string, reason: string) {
   
   const { svc, userId } = await requireStaff()
 
-  // Audit the identity verification rejection / escalation
+  // 1. Transition booking to exception_hold
+  const { error: bookingError } = await svc
+    .from('bookings' as never)
+    .update({ status: 'exception_hold' })
+    .eq('id', bookingId)
+
+  if (bookingError) {
+    return { error: bookingError.message }
+  }
+
+  // 2. Insert incident report record
+  const { error: incidentError } = await svc
+    .from('incident_reports' as never)
+    .insert({
+      booking_id: bookingId,
+      incident_type: 'customer_dispute',
+      description: `Identity verification rejected: ${reason.trim()}`,
+      status: 'open',
+      reported_by_staff_id: userId
+    })
+
+  if (incidentError) {
+    // Attempt to revert status if incident insert failed
+    await svc.from('bookings' as never).update({ status: 'arrived' }).eq('id', bookingId)
+    return { error: incidentError.message }
+  }
+
+  // 3. Audit the identity verification rejection / escalation
   await svc.rpc('write_audit_log', {
     p_actor_id: userId,
     p_actor_role: 'hub_staff',
