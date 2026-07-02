@@ -10,7 +10,8 @@ import {
   User, ChevronRight, Inbox, ArrowRight, Tag,
   ShoppingBag, ShieldAlert, Plus
 } from 'lucide-react'
-import { format, isToday, isTomorrow, isPast, formatDistanceToNow } from 'date-fns'
+import { isPast, formatDistanceToNow } from 'date-fns'
+import { formatInSLT } from '@/lib/utils/timezone'
 import { type BookingStatus, type BagType } from '@/types/database'
 
 type ActiveBooking = {
@@ -46,9 +47,7 @@ const NEXT_ACTION: Partial<Record<BookingStatus, { label: string; icon: React.Re
 
 function formatDropoff(dt: string) {
   const d = new Date(dt)
-  if (isToday(d))    return `Today ${format(d, 'h:mm a')}`
-  if (isTomorrow(d)) return `Tomorrow ${format(d, 'h:mm a')}`
-  return format(d, 'dd MMM, h:mm a')
+  return formatInSLT(d, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })
 }
 
 export default async function StaffDashboardPage({

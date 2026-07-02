@@ -4,7 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { type UserRole, type BookingStatus, type BagType } from '@/types/database'
-import { format, isPast } from 'date-fns'
+import { isPast } from 'date-fns'
+import { formatDateSLT, formatInSLT } from '@/lib/utils/timezone'
 import { BAG_LABELS } from '@/lib/utils/pricing'
 import { ChevronLeft, User, MapPin, Clock, Package, CreditCard, Tag, Shield, AlertTriangle } from 'lucide-react'
 
@@ -130,7 +131,7 @@ export default async function AdminBookingDetailPage({
           <div>
             <h1 className="text-2xl font-extrabold text-ocean-900">Booking Detail</h1>
             <p className="text-sm text-gray-400 mt-0.5">
-              Created {format(new Date(booking.created_at), 'dd MMM yyyy, h:mm a')}
+              Created {formatInSLT(booking.created_at, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
             </p>
           </div>
           <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${STATUS_COLOUR[booking.status] ?? 'bg-gray-100 text-gray-500'}`}>
@@ -175,19 +176,19 @@ export default async function AdminBookingDetailPage({
                     <Clock size={11} /> Drop-off
                   </p>
                   <p className="font-semibold text-sm text-ocean-900">
-                    {format(new Date(booking.start_time), 'dd MMM yyyy')}
+                    {formatDateSLT(booking.start_time)}
                   </p>
-                  <p className="text-xs text-gray-400">{format(new Date(booking.start_time), 'h:mm a')}</p>
+                  <p className="text-xs text-gray-400">{formatInSLT(booking.start_time, { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
                 </div>
                 <div>
                   <p className={`text-xs font-medium mb-1 flex items-center gap-1 ${isOverdue && isActive ? 'text-red-500' : 'text-gray-400'}`}>
                     <Clock size={11} /> Pick-up by
                   </p>
                   <p className={`font-semibold text-sm ${isOverdue && isActive ? 'text-red-600' : 'text-ocean-900'}`}>
-                    {format(new Date(booking.end_time), 'dd MMM yyyy')}
+                    {formatDateSLT(booking.end_time)}
                   </p>
                   <p className={`text-xs ${isOverdue && isActive ? 'text-red-400 font-semibold' : 'text-gray-400'}`}>
-                    {format(new Date(booking.end_time), 'h:mm a')}
+                    {formatInSLT(booking.end_time, { hour: '2-digit', minute: '2-digit', hour12: true })}
                     {isOverdue && isActive && ' — OVERDUE'}
                   </p>
                 </div>
@@ -236,7 +237,7 @@ export default async function AdminBookingDetailPage({
                           Attempt {sealProofs.length - i}
                         </p>
                         <p className="text-gray-400 text-xs">
-                          {format(new Date(sp.uploaded_at), 'dd MMM, h:mm a')}
+                          {formatInSLT(sp.uploaded_at, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -271,7 +272,7 @@ export default async function AdminBookingDetailPage({
                     <div>
                       <p className="text-xs font-semibold text-gray-700 capitalize">{p.type.replace('_', ' ')}</p>
                       <p className="text-[10px] text-gray-400 mt-0.5">
-                        {format(new Date(p.created_at), 'dd MMM, h:mm a')}
+                        {formatInSLT(p.created_at, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
                       </p>
                       {p.gateway_ref && (
                         <p className="text-[10px] font-mono text-gray-300 mt-0.5">{p.gateway_ref}</p>

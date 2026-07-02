@@ -13,7 +13,7 @@ import {
   ShoppingBag, CreditCard, QrCode, ShieldCheck
 } from 'lucide-react'
 import { BookingProgressTracker } from '@/components/customer/BookingProgressTracker'
-import { format } from 'date-fns'
+import { formatDateSLT, formatDateTimeSLT } from '@/lib/utils/timezone'
 import { type BookingStatus, type BagType } from '@/types/database'
 import { BAG_LABELS, BAG_RATES } from '@/lib/utils/pricing'
 
@@ -85,7 +85,7 @@ export default async function BookingDetailPage({
 
       <PageHeader
         title={booking.hubs?.name ?? 'Booking'}
-        subtitle={`#${booking.id.slice(0, 8).toUpperCase()} · ${format(start, 'dd MMM yyyy')}`}
+        subtitle={`#${booking.id.slice(0, 8).toUpperCase()} · ${formatDateSLT(start)}`}
         backHref="/bookings"
         action={<BookingStatusBadge status={booking.status} />}
       />
@@ -249,11 +249,11 @@ export default async function BookingDetailPage({
             <div className="flex-1 grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-gray-400 font-medium">Drop-off</p>
-                <p className="text-sm font-semibold text-gray-900">{format(start, 'dd MMM, HH:mm')}</p>
+                <p className="text-sm font-semibold text-gray-900">{formatDateTimeSLT(start)}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-400 font-medium">Pick-up</p>
-                <p className="text-sm font-semibold text-gray-900">{format(end, 'dd MMM, HH:mm')}</p>
+                <p className="text-sm font-semibold text-gray-900">{formatDateTimeSLT(end)}</p>
               </div>
             </div>
           </div>

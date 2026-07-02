@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Logo } from '@/components/ui/Logo'
 import { CheckCircle, MapPin, Clock, Package, CreditCard, ArrowLeft, Tag } from 'lucide-react'
-import { format } from 'date-fns'
+import { formatDateSLT, formatInSLT } from '@/lib/utils/timezone'
 import { BAG_LABELS, BAG_RATES } from '@/lib/utils/pricing'
 import { type BagType } from '@/types/database'
 
@@ -133,13 +133,13 @@ export default async function BookingReceiptPage({
                 <div className="grid grid-cols-2 gap-4 flex-1">
                   <div>
                     <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Drop-off</p>
-                    <p className="text-sm font-semibold text-gray-900">{format(start, 'dd MMM yyyy')}</p>
-                    <p className="text-xs text-gray-500">{format(start, 'h:mm a')}</p>
+                    <p className="text-sm font-semibold text-gray-900">{formatDateSLT(start)}</p>
+                    <p className="text-xs text-gray-500">{formatInSLT(start, { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
                   </div>
                   <div>
                     <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Pick-up</p>
-                    <p className="text-sm font-semibold text-gray-900">{format(end, 'dd MMM yyyy')}</p>
-                    <p className="text-xs text-gray-500">{format(end, 'h:mm a')}</p>
+                    <p className="text-sm font-semibold text-gray-900">{formatDateSLT(end)}</p>
+                    <p className="text-xs text-gray-500">{formatInSLT(end, { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
                   </div>
                 </div>
               </div>
@@ -225,7 +225,7 @@ export default async function BookingReceiptPage({
                       <div key={p.id} className="flex justify-between items-center text-xs">
                         <div>
                           <span className="text-gray-600 capitalize font-medium">{p.type.replace('_', ' ')}</span>
-                          <span className="text-gray-400 ml-2">· {format(new Date(p.created_at), 'dd MMM, h:mm a')}</span>
+                          <span className="text-gray-400 ml-2">· {formatInSLT(p.created_at, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                         </div>
                         <span className="font-semibold text-gray-700">LKR {p.amount.toLocaleString()}</span>
                       </div>
@@ -242,7 +242,7 @@ export default async function BookingReceiptPage({
               Thank you for choosing Luggo · luggo.lk
             </p>
             <p className="text-xs text-gray-300 mt-0.5">
-              Issued {format(new Date(), 'dd MMM yyyy, h:mm a')}
+              Issued {formatInSLT(new Date(), { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
             </p>
           </div>
         </div>

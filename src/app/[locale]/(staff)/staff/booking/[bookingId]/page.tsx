@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/Button'
 import { BookingStatusBadge } from '@/components/customer/BookingStatusBadge'
 import { RealtimeRefresher } from '@/components/shared/RealtimeRefresher'
 import { ChevronLeft, User, Clock, Package, Tag, ShieldAlert } from 'lucide-react'
-import { format, isPast } from 'date-fns'
+import { isPast } from 'date-fns'
+import { formatInSLT } from '@/lib/utils/timezone'
 import { markArrivedAction, bypassSealConfirmationAction, completePickupWithCashAction } from '@/lib/staff/actions'
 import { StaffVerificationForm } from '@/components/staff/StaffVerificationForm'
 import { CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react'
@@ -237,18 +238,18 @@ export default async function StaffBookingPage({
             <div className="flex items-center gap-1.5 text-white/50 text-xs mb-1">
               <Clock size={12} /> Drop-off
             </div>
-            <p className="font-bold text-sm">{format(start, 'dd MMM')}</p>
-            <p className="text-white/60 text-xs">{format(start, 'h:mm a')}</p>
+            <p className="font-bold text-sm">{formatInSLT(start, { day: '2-digit', month: 'short' })}</p>
+            <p className="text-white/60 text-xs">{formatInSLT(start, { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
           </div>
           <div className={`rounded-2xl p-3 ${isOverdue ? 'bg-red-500/20 border border-red-400/30' : 'bg-white/10'}`}>
             <div className="flex items-center gap-1.5 text-white/50 text-xs mb-1">
               <Clock size={12} /> Pick-up
             </div>
             <p className={`font-bold text-sm ${isOverdue ? 'text-red-300' : ''}`}>
-              {format(end, 'dd MMM')}
+              {formatInSLT(end, { day: '2-digit', month: 'short' })}
             </p>
             <p className={`text-xs ${isOverdue ? 'text-red-400' : 'text-white/60'}`}>
-              {format(end, 'h:mm a')} {isOverdue && booking.status === 'overstayed' ? '— OVERDUE' : ''}
+              {formatInSLT(end, { hour: '2-digit', minute: '2-digit', hour12: true })} {isOverdue && booking.status === 'overstayed' ? '— OVERDUE' : ''}
             </p>
           </div>
         </div>
