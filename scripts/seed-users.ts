@@ -22,8 +22,6 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 })
 
 async function seedUsers() {
-  console.log('🚀 Starting user seeding...')
-
   const testUsers = [
     {
       email: 'admin@luggo.lk',
@@ -40,8 +38,32 @@ async function seedUsers() {
     }
   ]
 
+  // Load existing auth users to prevent duplicates and handle pre-existing accounts
+  const { data: authUsersResult, error: listError } = await supabase.auth.admin.listUsers()
+  if (listError) {
+    console.error('Error fetching auth users:', listError.message)
+    return
+  }
+  const authUsers = authUsersResult?.users ?? []
+
   for (const u of testUsers) {
     console.log(`\nCreating ${u.name} (${u.email})...`)
+
+    const existingAuth = authUsers.find(user => user.email?.toLowerCase() === u.email.toLowerCase())
+
+    if (existingAuth) {
+      console.log(`   User already exists in Auth. Updating password to "${u.password}"...`)
+      const { error: resetError } = await supabase.auth.admin.updateUserById(existingAuth.id, {
+        password: u.password
+      })
+      if (resetError) {
+        console.error(`   Error resetting password:`, resetError.message)
+      } else {
+        console.log(`   Password reset completed successfully via Supabase Admin API!`)
+      }
+      await setupPublicProfile(existingAuth.id, u)
+      continue
+    }
 
     // 1. Create Auth User
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -50,18 +72,8 @@ async function seedUsers() {
       email_confirm: true,
       user_metadata: { name: u.name }
     })
-
     if (authError) {
-      if (authError.message.includes('already exists')) {
-        console.log(`   User already exists in Auth. Skipping creation.`)
-        // If exists, we still need to ensure they are in public.users with the right role
-        const { data: existingAuth } = await supabase.from('users').select('id').eq('email', u.email).maybeSingle()
-        if (existingAuth) {
-          await setupPublicProfile(existingAuth.id, u)
-        }
-      } else {
-        console.error(`   Error creating auth user:`, authError.message)
-      }
+      console.error(`   Error creating auth user:`, authError.message)
       continue
     }
 
