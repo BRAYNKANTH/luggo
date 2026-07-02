@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, ArrowRight, ShieldAlert, BadgeAlert } from 'lucide-react'
+import { Plus, Trash2, ArrowRight, BadgeAlert } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import { createWalkInBooking } from '@/lib/staff/actions'
@@ -123,7 +123,7 @@ export function WalkInForm({ hubId }: WalkInFormProps) {
       } else {
         router.push(`/staff/booking/${result.bookingId}/bags`)
       }
-    } catch (err) {
+    } catch {
       setError('A server error occurred. Please try again.')
     } finally {
       setLoading(false)

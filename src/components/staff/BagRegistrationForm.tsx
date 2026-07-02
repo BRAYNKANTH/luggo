@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Camera, Plus, Trash2, Shield, Info, AlertCircle } from 'lucide-react'
+import { Camera, Plus, Trash2, Shield, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import { SealScanner } from '@/components/staff/SealScanner'
@@ -86,9 +86,9 @@ export function BagRegistrationForm({ bookingId, initialBags }: BagRegistrationF
     setBags(bags.filter((_, idx) => idx !== index))
   }
 
-  function updateBagField(index: number, field: keyof BagInput, value: any) {
+  function updateBagField(index: number, field: keyof BagInput, value: string) {
     const updated = [...bags]
-    updated[index] = { ...updated[index], [field]: value }
+    updated[index] = { ...updated[index], [field]: value } as BagInput
     setBags(updated)
   }
 
@@ -149,7 +149,7 @@ export function BagRegistrationForm({ bookingId, initialBags }: BagRegistrationF
       } else {
         router.push('/staff/dashboard?success=bags_registered')
       }
-    } catch (err) {
+    } catch {
       setError('A system error occurred. Please try again.')
     } finally {
       setLoading(false)

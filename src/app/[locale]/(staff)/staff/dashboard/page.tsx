@@ -5,11 +5,10 @@ import { Logo } from '@/components/ui/Logo'
 import { SignOutButton } from '@/components/shared/SignOutButton'
 import { RealtimeDashboardRefresher } from '@/components/staff/RealtimeDashboardRefresher'
 import { Button } from '@/components/ui/Button'
-import { BookingStatusBadge } from '@/components/customer/BookingStatusBadge'
 import {
   QrCode, Package, Clock, AlertTriangle, CheckCircle2,
-  User, ChevronRight, Inbox, ArrowRight, Tag, Camera,
-  ShoppingBag, Timer, RefreshCw, ShieldAlert, Plus
+  User, ChevronRight, Inbox, ArrowRight, Tag,
+  ShoppingBag, ShieldAlert, Plus
 } from 'lucide-react'
 import { format, isToday, isTomorrow, isPast, formatDistanceToNow } from 'date-fns'
 import { type BookingStatus, type BagType } from '@/types/database'
@@ -283,7 +282,7 @@ export default async function StaffDashboardPage({
         {/* Bookings List */}
         <div className="space-y-3">
           {tabList.map((b) => (
-            <BookingCard key={b.id} booking={b} hubAlias={hub?.alias ?? ''} />
+            <BookingCard key={b.id} booking={b} />
           ))}
 
           {tabList.length === 0 && (
@@ -317,10 +316,8 @@ export default async function StaffDashboardPage({
 
 function BookingCard({
   booking,
-  hubAlias,
 }: {
   booking: ActiveBooking
-  hubAlias: string
 }) {
   const next = NEXT_ACTION[booking.status]
   const isOver = isPast(new Date(booking.end_time))

@@ -15,10 +15,9 @@ interface ExceptionCase {
 interface Props {
   bookingId: string
   exceptions: ExceptionCase[]
-  supervisorUserId: string
 }
 
-export function SupervisorResolutionPanel({ bookingId, exceptions, supervisorUserId }: Props) {
+export function SupervisorResolutionPanel({ bookingId, exceptions }: Props) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)

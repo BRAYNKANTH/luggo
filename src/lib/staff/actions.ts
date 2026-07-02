@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { type PostgrestError } from '@supabase/supabase-js'
+import { type PostgrestError, type SupabaseClient } from '@supabase/supabase-js'
 import { uuidSchema } from '@/lib/validators/common'
 import { type BagType } from '@/types/database'
 import { calculateLateFee } from '@/lib/utils/pricing'
@@ -346,7 +346,7 @@ export async function uploadSealProof(
 // ─────────────────────────────────────────────
 // WAIVE LATE FEE  overstayed → ready_for_release (staff override, supervisor only)
 // ─────────────────────────────────────────────
-async function checkIsSupervisor(userId: string, svc: any): Promise<boolean> {
+async function checkIsSupervisor(userId: string, svc: SupabaseClient): Promise<boolean> {
   const { data: userRow } = await svc
     .from('users')
     .select('role')
@@ -366,7 +366,8 @@ export async function waiveAndCompletePickupAction(bookingId: string): Promise<v
 }
 
 export async function waiveAndCompletePickup(
-  bookingId: string
+  bookingId: string,
+  reason?: string
 ): Promise<{ error?: string }> {
   const validId = uuidSchema.safeParse(bookingId)
   if (!validId.success) return { error: validId.error.issues[0].message }
@@ -420,7 +421,7 @@ export async function waiveAndCompletePickup(
     p_action: 'late_fee_waived',
     p_entity: 'bookings',
     p_entity_id: bookingId,
-    p_metadata: { waived_by_staff_id: userId }
+    p_metadata: { waived_by_staff_id: userId, waiver_reason: reason || 'Not specified' }
   })
 
   return {}
@@ -575,7 +576,7 @@ export async function createWalkInBooking(input: {
       walk_in_nic_passport_ref: input.nicPassportRef
     })
     .select('id')
-    .single() as { data: { id: string } | null; error: any }
+    .single() as { data: { id: string } | null; error: PostgrestError | null }
 
   if (bookingError || !booking) {
     return { error: bookingError?.message || 'Failed to create walk-in booking.' }
@@ -681,15 +682,18 @@ export async function registerBags(
 
   // 3. Register bags and assign tags
   for (const bag of bags) {
-    // A. Find bag tag
     const { data: tag } = await svc
       .from('bag_tags' as never)
-      .select('id, status')
+      .select('id, status, hub_id')
       .eq('tag_code', bag.tag_code.trim())
-      .single() as { data: { id: string; status: string } | null }
+      .single() as { data: { id: string; status: string; hub_id: string } | null }
 
     if (!tag) {
       return { error: `Bag Tag "${bag.tag_code}" does not exist in the system.` }
+    }
+
+    if (tag.hub_id !== hubId) {
+      return { error: `Bag Tag "${bag.tag_code}" is registered to a different hub.` }
     }
 
     if (tag.status !== 'available') {
@@ -709,7 +713,7 @@ export async function registerBags(
         status: 'stored'
       })
       .select('id')
-      .single() as { data: { id: string } | null; error: any }
+      .single() as { data: { id: string } | null; error: PostgrestError | null }
 
     if (insertError || !insertedBag) {
       return { error: `Failed to insert bag: ${insertError?.message || 'Null result'}` }
@@ -825,7 +829,7 @@ export async function createIncidentReport(
       reported_by_staff_id: userId
     })
     .select('id')
-    .single() as { data: { id: string } | null; error: any }
+    .single() as { data: { id: string } | null; error: PostgrestError | null }
 
   if (reportError || !report) {
     return { error: reportError?.message || 'Failed to create incident report.' }
@@ -928,7 +932,7 @@ export async function waiveLateFeeSupervisor(
   bookingId: string,
   reason: string
 ): Promise<{ error?: string }> {
-  return waiveAndCompletePickup(bookingId)
+  return waiveAndCompletePickup(bookingId, reason)
 }
 
 // ─────────────────────────────────────────────

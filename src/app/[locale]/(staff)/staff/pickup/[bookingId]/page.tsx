@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, Package, Tag, AlertTriangle, ShieldCheck, ShieldAlert, CheckSquare, Square } from 'lucide-react'
+import { ChevronLeft, Package, AlertTriangle, ShieldAlert } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { Logo } from '@/components/ui/Logo'
 import { Button } from '@/components/ui/Button'
@@ -97,7 +97,17 @@ export default async function StaffPickupPage({
         users:reported_by_staff_id ( name )
       `)
       .eq('booking_id', booking.id)
-      .eq('status', 'open') as { data: any[] | null; error: unknown }
+      .eq('status', 'open') as {
+        data: {
+          id: string
+          incident_type: string
+          description: string
+          status: string
+          reported_by_staff_id: string
+          users: { name: string } | null
+        }[] | null
+        error: unknown
+      }
 
     if (incidentList) {
       incidents = incidentList.map(item => ({
@@ -106,7 +116,7 @@ export default async function StaffPickupPage({
         description: item.description,
         status: item.status,
         reported_by_staff_id: item.reported_by_staff_id,
-        users: Array.isArray(item.users) ? item.users[0] : item.users
+        users: Array.isArray(item.users) ? (item.users[0] as { name: string } | null) : item.users
       }))
     }
   }
