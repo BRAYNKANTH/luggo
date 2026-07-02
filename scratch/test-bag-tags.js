@@ -2,54 +2,37 @@ const { createClient } = require('@supabase/supabase-js')
 require('path')
 require('dotenv').config({ path: require('path').resolve(process.cwd(), '.env.local') })
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-if (!supabaseUrl || !serviceRoleKey) {
-  console.error('Missing Supabase credentials in .env.local')
-  process.exit(1)
-}
-
-const supabase = createClient(supabaseUrl, serviceRoleKey)
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
 
 async function run() {
-  // 1. Get first active hub
-  const { data: hubs, error: hubError } = await supabase
-    .from('hubs')
-    .select('id, name, alias')
-    .eq('active', true)
-    .limit(1)
+  const hubs = [
+    { id: '7ea5a69a-cfc7-4c28-b938-91040e9803b1', alias: 'CMB' },
+    { id: '05bc7cc9-9d2b-4541-9302-d2de3a62a586', alias: 'FORT' },
+    { id: '5d51323e-6515-4a2b-a309-f832e25f0732', alias: 'BIA' }
+  ]
 
-  if (hubError || !hubs || hubs.length === 0) {
-    console.error('No active hubs found to assign tags to:', hubError?.message)
-    return
-  }
-
-  const hub = hubs[0]
-  console.log(`Using Hub: ${hub.name} (Alias: ${hub.alias}, ID: ${hub.id})`)
-
-  // 2. Generate and insert 10 test tags
   const tags = []
-  for (let i = 101; i <= 110; i++) {
-    const code = `${hub.alias}-A-${i}`
-    tags.push({
-      tag_code: code,
-      qr_code_value: code, // Set qr_code_value matching tag_code
-      hub_id: hub.id,
-      status: 'available'
-    })
+  for (const hub of hubs) {
+    for (let i = 101; i <= 110; i++) {
+      const code = `${hub.alias}-A-${i}`
+      tags.push({
+        tag_code: code,
+        qr_code_value: code,
+        hub_id: hub.id,
+        status: 'available'
+      })
+    }
   }
 
-  // Insert tags (ignore duplicates if they exist already)
   const { data, error } = await supabase
     .from('bag_tags')
     .upsert(tags, { onConflict: 'tag_code' })
     .select()
 
   if (error) {
-    console.error('Error inserting test bag tags:', error.message)
+    console.error('Error seeding tags:', error.message)
   } else {
-    console.log(`Successfully seeded ${data.length} test bag tags:`, data.map(t => t.tag_code))
+    console.log(`Seeded ${data.length} reusable tags successfully!`)
   }
 }
 
