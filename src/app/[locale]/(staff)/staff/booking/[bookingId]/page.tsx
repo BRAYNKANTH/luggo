@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
-import Link from 'next/link'
+import { Link } from '@/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Logo } from '@/components/ui/Logo'
 import { SignOutButton } from '@/components/shared/SignOutButton'
@@ -86,7 +86,7 @@ export default async function StaffBookingPage({
     .eq('type', 'booking')
     .single() as { data: { status: string; gateway_ref: string | null } | null; error: unknown }
 
-  const isCashPaymentPending = bookingPayment?.status === 'pending' && bookingPayment?.gateway_ref === 'PAY_AT_HUB'
+  const isCashPaymentPending = !bookingPayment || (bookingPayment.status === 'pending' && bookingPayment.gateway_ref === 'PAY_AT_HUB')
 
   const start = new Date(booking.start_time)
   const end = new Date(booking.end_time)

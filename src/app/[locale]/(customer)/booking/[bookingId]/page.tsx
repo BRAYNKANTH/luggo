@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
-import Link from 'next/link'
+import { Link } from '@/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { BookingQR } from '@/components/customer/BookingQR'
 import { BookingStatusBadge } from '@/components/customer/BookingStatusBadge'
@@ -32,7 +32,6 @@ type BookingDetail = {
 }
 
 const CANCELLABLE: BookingStatus[] = ['pending_payment', 'confirmed']
-const PICKUP_ELIGIBLE: BookingStatus[] = ['active_storage', 'overstayed']
 const EXTEND_ELIGIBLE: BookingStatus[] = ['confirmed', 'arrived', 'sealing_in_progress', 'sealed_waiting_user_confirmation', 'active_storage', 'overstayed']
 
 export default async function BookingDetailPage({
@@ -81,12 +80,12 @@ export default async function BookingDetailPage({
   const isCancellable   = CANCELLABLE.includes(booking.status)
   const showQR          = !['cancelled', 'expired', 'pending_payment'].includes(booking.status)
   const showConfirmSeal = booking.status === 'sealed_waiting_user_confirmation'
-  const showPickupCTA   = PICKUP_ELIGIBLE.includes(booking.status)
+  const showPickupCTA   = false
   const isPickupPending = booking.status === 'pickup_requested'
   const showExtendCTA   = EXTEND_ELIGIBLE.includes(booking.status)
   const hourlyRate      = booking.booking_bags.reduce((t, b) => t + (BAG_RATES[b.bag_type] || 0), 0)
   const bookingPayment  = booking.payments?.find(p => p.type === 'booking')
-  const isCashPaymentPending = bookingPayment?.status === 'pending' && bookingPayment?.gateway_ref === 'PAY_AT_HUB'
+  const isCashPaymentPending = !bookingPayment || (bookingPayment.status === 'pending' && bookingPayment.gateway_ref === 'PAY_AT_HUB')
 
   return (
     <div className="max-w-3xl mx-auto">

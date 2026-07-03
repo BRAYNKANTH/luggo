@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
-import Link from 'next/link'
+import { Link } from '@/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Logo } from '@/components/ui/Logo'
 import { CheckCircle, MapPin, Clock, Package, CreditCard, ArrowLeft } from 'lucide-react'
