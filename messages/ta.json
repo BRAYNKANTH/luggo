@@ -70,6 +70,7 @@
   },
   "Statuses": {
     "pending_payment": "கட்டணத்திற்காக காத்திருக்கிறது",
+    "early_checkin_pending_payment": "முன்கூட்டியே கட்டணம் நிலுவையில் உள்ளது",
     "confirmed": "உறுதிப்படுத்தப்பட்டது",
     "arrived": "மையத்தில் உள்ளது",
     "sealing_in_progress": "பைகள் பேக் செய்யப்படுகின்றன",

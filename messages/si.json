@@ -70,6 +70,7 @@
   },
   "Statuses": {
     "pending_payment": "ගෙවීම් අපේක්ෂාවෙන්",
+    "early_checkin_pending_payment": "කලින් පැමිණීමේ ගෙවීම් අපේක්ෂාවෙන්",
     "confirmed": "තහවුරු කර ඇත",
     "arrived": "මධ්‍යස්ථානයට පැමිණ ඇත",
     "sealing_in_progress": "බෑග් සීල් කරමින් පවතී",

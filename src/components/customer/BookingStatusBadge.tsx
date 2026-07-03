@@ -9,6 +9,7 @@ const STATUS_CONFIG: Record<
   { variant: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'purple' }
 > = {
   pending_payment:                  { variant: 'warning' },
+  early_checkin_pending_payment:    { variant: 'warning' },
   confirmed:                        { variant: 'info'    },
   arrived:                          { variant: 'info'    },
   sealing_in_progress:              { variant: 'purple'  },

@@ -70,6 +70,7 @@
   },
   "Statuses": {
     "pending_payment": "Awaiting Payment",
+    "early_checkin_pending_payment": "Early Drop-off Payment Pending",
     "confirmed": "Confirmed",
     "arrived": "At the Hub",
     "sealing_in_progress": "Staff Packing Bags",
