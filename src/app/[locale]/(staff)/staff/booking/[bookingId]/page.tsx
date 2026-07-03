@@ -86,6 +86,8 @@ export default async function StaffBookingPage({
     .eq('type', 'booking')
     .single() as { data: { status: string; gateway_ref: string | null } | null; error: unknown }
 
+  const isCashPaymentPending = bookingPayment?.status === 'pending' && bookingPayment?.gateway_ref === 'PAY_AT_HUB'
+
   const start = new Date(booking.start_time)
   const end = new Date(booking.end_time)
   const hasInsurance = booking.qr_code.endsWith('_ins')
@@ -348,9 +350,15 @@ export default async function StaffBookingPage({
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-ocean-900 border-t border-white/10 px-4 py-4 pb-safe">
           {nextAction === 'check-in' && (
             <form action={markArrivedAction.bind(null, booking.id)}>
-              <Button type="submit" fullWidth size="lg">
-                ✓ Check in customer
-              </Button>
+              {isCashPaymentPending ? (
+                <Button type="submit" fullWidth size="lg" className="bg-amber-500 hover:bg-amber-600 text-ocean-900 border-none font-extrabold flex items-center justify-center gap-2">
+                  💵 Collect LKR {booking.total_price.toLocaleString()} Cash & Check In
+                </Button>
+              ) : (
+                <Button type="submit" fullWidth size="lg">
+                  ✓ Check in customer
+                </Button>
+              )}
             </form>
           )}
           {nextAction === 'verify_id' && (

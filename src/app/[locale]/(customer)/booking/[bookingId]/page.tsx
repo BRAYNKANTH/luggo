@@ -28,6 +28,7 @@ type BookingDetail = {
   slot_number: number | null
   hubs: { name: string; alias: string; address: string } | null
   booking_bags: { id: string; bag_type: BagType; sticker_number: string | null; seal_number: string | null }[]
+  payments: { status: string; gateway_ref: string | null; type: string }[]
 }
 
 const CANCELLABLE: BookingStatus[] = ['pending_payment', 'confirmed']
@@ -47,7 +48,12 @@ export default async function BookingDetailPage({
 
   const { data: booking } = await supabase
     .from('bookings')
-    .select('id, status, start_time, end_time, total_price, qr_code, created_at, slot_number, hubs(name, alias, address), booking_bags(id, bag_type, sticker_number, seal_number)')
+    .select(`
+      id, status, start_time, end_time, total_price, qr_code, created_at, slot_number,
+      hubs ( name, alias, address ),
+      booking_bags ( id, bag_type, sticker_number, seal_number ),
+      payments ( status, gateway_ref, type )
+    `)
     .eq('id', params.bookingId)
     .eq('user_id', user.id)
     .single() as { data: BookingDetail | null; error: unknown }
@@ -79,6 +85,8 @@ export default async function BookingDetailPage({
   const isPickupPending = booking.status === 'pickup_requested'
   const showExtendCTA   = EXTEND_ELIGIBLE.includes(booking.status)
   const hourlyRate      = booking.booking_bags.reduce((t, b) => t + (BAG_RATES[b.bag_type] || 0), 0)
+  const bookingPayment  = booking.payments?.find(p => p.type === 'booking')
+  const isCashPaymentPending = bookingPayment?.status === 'pending' && bookingPayment?.gateway_ref === 'PAY_AT_HUB'
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -94,6 +102,15 @@ export default async function BookingDetailPage({
       <div className="px-4 md:px-6 py-4 md:py-6 space-y-4">
 
         {/* ── Banners ── */}
+        {isCashPaymentPending && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
+            <AlertTriangle size={18} className="text-amber-600 shrink-0" />
+            <div>
+              <p className="font-semibold text-amber-900 text-sm">💵 Cash Payment Pending at Hub</p>
+              <p className="text-xs text-amber-700 mt-0.5">Please pay <strong>LKR {booking.total_price.toLocaleString()}</strong> in cash to the staff at the counter during drop-off.</p>
+            </div>
+          </div>
+        )}
         {searchParams.payment === 'success' && (
           <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
             <CheckCircle size={18} className="text-green-600 shrink-0" />
@@ -300,12 +317,20 @@ export default async function BookingDetailPage({
             </div>
             <div className="flex-1 flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-400 font-medium">Total paid</p>
+                <p className="text-xs text-gray-400 font-medium">
+                  {isCashPaymentPending ? 'Amount payable at counter' : 'Total paid'}
+                </p>
                 <p className="text-sm font-bold text-gray-900">LKR {booking.total_price.toLocaleString()}</p>
               </div>
-              <span className="text-xs font-semibold text-green-700 bg-green-50 border border-green-100 px-2.5 py-1 rounded-full">
-                Paid
-              </span>
+              {isCashPaymentPending ? (
+                <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-full">
+                  Pay at Hub (Cash)
+                </span>
+              ) : (
+                <span className="text-xs font-semibold text-green-700 bg-green-50 border border-green-100 px-2.5 py-1 rounded-full">
+                  Paid
+                </span>
+              )}
             </div>
           </div>
         </div>

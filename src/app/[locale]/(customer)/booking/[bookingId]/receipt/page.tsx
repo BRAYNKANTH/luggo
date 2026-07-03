@@ -8,7 +8,7 @@ import { BAG_LABELS, BAG_RATES } from '@/lib/utils/pricing'
 import { type BagType } from '@/types/database'
 
 type Bag = { id: string; bag_type: BagType; sticker_number: string | null; seal_number: string | null }
-type Payment = { id: string; amount: number; status: string; type: string; created_at: string }
+type Payment = { id: string; amount: number; status: string; type: string; gateway_ref: string | null; created_at: string }
 
 export default async function BookingReceiptPage({
   params,
@@ -54,9 +54,8 @@ export default async function BookingReceiptPage({
 
   const { data: payments } = await supabase
     .from('payments' as never)
-    .select('id, amount, status, type, created_at')
+    .select('id, amount, status, type, gateway_ref, created_at')
     .eq('booking_id', params.bookingId)
-    .eq('status', 'paid')
     .order('created_at', { ascending: true }) as { data: Payment[] | null }
 
   const start       = new Date(booking.start_time)
@@ -73,10 +72,14 @@ export default async function BookingReceiptPage({
     seal: bag.seal_number,
   }))
 
+  const paidPayments = (payments ?? []).filter(p => p.status === 'paid')
+  const pendingPayments = (payments ?? []).filter(p => p.status === 'pending')
+
   const subtotal   = lineItems.reduce((s, l) => s + l.total, 0)
-  const lateFees   = (payments ?? []).filter(p => p.type === 'late_fee').reduce((s, p) => s + p.amount, 0)
-  const extensions = (payments ?? []).filter(p => p.type === 'extension').reduce((s, p) => s + p.amount, 0)
-  const grandTotal = (payments ?? []).reduce((s, p) => s + p.amount, 0) || booking.total_price
+  const lateFees   = paidPayments.filter(p => p.type === 'late_fee').reduce((s, p) => s + p.amount, 0)
+  const extensions = paidPayments.filter(p => p.type === 'extension').reduce((s, p) => s + p.amount, 0)
+  const grandTotalPaid = paidPayments.reduce((s, p) => s + p.amount, 0)
+  const pendingBookingPayment = pendingPayments.find(p => p.type === 'booking' && p.gateway_ref === 'PAY_AT_HUB')
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -212,9 +215,15 @@ export default async function BookingReceiptPage({
                   <span>LKR {lateFees.toLocaleString()}</span>
                 </div>
               )}
+              {pendingBookingPayment && (
+                <div className="flex justify-between text-sm text-amber-600 font-bold bg-amber-50/50 p-2 rounded-lg border border-amber-100">
+                  <span>Payable at Hub (Cash)</span>
+                  <span>LKR {pendingBookingPayment.amount.toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between font-black text-ocean-900 text-base pt-2 border-t border-gray-100">
                 <span>Total paid</span>
-                <span>LKR {grandTotal.toLocaleString()}</span>
+                <span>LKR {grandTotalPaid.toLocaleString()}</span>
               </div>
             </div>
 
@@ -232,9 +241,14 @@ export default async function BookingReceiptPage({
                       <div key={p.id} className="flex justify-between items-center text-xs">
                         <div>
                           <span className="text-gray-600 capitalize font-medium">{p.type.replace('_', ' ')}</span>
+                          {p.status === 'pending' && (
+                            <span className="ml-1 text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-1 py-0.5 rounded">
+                              Pending Cash
+                            </span>
+                          )}
                           <span className="text-gray-400 ml-2">· {formatInSLT(p.created_at, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                         </div>
-                        <span className="font-semibold text-gray-700">LKR {p.amount.toLocaleString()}</span>
+                        <span className={`font-semibold ${p.status === 'pending' ? 'text-gray-400 line-through' : 'text-gray-700'}`}>LKR {p.amount.toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
