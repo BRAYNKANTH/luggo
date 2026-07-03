@@ -431,6 +431,9 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending }: StaffCheck
             <p className="text-xs text-white/70 leading-normal">
               Collect payment for early drop-off. Customer keeps their original pickup deadline.
             </p>
+            <p className="text-[10px] text-amber-300/80 leading-normal italic">
+              * Early fee is calculated from the time Luggo staff accepts your luggage.
+            </p>
             <div className="bg-black/20 p-3 rounded-xl border border-white/5 text-[11px] space-y-1 text-white/50">
               <p>• Extra hours: <strong className="text-white font-extrabold">{extraHours} hr{extraHours !== 1 ? 's' : ''}</strong></p>
               <p>• Extra fee: <strong className="text-brand-accent font-extrabold">LKR {earlyCheckinFee.toLocaleString()}</strong></p>

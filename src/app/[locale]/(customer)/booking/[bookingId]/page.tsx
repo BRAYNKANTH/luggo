@@ -180,6 +180,9 @@ export default async function BookingDetailPage({
                 <p className="text-xs text-amber-700 mt-0.5 leading-tight">
                   You are {booking.early_checkin_minutes} minutes early. To keep your original pickup time, please pay LKR {booking.early_checkin_fee}.
                 </p>
+                <p className="text-[10px] text-amber-600/80 leading-normal italic mt-1.5">
+                  * Early fee is calculated from the time Luggo staff accepts your luggage.
+                </p>
               </div>
             </div>
             <EarlyCheckinPayButton bookingId={booking.id} fee={booking.early_checkin_fee} />

@@ -1354,7 +1354,9 @@ export async function processStandardCheckInAction(
     return { error: 'This booking has already been processed or is not in a confirmable status. Refresh the page.' }
   }
 
-  const actualCheckInTime = new Date()
+  // bagCollectedAt represents the time Luggo staff physically accepted the customer's luggage at the hub counter.
+  // This controls the billing duration (early check-in minutes).
+  const bagCollectedAt = new Date()
   const bookedStartTime = new Date(booking.start_time)
   const bookedEndTime = new Date(booking.end_time)
   const totalHourlyBagRate = booking.booking_bags.reduce((total, bag) => total + BAG_RATES[bag.bag_type], 0)
@@ -1362,7 +1364,7 @@ export async function processStandardCheckInAction(
   const decision = calculateEarlyCheckinDecision({
     bookedStartTime,
     bookedEndTime,
-    actualCheckInTime,
+    actualCheckInTime: bagCollectedAt,
     totalHourlyBagRate,
     earlyBufferMinutes: 15
   })
@@ -1374,18 +1376,18 @@ export async function processStandardCheckInAction(
 
   const resolvedCheckInType = decision.isEarly ? 'free_buffer' : 'none'
 
-  // 2. Update booking
+  // 2. Update booking (bagCollectedAt is saved to actual_check_in_time)
   const { error } = await svc
     .from('bookings' as never)
     .update({
       status: 'arrived',
-      actual_check_in_time: actualCheckInTime.toISOString(),
+      actual_check_in_time: bagCollectedAt.toISOString(), // bagCollectedAt controls billing
       early_checkin_minutes: decision.earlyMinutes,
       early_checkin_type: resolvedCheckInType,
       early_checkin_fee: 0,
       early_checkin_payment_status: 'paid',
       early_checkin_handled_by_staff_id: userId,
-      early_checkin_handled_at: actualCheckInTime.toISOString()
+      early_checkin_handled_at: bagCollectedAt.toISOString()
     })
     .eq('id', bookingId)
     .eq('hub_id', hubId)
@@ -1400,7 +1402,7 @@ export async function processStandardCheckInAction(
       status: 'paid', 
       gateway_ref: 'CASH_PAYMENT_AT_HUB', 
       collected_by_staff_id: userId, 
-      collected_at: actualCheckInTime.toISOString() 
+      collected_at: bagCollectedAt.toISOString() 
     })
     .eq('booking_id', bookingId)
     .eq('status', 'pending')
@@ -1440,7 +1442,9 @@ export async function processCashEarlyCheckInAction(
     return { error: 'This booking has already been processed or is not in a confirmable status. Refresh the page.' }
   }
 
-  const actualCheckInTime = new Date()
+  // bagCollectedAt represents the time Luggo staff physically accepted the luggage at the counter.
+  // This controls the billing duration.
+  const bagCollectedAt = new Date()
   const bookedStartTime = new Date(booking.start_time)
   const bookedEndTime = new Date(booking.end_time)
   const totalHourlyBagRate = booking.booking_bags.reduce((total, bag) => total + BAG_RATES[bag.bag_type], 0)
@@ -1448,7 +1452,7 @@ export async function processCashEarlyCheckInAction(
   const decision = calculateEarlyCheckinDecision({
     bookedStartTime,
     bookedEndTime,
-    actualCheckInTime,
+    actualCheckInTime: bagCollectedAt,
     totalHourlyBagRate,
     earlyBufferMinutes: 15
   })
@@ -1481,7 +1485,7 @@ export async function processCashEarlyCheckInAction(
       gateway_ref: 'CASH_AT_COUNTER',
       method: 'cash',
       collected_by_staff_id: userId,
-      collected_at: actualCheckInTime.toISOString()
+      collected_at: new Date().toISOString() // paymentPaidAt controls payment audit only
     })
     .select('id')
     .single() as { data: { id: string } | null; error: PostgrestError | null }
@@ -1495,7 +1499,7 @@ export async function processCashEarlyCheckInAction(
     .from('bookings' as never)
     .update({
       status: 'arrived',
-      actual_check_in_time: actualCheckInTime.toISOString(),
+      actual_check_in_time: bagCollectedAt.toISOString(), // bagCollectedAt controls billing
       early_checkin_minutes: decision.earlyMinutes,
       early_checkin_type: 'pay_extra',
       early_checkin_extra_hours: decision.extraHours,
@@ -1503,7 +1507,7 @@ export async function processCashEarlyCheckInAction(
       early_checkin_payment_status: 'paid',
       early_checkin_payment_id: payment.id,
       early_checkin_handled_by_staff_id: userId,
-      early_checkin_handled_at: actualCheckInTime.toISOString()
+      early_checkin_handled_at: bagCollectedAt.toISOString()
     })
     .eq('id', bookingId)
     .eq('hub_id', hubId)
@@ -1518,7 +1522,7 @@ export async function processCashEarlyCheckInAction(
       status: 'paid', 
       gateway_ref: 'CASH_PAYMENT_AT_HUB', 
       collected_by_staff_id: userId, 
-      collected_at: actualCheckInTime.toISOString() 
+      collected_at: bagCollectedAt.toISOString() 
     })
     .eq('booking_id', bookingId)
     .eq('status', 'pending')
@@ -1564,7 +1568,9 @@ export async function processOnlineEarlyCheckInAction(
     return { error: 'This booking has already been processed or is not in a confirmable status. Refresh the page.' }
   }
 
-  const actualCheckInTime = new Date()
+  // bagCollectedAt represents the time Luggo staff physically accepted the luggage at the counter.
+  // This controls the billing duration.
+  const bagCollectedAt = new Date()
   const bookedStartTime = new Date(booking.start_time)
   const bookedEndTime = new Date(booking.end_time)
   const totalHourlyBagRate = booking.booking_bags.reduce((total, bag) => total + BAG_RATES[bag.bag_type], 0)
@@ -1572,7 +1578,7 @@ export async function processOnlineEarlyCheckInAction(
   const decision = calculateEarlyCheckinDecision({
     bookedStartTime,
     bookedEndTime,
-    actualCheckInTime,
+    actualCheckInTime: bagCollectedAt,
     totalHourlyBagRate,
     earlyBufferMinutes: 15
   })
@@ -1628,7 +1634,7 @@ export async function processOnlineEarlyCheckInAction(
     .from('bookings' as never)
     .update({
       status: 'early_checkin_pending_payment',
-      actual_check_in_time: actualCheckInTime.toISOString(),
+      actual_check_in_time: bagCollectedAt.toISOString(), // bagCollectedAt controls billing
       early_checkin_minutes: decision.earlyMinutes,
       early_checkin_type: 'pay_extra',
       early_checkin_extra_hours: decision.extraHours,
@@ -1636,7 +1642,7 @@ export async function processOnlineEarlyCheckInAction(
       early_checkin_payment_status: 'pending',
       early_checkin_payment_id: paymentId,
       early_checkin_handled_by_staff_id: userId,
-      early_checkin_handled_at: actualCheckInTime.toISOString()
+      early_checkin_handled_at: bagCollectedAt.toISOString()
     })
     .eq('id', bookingId)
     .eq('hub_id', hubId)
@@ -1698,7 +1704,9 @@ export async function processShiftBookingCheckInAction(
     return { error: 'This booking has already been processed or is not in a confirmable status. Refresh the page.' }
   }
 
-  const actualCheckInTime = new Date()
+  // bagCollectedAt represents the time Luggo staff physically accepted the luggage at the counter.
+  // This controls the billing duration and shifting offset.
+  const bagCollectedAt = new Date()
   const bookedStartTime = new Date(booking.start_time)
   const bookedEndTime = new Date(booking.end_time)
   const totalHourlyBagRate = booking.booking_bags.reduce((total, bag) => total + BAG_RATES[bag.bag_type], 0)
@@ -1706,7 +1714,7 @@ export async function processShiftBookingCheckInAction(
   const decision = calculateEarlyCheckinDecision({
     bookedStartTime,
     bookedEndTime,
-    actualCheckInTime,
+    actualCheckInTime: bagCollectedAt,
     totalHourlyBagRate,
     earlyBufferMinutes: 15
   })
@@ -1716,26 +1724,26 @@ export async function processShiftBookingCheckInAction(
   }
 
   // Prevent shifting in the past or invalid values
-  if (decision.shiftedEndTime <= actualCheckInTime) {
+  if (decision.shiftedEndTime <= bagCollectedAt) {
     return { error: 'Shifted pickup time cannot be in the past.' }
   }
 
-  // 2. Update booking times and status
+  // 2. Update booking times and status (shifting based on bagCollectedAt)
   const { error: bookingError } = await svc
     .from('bookings' as never)
     .update({
       status: 'arrived',
-      start_time: decision.shiftedStartTime.toISOString(),
-      end_time: decision.shiftedEndTime.toISOString(),
+      start_time: decision.shiftedStartTime.toISOString(), // shiftedStartTime = bagCollectedAt
+      end_time: decision.shiftedEndTime.toISOString(),     // shiftedEndTime = bagCollectedAt + originalDuration
       original_start_time: booking.start_time,
       original_end_time: booking.end_time,
-      actual_check_in_time: actualCheckInTime.toISOString(),
+      actual_check_in_time: bagCollectedAt.toISOString(), // bagCollectedAt controls billing
       early_checkin_minutes: decision.earlyMinutes,
       early_checkin_type: 'shift_booking',
       early_checkin_fee: 0,
       early_checkin_payment_status: 'paid',
       early_checkin_handled_by_staff_id: userId,
-      early_checkin_handled_at: actualCheckInTime.toISOString()
+      early_checkin_handled_at: bagCollectedAt.toISOString()
     })
     .eq('id', bookingId)
     .eq('hub_id', hubId)
@@ -1750,7 +1758,7 @@ export async function processShiftBookingCheckInAction(
       status: 'paid', 
       gateway_ref: 'CASH_PAYMENT_AT_HUB', 
       collected_by_staff_id: userId, 
-      collected_at: actualCheckInTime.toISOString() 
+      collected_at: bagCollectedAt.toISOString() 
     })
     .eq('booking_id', bookingId)
     .eq('status', 'pending')
@@ -1812,7 +1820,9 @@ export async function processSupervisorOverrideCheckInAction(
     return { error: 'This booking has already been processed or is not in a confirmable status. Refresh the page.' }
   }
 
-  const actualCheckInTime = new Date()
+  // bagCollectedAt represents the time Luggo staff physically accepted the luggage at the counter.
+  // This controls the billing duration.
+  const bagCollectedAt = new Date()
   const bookedStartTime = new Date(booking.start_time)
   const bookedEndTime = new Date(booking.end_time)
   const totalHourlyBagRate = booking.booking_bags.reduce((total, bag) => total + BAG_RATES[bag.bag_type], 0)
@@ -1820,7 +1830,7 @@ export async function processSupervisorOverrideCheckInAction(
   const decision = calculateEarlyCheckinDecision({
     bookedStartTime,
     bookedEndTime,
-    actualCheckInTime,
+    actualCheckInTime: bagCollectedAt,
     totalHourlyBagRate,
     earlyBufferMinutes: 15
   })
@@ -1830,13 +1840,13 @@ export async function processSupervisorOverrideCheckInAction(
     .from('bookings' as never)
     .update({
       status: 'arrived',
-      actual_check_in_time: actualCheckInTime.toISOString(),
+      actual_check_in_time: bagCollectedAt.toISOString(), // bagCollectedAt controls billing
       early_checkin_minutes: decision.earlyMinutes,
       early_checkin_type: 'supervisor_override',
       early_checkin_fee: 0,
       early_checkin_payment_status: 'paid',
       early_checkin_handled_by_staff_id: supervisorId,
-      early_checkin_handled_at: actualCheckInTime.toISOString()
+      early_checkin_handled_at: bagCollectedAt.toISOString()
     })
     .eq('id', bookingId)
     .eq('hub_id', hubId)
@@ -1851,7 +1861,7 @@ export async function processSupervisorOverrideCheckInAction(
       status: 'paid', 
       gateway_ref: 'CASH_PAYMENT_AT_HUB', 
       collected_by_staff_id: userId, 
-      collected_at: actualCheckInTime.toISOString() 
+      collected_at: bagCollectedAt.toISOString() 
     })
     .eq('booking_id', bookingId)
     .eq('status', 'pending')
