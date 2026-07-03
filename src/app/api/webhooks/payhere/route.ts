@@ -90,6 +90,57 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true })
     }
 
+    // ── Early check-in fee payment: order_id = "ec-{paymentId}" ───────────
+    if (order_id.startsWith('ec-')) {
+      const paymentId = order_id.slice(3)
+
+      const { data: ecPayment } = await supabase
+        .from('payments' as never)
+        .select('id, booking_id, amount')
+        .eq('id', paymentId)
+        .eq('type', 'early_checkin')
+        .eq('status', 'pending')
+        .maybeSingle() as { data: { id: string; booking_id: string; amount: number } | null }
+
+      if (!ecPayment || Number(payhere_amount) !== Number(ecPayment.amount)) {
+        console.warn('[PayHere IPN] Early check-in amount mismatch', { paymentId, payhere_amount })
+        return NextResponse.json({ received: true })
+      }
+
+      await supabase
+        .from('payments' as never)
+        .update({ status: 'paid', gateway_ref: payment_id })
+        .eq('id', ecPayment.id)
+        .eq('status', 'pending')
+
+      if (ecPayment.booking_id) {
+        const bookingId = ecPayment.booking_id
+        const { error } = await supabase
+          .from('bookings' as never)
+          .update({ 
+            status: 'arrived', 
+            early_checkin_payment_status: 'paid' 
+          })
+          .eq('id', bookingId)
+          .eq('status', 'early_checkin_pending_payment')
+
+        if (error) {
+          console.error('[PayHere IPN] Failed to update booking after early check-in payment', bookingId, error)
+        } else {
+          console.log('[PayHere IPN] Early check-in payment confirmed, booking status: arrived', bookingId)
+          await supabase
+            .from('payments' as never)
+            .update({ status: 'paid', gateway_ref: 'CASH_PAYMENT_AT_HUB' })
+            .eq('booking_id', bookingId)
+            .eq('status', 'pending')
+            .eq('type', 'booking')
+            .eq('gateway_ref', 'PAY_AT_HUB')
+        }
+      }
+
+      return NextResponse.json({ received: true })
+    }
+
     // ── Extension payment: order_id = "ext-{paymentId}" ───────────────────
     if (order_id.startsWith('ext-')) {
       const paymentId = order_id.slice(4)

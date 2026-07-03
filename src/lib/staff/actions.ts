@@ -1323,3 +1323,436 @@ export async function completePickupWithCash(
 
   return {}
 }
+
+// ─────────────────────────────────────────────
+// EARLY CHECK-IN OPERATIONS
+// ─────────────────────────────────────────────
+
+export async function createEarlyCheckinPaymentLink(bookingId: string, amount: number): Promise<string> {
+  // TODO: Integrate with actual PayHere API to generate payment link for early drop-off fee
+  return `https://luggo.lk/payment/early-checkin/${bookingId}?amount=${amount}`
+}
+
+export async function processStandardCheckInAction(
+  bookingId: string,
+  earlyMinutes: number,
+  checkInType: 'none' | 'free_buffer'
+): Promise<{ error?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, hubId, userId } = await requireStaff()
+
+  // 1. Update booking
+  const { error } = await svc
+    .from('bookings' as never)
+    .update({
+      status: 'arrived',
+      actual_check_in_time: new Date().toISOString(),
+      early_checkin_minutes: earlyMinutes,
+      early_checkin_type: checkInType,
+      early_checkin_fee: 0,
+      early_checkin_payment_status: 'paid',
+      early_checkin_handled_by_staff_id: userId,
+      early_checkin_handled_at: new Date().toISOString()
+    })
+    .eq('id', bookingId)
+    .eq('hub_id', hubId)
+    .eq('status', 'confirmed')
+
+  if (error) return { error: error.message }
+
+  // 2. Resolve pending base payment (cash on arrival) if any
+  await svc
+    .from('payments' as never)
+    .update({ status: 'paid', gateway_ref: 'CASH_PAYMENT_AT_HUB', collected_by_staff_id: userId, collected_at: new Date().toISOString() })
+    .eq('booking_id', bookingId)
+    .eq('status', 'pending')
+    .eq('type', 'booking')
+    .eq('gateway_ref', 'PAY_AT_HUB')
+
+  // 3. Audit
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'customer_arrived',
+    p_entity: 'bookings',
+    p_entity_id: bookingId,
+    p_metadata: { early_checkin_type: checkInType, early_minutes: earlyMinutes }
+  })
+
+  return {}
+}
+
+export async function processCashEarlyCheckInAction(
+  bookingId: string,
+  earlyMinutes: number,
+  extraHours: number,
+  fee: number
+): Promise<{ error?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, hubId, userId } = await requireStaff()
+
+  // 1. Create paid early_checkin payment record
+  const { data: payment, error: paymentError } = await svc
+    .from('payments' as never)
+    .insert({
+      booking_id: bookingId,
+      amount: fee,
+      status: 'paid',
+      type: 'early_checkin',
+      gateway_ref: 'CASH_AT_COUNTER',
+      method: 'cash',
+      collected_by_staff_id: userId,
+      collected_at: new Date().toISOString()
+    })
+    .select('id')
+    .single() as { data: { id: string } | null; error: PostgrestError | null }
+
+  if (paymentError || !payment) return { error: `Failed to record payment: ${paymentError?.message || 'Null'}` }
+
+  // 2. Update booking
+  const { error: bookingError } = await svc
+    .from('bookings' as never)
+    .update({
+      status: 'arrived',
+      actual_check_in_time: new Date().toISOString(),
+      early_checkin_minutes: earlyMinutes,
+      early_checkin_type: 'pay_extra',
+      early_checkin_extra_hours: extraHours,
+      early_checkin_fee: fee,
+      early_checkin_payment_status: 'paid',
+      early_checkin_payment_id: payment.id,
+      early_checkin_handled_by_staff_id: userId,
+      early_checkin_handled_at: new Date().toISOString()
+    })
+    .eq('id', bookingId)
+    .eq('hub_id', hubId)
+    .eq('status', 'confirmed')
+
+  if (bookingError) return { error: bookingError.message }
+
+  // 3. Resolve pending base payment (cash on arrival) if any
+  await svc
+    .from('payments' as never)
+    .update({ status: 'paid', gateway_ref: 'CASH_PAYMENT_AT_HUB', collected_by_staff_id: userId, collected_at: new Date().toISOString() })
+    .eq('booking_id', bookingId)
+    .eq('status', 'pending')
+    .eq('type', 'booking')
+    .eq('gateway_ref', 'PAY_AT_HUB')
+
+  // 4. Audit early checkin decision
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'early_checkin_decision',
+    p_entity: 'bookings',
+    p_entity_id: bookingId,
+    p_metadata: {
+      early_checkin_type: 'pay_extra',
+      early_minutes: earlyMinutes,
+      fee,
+      payment_method: 'cash',
+      staff_id: userId
+    }
+  })
+
+  return {}
+}
+
+export async function processOnlineEarlyCheckInAction(
+  bookingId: string,
+  earlyMinutes: number,
+  extraHours: number,
+  fee: number
+): Promise<{ error?: string; paymentLink?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, hubId, userId } = await requireStaff()
+
+  // 1. Create pending early_checkin payment record
+  const { data: payment, error: paymentError } = await svc
+    .from('payments' as never)
+    .insert({
+      booking_id: bookingId,
+      amount: fee,
+      status: 'pending',
+      type: 'early_checkin',
+      method: 'online'
+    })
+    .select('id')
+    .single() as { data: { id: string } | null; error: PostgrestError | null }
+
+  if (paymentError || !payment) return { error: `Failed to record pending payment: ${paymentError?.message || 'Null'}` }
+
+  // 2. Update booking status to early_checkin_pending_payment
+  const { error: bookingError } = await svc
+    .from('bookings' as never)
+    .update({
+      status: 'early_checkin_pending_payment',
+      actual_check_in_time: new Date().toISOString(),
+      early_checkin_minutes: earlyMinutes,
+      early_checkin_type: 'pay_extra',
+      early_checkin_extra_hours: extraHours,
+      early_checkin_fee: fee,
+      early_checkin_payment_status: 'pending',
+      early_checkin_payment_id: payment.id,
+      early_checkin_handled_by_staff_id: userId,
+      early_checkin_handled_at: new Date().toISOString()
+    })
+    .eq('id', bookingId)
+    .eq('hub_id', hubId)
+    .eq('status', 'confirmed')
+
+  if (bookingError) return { error: bookingError.message }
+
+  const paymentLink = await createEarlyCheckinPaymentLink(bookingId, fee)
+
+  // Send SMS to customer if they have a phone number
+  const { data: bookingDetail } = await svc
+    .from('bookings' as never)
+    .select('users(phone)')
+    .eq('id', bookingId)
+    .single() as { data: { users: { phone: string | null } | null } | null }
+
+  if (bookingDetail?.users?.phone) {
+    const { sendSMS } = await import('@/lib/utils/sms')
+    sendSMS(
+      bookingDetail.users.phone,
+      `Luggo: You arrived early. Please pay LKR ${fee} to confirm early storage. ${paymentLink}`
+    ).catch(console.error)
+  }
+
+  // 3. Audit
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'early_checkin_payment_initiated',
+    p_entity: 'bookings',
+    p_entity_id: bookingId,
+    p_metadata: {
+      early_checkin_type: 'pay_extra',
+      early_minutes: earlyMinutes,
+      fee,
+      payment_method: 'online',
+      payment_id: payment.id
+    }
+  })
+
+  return { paymentLink }
+}
+
+export async function processShiftBookingCheckInAction(
+  bookingId: string,
+  earlyMinutes: number,
+  checkInTimeStr: string,
+  shiftedStartTimeStr: string,
+  shiftedEndTimeStr: string,
+  bookedStartTimeStr: string,
+  bookedEndTimeStr: string
+): Promise<{ error?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, hubId, userId } = await requireStaff()
+
+  // 1. Update booking times and status
+  const { error: bookingError } = await svc
+    .from('bookings' as never)
+    .update({
+      status: 'arrived',
+      start_time: shiftedStartTimeStr,
+      end_time: shiftedEndTimeStr,
+      original_start_time: bookedStartTimeStr,
+      original_end_time: bookedEndTimeStr,
+      actual_check_in_time: checkInTimeStr,
+      early_checkin_minutes: earlyMinutes,
+      early_checkin_type: 'shift_booking',
+      early_checkin_fee: 0,
+      early_checkin_payment_status: 'paid',
+      early_checkin_handled_by_staff_id: userId,
+      early_checkin_handled_at: new Date().toISOString()
+    })
+    .eq('id', bookingId)
+    .eq('hub_id', hubId)
+    .eq('status', 'confirmed')
+
+  if (bookingError) return { error: bookingError.message }
+
+  // 2. Resolve pending base payment (cash on arrival) if any
+  await svc
+    .from('payments' as never)
+    .update({ status: 'paid', gateway_ref: 'CASH_PAYMENT_AT_HUB', collected_by_staff_id: userId, collected_at: new Date().toISOString() })
+    .eq('booking_id', bookingId)
+    .eq('status', 'pending')
+    .eq('type', 'booking')
+    .eq('gateway_ref', 'PAY_AT_HUB')
+
+  // 3. Audit checkin shift decision
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'early_checkin_decision',
+    p_entity: 'bookings',
+    p_entity_id: bookingId,
+    p_metadata: {
+      early_checkin_type: 'shift_booking',
+      early_minutes: earlyMinutes,
+      oldStartTime: bookedStartTimeStr,
+      oldEndTime: bookedEndTimeStr,
+      newStartTime: shiftedStartTimeStr,
+      newEndTime: shiftedEndTimeStr,
+      fee: 0,
+      staff_id: userId
+    }
+  })
+
+  return {}
+}
+
+export async function processSupervisorOverrideCheckInAction(
+  bookingId: string,
+  earlyMinutes: number,
+  supervisorId: string,
+  reason: string
+): Promise<{ error?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, hubId, userId } = await requireStaff()
+
+  // 1. Verify supervisor role
+  const { data: supervisor } = await svc
+    .from('users' as never)
+    .select('role')
+    .eq('id', supervisorId)
+    .single() as { data: { role: string } | null }
+
+  if (!supervisor || !['support_admin', 'ops_admin', 'master_admin'].includes(supervisor.role)) {
+    return { error: 'Invalid Supervisor ID or unauthorized role.' }
+  }
+
+  // 2. Update booking with override details
+  const { error: bookingError } = await svc
+    .from('bookings' as never)
+    .update({
+      status: 'arrived',
+      actual_check_in_time: new Date().toISOString(),
+      early_checkin_minutes: earlyMinutes,
+      early_checkin_type: 'supervisor_override',
+      early_checkin_fee: 0,
+      early_checkin_payment_status: 'paid',
+      early_checkin_handled_by_staff_id: supervisorId,
+      early_checkin_handled_at: new Date().toISOString()
+    })
+    .eq('id', bookingId)
+    .eq('hub_id', hubId)
+    .eq('status', 'confirmed')
+
+  if (bookingError) return { error: bookingError.message }
+
+  // 3. Resolve pending base payment (cash on arrival) if any
+  await svc
+    .from('payments' as never)
+    .update({ status: 'paid', gateway_ref: 'CASH_PAYMENT_AT_HUB', collected_by_staff_id: userId, collected_at: new Date().toISOString() })
+    .eq('booking_id', bookingId)
+    .eq('status', 'pending')
+    .eq('type', 'booking')
+    .eq('gateway_ref', 'PAY_AT_HUB')
+
+  // 4. Audit overrides
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'early_checkin_decision',
+    p_entity: 'bookings',
+    p_entity_id: bookingId,
+    p_metadata: {
+      early_checkin_type: 'supervisor_override',
+      early_minutes: earlyMinutes,
+      fee: 0,
+      supervisor_id: supervisorId,
+      override_reason: reason,
+      staff_id: userId
+    }
+  })
+
+  return {}
+}
+
+export async function completeOnlineEarlyCheckInAction(
+  bookingId: string
+): Promise<{ error?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, hubId, userId } = await requireStaff()
+
+  // Fetch early check-in payment details
+  const { data: booking } = await svc
+    .from('bookings' as never)
+    .select('early_checkin_payment_id')
+    .eq('id', bookingId)
+    .single() as { data: { early_checkin_payment_id: string | null } | null }
+
+  if (!booking || !booking.early_checkin_payment_id) return { error: 'Early check-in payment reference not found.' }
+
+  const { data: payment } = await svc
+    .from('payments' as never)
+    .select('status')
+    .eq('id', booking.early_checkin_payment_id)
+    .single() as { data: { status: string } | null }
+
+  if (!payment || payment.status !== 'paid') {
+    return { error: 'Early check-in fee has not been paid yet.' }
+  }
+
+  // Update booking status to arrived and payment status to paid
+  const { error: bookingError } = await svc
+    .from('bookings' as never)
+    .update({
+      status: 'arrived',
+      early_checkin_payment_status: 'paid'
+    })
+    .eq('id', bookingId)
+    .eq('hub_id', hubId)
+    .eq('status', 'early_checkin_pending_payment')
+
+  if (bookingError) return { error: bookingError.message }
+
+  // Resolve pending base payment (cash on arrival) if any
+  await svc
+    .from('payments' as never)
+    .update({ status: 'paid', gateway_ref: 'CASH_PAYMENT_AT_HUB', collected_by_staff_id: userId, collected_at: new Date().toISOString() })
+    .eq('booking_id', bookingId)
+    .eq('status', 'pending')
+    .eq('type', 'booking')
+    .eq('gateway_ref', 'PAY_AT_HUB')
+
+  // Audit
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'early_checkin_payment_completed',
+    p_entity: 'bookings',
+    p_entity_id: bookingId,
+    p_metadata: { payment_id: booking.early_checkin_payment_id }
+  })
+
+  return {}
+}
+
+export async function getSupervisorsAction(): Promise<{ supervisors?: { id: string; name: string }[]; error?: string }> {
+  const { svc } = await requireStaff()
+  const { data, error } = await svc
+    .from('users' as never)
+    .select('id, name')
+    .in('role', ['support_admin', 'ops_admin', 'master_admin'])
+  
+  if (error) return { error: error.message }
+  return { supervisors: data as { id: string; name: string }[] }
+}
+

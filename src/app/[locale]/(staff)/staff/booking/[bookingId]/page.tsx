@@ -9,8 +9,9 @@ import { RealtimeRefresher } from '@/components/shared/RealtimeRefresher'
 import { ChevronLeft, User, Clock, Package, Tag, ShieldAlert, MapPin } from 'lucide-react'
 import { isPast } from 'date-fns'
 import { formatInSLT } from '@/lib/utils/timezone'
-import { markArrivedAction, bypassSealConfirmationAction, completePickupWithCashAction } from '@/lib/staff/actions'
+import { bypassSealConfirmationAction, completePickupWithCashAction } from '@/lib/staff/actions'
 import { StaffVerificationForm } from '@/components/staff/StaffVerificationForm'
+import { StaffCheckInWizard } from '@/components/staff/StaffCheckInWizard'
 import { CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react'
 import { type BookingStatus, type BagType } from '@/types/database'
 import { BAG_LABELS, calculateLateFee } from '@/lib/utils/pricing'
@@ -97,7 +98,9 @@ export default async function StaffBookingPage({
   // Determine next action
   const nextAction = (() => {
     switch (booking.status) {
-      case 'confirmed': return 'check-in'
+      case 'confirmed':
+      case 'early_checkin_pending_payment':
+        return 'check-in'
       case 'arrived': return booking.id_verified ? 'bags' : 'verify_id'
       case 'identity_verified': return 'bags'
       case 'sealing_in_progress': return 'bags'
@@ -254,6 +257,14 @@ export default async function StaffBookingPage({
           <StaffVerificationForm bookingId={booking.id} />
         )}
 
+        {/* Early check-in wizard */}
+        {nextAction === 'check-in' && (
+          <StaffCheckInWizard
+            booking={booking as never}
+            isCashPaymentPending={isCashPaymentPending}
+          />
+        )}
+
         {/* Times */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white/10 rounded-2xl p-3">
@@ -346,21 +357,8 @@ export default async function StaffBookingPage({
       </div>
 
       {/* Sticky action footer */}
-      {(nextAction === 'check-in' || nextAction === 'verify_id' || nextAction === 'bags' || nextAction === 'pickup') && (
+      {(nextAction === 'verify_id' || nextAction === 'bags' || nextAction === 'pickup') && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-ocean-900 border-t border-white/10 px-4 py-4 pb-safe">
-          {nextAction === 'check-in' && (
-            <form action={markArrivedAction.bind(null, booking.id)}>
-              {isCashPaymentPending ? (
-                <Button type="submit" fullWidth size="lg" className="bg-amber-500 hover:bg-amber-600 text-ocean-900 border-none font-extrabold flex items-center justify-center gap-2">
-                  💵 Collect LKR {booking.total_price.toLocaleString()} Cash & Check In
-                </Button>
-              ) : (
-                <Button type="submit" fullWidth size="lg">
-                  ✓ Check in customer
-                </Button>
-              )}
-            </form>
-          )}
           {nextAction === 'verify_id' && (
             <div className="text-center text-xs text-white/50 bg-white/5 p-3 rounded-xl mx-4">
               Verify customer ID document above to continue

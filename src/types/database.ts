@@ -6,6 +6,7 @@ export type BagType = 'small' | 'regular' | 'large'
 export type BookingStatus =
   | 'pending_payment'
   | 'confirmed'
+  | 'early_checkin_pending_payment'
   | 'arrived'
   | 'identity_verified'
   | 'sealing_in_progress'
@@ -21,7 +22,7 @@ export type BookingStatus =
   | 'disputed'
   | 'exception_hold'
 export type BagTagStatus = 'available' | 'assigned' | 'in_storage' | 'released' | 'lost' | 'damaged' | 'retired'
-export type PaymentType = 'booking' | 'late_fee' | 'extension'
+export type PaymentType = 'booking' | 'late_fee' | 'extension' | 'early_checkin'
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
 export type RefundStatus = 'pending' | 'approved' | 'rejected' | 'processed'
 export type ComplaintStatus = 'open' | 'in_review' | 'resolved' | 'closed'
@@ -95,8 +96,36 @@ export interface Database {
           walk_in_name: string | null
           walk_in_phone: string | null
           walk_in_nic_passport_ref: string | null
+          original_start_time: string | null
+          original_end_time: string | null
+          current_start_time: string | null
+          current_end_time: string | null
+          actual_check_in_time: string | null
+          early_checkin_minutes: number | null
+          early_checkin_type: string
+          early_checkin_extra_hours: number | null
+          early_checkin_fee: number
+          early_checkin_payment_status: string | null
+          early_checkin_payment_id: string | null
+          early_checkin_handled_by_staff_id: string | null
+          early_checkin_handled_at: string | null
         }
-        Insert: Omit<Database['public']['Tables']['bookings']['Row'], 'id' | 'created_at'> & { id_verified?: boolean }
+        Insert: Omit<Database['public']['Tables']['bookings']['Row'], 'id' | 'created_at'> & { 
+          id_verified?: boolean
+          original_start_time?: string | null
+          original_end_time?: string | null
+          current_start_time?: string | null
+          current_end_time?: string | null
+          actual_check_in_time?: string | null
+          early_checkin_minutes?: number | null
+          early_checkin_type?: string
+          early_checkin_extra_hours?: number | null
+          early_checkin_fee?: number
+          early_checkin_payment_status?: string | null
+          early_checkin_payment_id?: string | null
+          early_checkin_handled_by_staff_id?: string | null
+          early_checkin_handled_at?: string | null
+        }
         Update: Partial<Database['public']['Tables']['bookings']['Insert']>
       }
       booking_bags: {
@@ -191,8 +220,16 @@ export interface Database {
           gateway_ref: string | null
           type: PaymentType
           created_at: string
+          method: string | null
+          collected_by_staff_id: string | null
+          collected_at: string | null
+          updated_at: string
         }
-        Insert: Omit<Database['public']['Tables']['payments']['Row'], 'id' | 'created_at'>
+        Insert: Omit<Database['public']['Tables']['payments']['Row'], 'id' | 'created_at' | 'updated_at'> & {
+          method?: string | null
+          collected_by_staff_id?: string | null
+          collected_at?: string | null
+        }
         Update: Partial<Database['public']['Tables']['payments']['Insert']>
       }
       refunds: {

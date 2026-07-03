@@ -16,6 +16,7 @@ import { BookingProgressTracker } from '@/components/customer/BookingProgressTra
 import { formatDateSLT, formatDateTimeSLT } from '@/lib/utils/timezone'
 import { type BookingStatus, type BagType } from '@/types/database'
 import { BAG_LABELS, BAG_RATES } from '@/lib/utils/pricing'
+import { EarlyCheckinPayButton } from '@/components/customer/EarlyCheckinPayButton'
 
 type BookingDetail = {
   id: string
@@ -29,6 +30,11 @@ type BookingDetail = {
   hubs: { name: string; alias: string; address: string } | null
   booking_bags: { id: string; bag_type: BagType; sticker_number: string | null; seal_number: string | null }[]
   payments: { status: string; gateway_ref: string | null; type: string }[]
+  early_checkin_minutes: number | null
+  early_checkin_type: string
+  early_checkin_extra_hours: number | null
+  early_checkin_fee: number
+  early_checkin_payment_status: string | null
 }
 
 const CANCELLABLE: BookingStatus[] = ['pending_payment', 'confirmed']
@@ -49,6 +55,7 @@ export default async function BookingDetailPage({
     .from('bookings')
     .select(`
       id, status, start_time, end_time, total_price, qr_code, created_at, slot_number,
+      early_checkin_minutes, early_checkin_type, early_checkin_extra_hours, early_checkin_fee, early_checkin_payment_status,
       hubs ( name, alias, address ),
       booking_bags ( id, bag_type, sticker_number, seal_number ),
       payments ( status, gateway_ref, type )
@@ -163,7 +170,73 @@ export default async function BookingDetailPage({
           </div>
         )}
 
-        {/* ── Pickup error ── */}
+        {/* ── Early Check-In Pending Payment Alert ── */}
+        {booking.status === 'early_checkin_pending_payment' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl md:rounded-2xl p-5 space-y-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-amber-900 text-sm">Early drop-off payment required</p>
+                <p className="text-xs text-amber-700 mt-0.5 leading-tight">
+                  You are {booking.early_checkin_minutes} minutes early. To keep your original pickup time, please pay LKR {booking.early_checkin_fee}.
+                </p>
+              </div>
+            </div>
+            <EarlyCheckinPayButton bookingId={booking.id} fee={booking.early_checkin_fee} />
+          </div>
+        )}
+
+        {/* ── Free Buffer Early Check-In Applied Banner ── */}
+        {booking.early_checkin_type === 'free_buffer' && (
+          <div className="bg-emerald-50 border border-emerald-100 rounded-xl md:rounded-2xl p-4 flex items-start gap-3 shadow-sm">
+            <CheckCircle size={18} className="text-emerald-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-emerald-900 text-sm">Free early check-in applied</p>
+              <p className="text-xs text-emerald-700 mt-0.5">
+                You are slightly early. Your early check-in is free, and your pickup time remains unchanged.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Shift Booking Early Check-In Applied Banner ── */}
+        {booking.early_checkin_type === 'shift_booking' && (
+          <div className="bg-brand/5 border border-brand/20 rounded-xl md:rounded-2xl p-4 flex items-start gap-3 shadow-sm">
+            <Clock size={18} className="text-brand shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-ocean-900 text-sm">Booking shifted earlier</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                You shifted your booking window earlier. Your new pickup time is {formatDateTimeSLT(new Date(booking.end_time))}.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Paid Early Check-In Applied Banner ── */}
+        {booking.early_checkin_type === 'pay_extra' && booking.early_checkin_payment_status === 'paid' && (
+          <div className="bg-emerald-50 border border-emerald-100 rounded-xl md:rounded-2xl p-4 flex items-start gap-3 shadow-sm">
+            <CheckCircle size={18} className="text-emerald-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-emerald-900 text-sm">Early check-in fee paid</p>
+              <p className="text-xs text-emerald-700 mt-0.5">
+                You checked in {booking.early_checkin_minutes} minutes early. Paid LKR {booking.early_checkin_fee} to keep your original pickup time.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Cash Payment Pending Warning Banner ── */}
+        {isCashPaymentPending && booking.status === 'confirmed' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl md:rounded-2xl p-4 flex items-start gap-3 shadow-sm">
+            <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-amber-900 text-sm leading-tight">Cash Payment Pending at Hub</p>
+              <p className="text-xs text-amber-700 mt-0.5 leading-tight">
+                Please pay LKR {booking.total_price.toLocaleString()} in cash to the staff at the counter during drop-off.
+              </p>
+            </div>
+          </div>
+        )}
         {searchParams.pickup_error && (
           <div className="bg-red-50 border border-red-200 rounded-xl md:rounded-2xl p-4 flex items-start gap-3">
             <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" />

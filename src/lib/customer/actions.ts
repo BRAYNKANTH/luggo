@@ -225,3 +225,90 @@ export async function requestPickupAction(bookingId: string): Promise<void> {
     redirect(`/booking/${bookingId}?pickup=requested`)
   }
 }
+
+// ---------------------------------------------------------------------------
+// createEarlyCheckinPayment
+// Finds the pending early_checkin payment record and returns PayHere form data.
+// order_id format: ec-{paymentId}
+// ---------------------------------------------------------------------------
+export async function createEarlyCheckinPayment(
+  bookingId: string
+): Promise<{ error?: string; formData?: PayhereFormData }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  // Verify ownership + current status
+  const { data: booking } = await supabase
+    .from('bookings')
+    .select('id, status, hub_id, early_checkin_fee, users ( name, email, phone ), hubs ( name )')
+    .eq('id', bookingId)
+    .eq('user_id', user.id)
+    .single() as {
+      data: {
+        id: string
+        status: string
+        hub_id: string
+        early_checkin_fee: number
+        users: { name: string; email: string; phone: string | null } | null
+        hubs: { name: string } | null
+      } | null
+      error: unknown
+    }
+
+  if (!booking) return { error: 'Booking not found' }
+  if (booking.status !== 'early_checkin_pending_payment') {
+    return { error: 'No early check-in payment pending' }
+  }
+
+  // Find the pending early_checkin payment
+  const { data: payment, error: paymentError } = await supabase
+    .from('payments')
+    .select('id, amount')
+    .eq('booking_id', bookingId)
+    .eq('type', 'early_checkin')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle() as { data: { id: string; amount: number } | null; error: unknown }
+
+  if (paymentError || !payment) return { error: 'Failed to retrieve payment record' }
+
+  const merchantId = process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID!
+  const merchantSecret = process.env.PAYHERE_MERCHANT_SECRET!
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL!
+  const orderId = `ec-${payment.id}`
+  const currency = 'LKR'
+
+  const hash = generatePayhereHash(merchantId, orderId, payment.amount, currency, merchantSecret)
+
+  const nameParts = (booking.users?.name ?? 'Customer').split(' ')
+  const firstName = nameParts[0]
+  const lastName = nameParts.slice(1).join(' ') || firstName
+
+  const formData: PayhereFormData = {
+    merchant_id: merchantId,
+    return_url: `${baseUrl}/booking/${bookingId}?payment=ec_success`,
+    cancel_url: `${baseUrl}/booking/${bookingId}?payment=cancelled`,
+    notify_url: process.env.NEXT_PUBLIC_PAYHERE_NOTIFY_URL || `${baseUrl}/api/webhooks/payhere`,
+    order_id: orderId,
+    items: `Early drop-off fee — ${booking.hubs?.name}`,
+    currency,
+    amount: payment.amount.toFixed(2),
+    first_name: firstName,
+    last_name: lastName,
+    email: booking.users?.email ?? '',
+    phone: booking.users?.phone ?? '',
+    address: 'N/A',
+    city: 'Colombo',
+    country: 'Sri Lanka',
+    hash,
+    endpoint: PAYHERE_ENDPOINT,
+  }
+
+  return { formData }
+}
