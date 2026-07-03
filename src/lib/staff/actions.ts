@@ -6,7 +6,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { type PostgrestError, type SupabaseClient } from '@supabase/supabase-js'
 import { uuidSchema } from '@/lib/validators/common'
 import { type BagType } from '@/types/database'
-import { calculateLateFee, calculateEarlyCheckinDecision, BAG_RATES } from '@/lib/utils/pricing'
+import { calculateLateFee, calculateEarlyCheckinDecision, BAG_RATES, calculateBookingPrice } from '@/lib/utils/pricing'
 
 
 // ─────────────────────────────────────────────
@@ -1971,5 +1971,431 @@ export async function getSupervisorsAction(): Promise<{ supervisors?: { id: stri
   
   if (error) return { error: error.message }
   return { supervisors: data as { id: string; name: string }[] }
+}
+
+export async function processSupervisorIdOverrideAction(
+  bookingId: string,
+  supervisorId: string,
+  reason: string
+): Promise<{ error?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, hubId, userId } = await requireStaff()
+
+  // Verify supervisor exists and is a supervisor/admin
+  const { data: supervisor } = await svc
+    .from('users' as never)
+    .select('role')
+    .eq('id', supervisorId)
+    .single() as { data: { role: string } | null }
+
+  if (!supervisor || !['support_admin', 'ops_admin', 'master_admin'].includes(supervisor.role)) {
+    return { error: 'Invalid supervisor credentials.' }
+  }
+
+  // Update id_verified
+  const { error } = await svc
+    .from('bookings' as never)
+    .update({ id_verified: true })
+    .eq('id', bookingId)
+    .eq('hub_id', hubId)
+
+  if (error) return { error: error.message }
+
+  // Audit log
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'identity_verification_supervisor_override',
+    p_entity: 'bookings',
+    p_entity_id: bookingId,
+    p_metadata: {
+      supervisor_id: supervisorId,
+      override_reason: reason
+    }
+  })
+
+  return {}
+}
+
+export async function processPhoneDeadPickupOverrideAction(
+  bookingId: string,
+  supervisorId: string,
+  reason: string
+): Promise<{ error?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, hubId, userId } = await requireStaff()
+
+  // Verify supervisor exists and is a supervisor/admin
+  const { data: supervisor } = await svc
+    .from('users' as never)
+    .select('role')
+    .eq('id', supervisorId)
+    .single() as { data: { role: string } | null }
+
+  if (!supervisor || !['support_admin', 'ops_admin', 'master_admin'].includes(supervisor.role)) {
+    return { error: 'Invalid supervisor credentials.' }
+  }
+
+  // Check if booking is in release-eligible state
+  const { data: booking } = await svc
+    .from('bookings' as never)
+    .select('status')
+    .eq('id', bookingId)
+    .single() as { data: { status: string } | null }
+
+  if (!booking) return { error: 'Booking not found.' }
+
+  // Update status to ready_for_release
+  const { error } = await svc
+    .from('bookings' as never)
+    .update({ status: 'ready_for_release' })
+    .eq('id', bookingId)
+    .eq('hub_id', hubId)
+
+  if (error) return { error: error.message }
+
+  // Audit log
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'phone_dead_pickup_supervisor_override',
+    p_entity: 'bookings',
+    p_entity_id: bookingId,
+    p_metadata: {
+      supervisor_id: supervisorId,
+      override_reason: reason
+    }
+  })
+
+  return {}
+}
+
+export async function recordBagAccessEventAction(
+  bookingId: string,
+  bagId: string,
+  newSealNumber: string,
+  notes: string
+): Promise<{ error?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, userId } = await requireStaff()
+
+  // Get old seal number
+  const { data: bag } = await svc
+    .from('booking_bags' as never)
+    .select('seal_number')
+    .eq('id', bagId)
+    .eq('booking_id', bookingId)
+    .single() as { data: { seal_number: string | null } | null }
+
+  if (!bag) return { error: 'Bag not found.' }
+
+  const oldSealNumber = bag.seal_number
+
+  // Update seal number in booking_bags
+  const { error } = await svc
+    .from('booking_bags' as never)
+    .update({ 
+      seal_number: newSealNumber,
+      notes: notes ? `Accessed & Resealed: ${notes}` : 'Accessed & Resealed'
+    })
+    .eq('id', bagId)
+
+  if (error) return { error: error.message }
+
+  // Audit log
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'bag_controlled_access_event',
+    p_entity: 'booking_bags',
+    p_entity_id: bagId,
+    p_metadata: {
+      booking_id: bookingId,
+      old_seal_number: oldSealNumber,
+      new_seal_number: newSealNumber,
+      notes
+    }
+  })
+
+  return {}
+}
+
+export async function completePartialPickupAction(
+  bookingId: string,
+  bagIds: string[]
+): Promise<{ error?: string; completed?: boolean }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, hubId, userId } = await requireStaff()
+
+  // Verify all bags exist and belong to the booking
+  const { data: bookingBags } = await svc
+    .from('booking_bags' as never)
+    .select('id, status')
+    .eq('booking_id', bookingId) as { data: { id: string; status: string }[] | null }
+
+  if (!bookingBags) return { error: 'No bags found for this booking.' }
+
+  // Update status of selected bags to 'released'
+  const { error } = await svc
+    .from('booking_bags' as never)
+    .update({ status: 'released' })
+    .in('id', bagIds)
+
+  if (error) return { error: error.message }
+
+  // Check if there are any remaining bags in storage
+  const remainingBags = bookingBags.filter(b => !bagIds.includes(b.id) && b.status !== 'released')
+  const isFullyCompleted = remainingBags.length === 0
+
+  if (isFullyCompleted) {
+    // Transition booking to completed
+    const { error: bError } = await svc
+      .from('bookings' as never)
+      .update({ status: 'completed' })
+      .eq('id', bookingId)
+      .eq('hub_id', hubId)
+    if (bError) return { error: bError.message }
+  }
+
+  // Audit log
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'partial_pickup_processed',
+    p_entity: 'bookings',
+    p_entity_id: bookingId,
+    p_metadata: {
+      released_bag_ids: bagIds,
+      is_fully_completed: isFullyCompleted
+    }
+  })
+
+  return { completed: isFullyCompleted }
+}
+
+export async function reportPickupIncidentAction(
+  bookingId: string,
+  bagId: string | null,
+  incidentType: string,
+  notes: string
+): Promise<{ error?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, hubId, userId } = await requireStaff()
+
+  // Insert into incident_reports
+  const { error: reportError } = await svc
+    .from('incident_reports' as never)
+    .insert({
+      booking_id: bookingId,
+      bag_id: bagId,
+      incident_type: incidentType,
+      description: notes,
+      status: 'open',
+      reported_by_staff_id: userId
+    })
+
+  if (reportError) return { error: reportError.message }
+
+  // Flag booking as disputed
+  const { error: statusError } = await svc
+    .from('bookings' as never)
+    .update({ status: 'disputed' })
+    .eq('id', bookingId)
+    .eq('hub_id', hubId)
+
+  if (statusError) return { error: statusError.message }
+
+  // Update selected bag status to disputed if applicable
+  if (bagId) {
+    await svc
+      .from('booking_bags' as never)
+      .update({ status: 'disputed' })
+      .eq('id', bagId)
+  }
+
+  // Audit log
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'incident_report_filed',
+    p_entity: 'bookings',
+    p_entity_id: bookingId,
+    p_metadata: {
+      bag_id: bagId,
+      incident_type: incidentType,
+      notes
+    }
+  })
+
+  return {}
+}
+
+export async function getStaffCashReconciliationAction(): Promise<{
+  error?: string
+  totalCollected?: number
+  breakdown?: { type: string; total: number; count: number }[]
+}> {
+  const { svc, userId } = await requireStaff()
+
+  // Query paid cash payments collected by this staff today (local server time date range)
+  const startOfDay = new Date()
+  startOfDay.setHours(0, 0, 0, 0)
+  const endOfDay = new Date()
+  endOfDay.setHours(23, 59, 59, 999)
+
+  const { data: payments, error } = await svc
+    .from('payments' as never)
+    .select('amount, type')
+    .eq('status', 'paid')
+    .eq('method', 'cash')
+    .eq('collected_by_staff_id', userId)
+    .gte('collected_at', startOfDay.toISOString())
+    .lte('collected_at', endOfDay.toISOString()) as { data: { amount: number; type: string }[] | null; error: PostgrestError | null }
+
+  if (error) return { error: error.message }
+  if (!payments) return { totalCollected: 0, breakdown: [] }
+
+  const totalCollected = payments.reduce((sum, p) => sum + Number(p.amount), 0)
+
+  // Aggregate breakdown
+  const groups: Record<string, { type: string; total: number; count: number }> = {}
+  for (const p of payments) {
+    if (!groups[p.type]) {
+      groups[p.type] = { type: p.type, total: 0, count: 0 }
+    }
+    groups[p.type].total += Number(p.amount)
+    groups[p.type].count += 1
+  }
+
+  return {
+    totalCollected,
+    breakdown: Object.values(groups)
+  }
+}
+
+export async function updateBookingBagsAction(
+  bookingId: string,
+  updatedBags: Array<{ id?: string; bag_type: BagType; seal_status: string; seal_number: string | null; notes: string | null }>
+): Promise<{ error?: string; difference?: number }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, userId } = await requireStaff()
+
+  // 1. Fetch booking details to calculate new price
+  const { data: booking } = await svc
+    .from('bookings' as never)
+    .select('start_time, end_time, total_price')
+    .eq('id', bookingId)
+    .single() as { data: { start_time: string; end_time: string; total_price: number } | null }
+
+  if (!booking) return { error: 'Booking not found.' }
+
+  // Recalculate price of updated bags
+  const start = new Date(booking.start_time)
+  const end = new Date(booking.end_time)
+  const newPrice = calculateBookingPrice(updatedBags, start, end)
+  const priceDifference = newPrice - booking.total_price
+
+  // 2. Fetch existing bags
+  const { data: existingBags } = await svc
+    .from('booking_bags' as never)
+    .select('id')
+    .eq('booking_id', bookingId) as { data: { id: string }[] | null }
+
+  if (!existingBags) return { error: 'Existing bags not found.' }
+  const existingIds = existingBags.map((b) => b.id)
+  const updatedIds = updatedBags.map((b) => b.id).filter((id): id is string => !!id)
+
+  // Determine deletions
+  const toDelete = existingIds.filter((id) => !updatedIds.includes(id))
+
+  // Delete removed bags
+  if (toDelete.length > 0) {
+    const { error: delError } = await svc
+      .from('booking_bags' as never)
+      .delete()
+      .in('id', toDelete)
+    if (delError) return { error: `Failed to remove bags: ${delError.message}` }
+  }
+
+  // Update or insert bags
+  for (const bag of updatedBags) {
+    if (bag.id) {
+      // Update existing
+      const { error: updError } = await svc
+        .from('booking_bags' as never)
+        .update({
+          bag_type: bag.bag_type,
+          seal_status: bag.seal_status,
+          seal_number: bag.seal_number,
+          notes: bag.notes
+        })
+        .eq('id', bag.id)
+      if (updError) return { error: `Failed to update bag: ${updError.message}` }
+    } else {
+      // Insert new
+      const { error: insError } = await svc
+        .from('booking_bags' as never)
+        .insert({
+          booking_id: bookingId,
+          bag_type: bag.bag_type,
+          seal_status: bag.seal_status,
+          seal_number: bag.seal_number,
+          notes: bag.notes,
+          status: 'pending_acceptance'
+        })
+      if (insError) return { error: `Failed to add bag: ${insError.message}` }
+    }
+  }
+
+  // Update booking price
+  const { error: bookingPriceError } = await svc
+    .from('bookings' as never)
+    .update({ total_price: newPrice })
+    .eq('id', bookingId)
+
+  if (bookingPriceError) return { error: `Failed to update booking total: ${bookingPriceError.message}` }
+
+  // If there is an increased price difference, record a pending difference payment
+  if (priceDifference > 0) {
+    const { error: paymentError } = await svc
+      .from('payments' as never)
+      .insert({
+        booking_id: bookingId,
+        amount: priceDifference,
+        status: 'pending',
+        type: 'booking',
+        gateway_ref: 'PAY_AT_HUB', // Default cash collected at counter for manual additions
+        method: 'cash'
+      })
+    if (paymentError) return { error: `Failed to create difference payment record: ${paymentError.message}` }
+  }
+
+  // Audit log
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'booking_bags_modified_at_counter',
+    p_entity: 'bookings',
+    p_entity_id: bookingId,
+    p_metadata: {
+      old_price: booking.total_price,
+      new_price: newPrice,
+      price_difference: priceDifference
+    }
+  })
+
+  return { difference: priceDifference }
 }
 

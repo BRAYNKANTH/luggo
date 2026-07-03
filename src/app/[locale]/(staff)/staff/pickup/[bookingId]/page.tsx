@@ -1,14 +1,13 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, Package, AlertTriangle, ShieldAlert, MapPin } from 'lucide-react'
+import { ChevronLeft, AlertTriangle, ShieldAlert, MapPin } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { Logo } from '@/components/ui/Logo'
 import { Button } from '@/components/ui/Button'
 import { BookingStatusBadge } from '@/components/customer/BookingStatusBadge'
-import { completePickupAction, waiveAndCompletePickupAction, resolveIncidentReport } from '@/lib/staff/actions'
-import { BAG_LABELS } from '@/lib/utils/pricing'
+import { StaffPickupConsole } from '@/components/staff/StaffPickupConsole'
+import { resolveIncidentReport } from '@/lib/staff/actions'
 import { type BookingStatus, type BagType } from '@/types/database'
-import { isPast } from 'date-fns'
 import { LiveStorageCountdown } from '@/components/staff/LiveStorageCountdown'
 
 type Bag = { 
@@ -134,7 +133,6 @@ export default async function StaffPickupPage({
     p_booking_id: params.bookingId,
   }) as { data: number | null; error: unknown }
 
-  const isOverdue = isPast(new Date(booking.end_time))
   const fee = lateFee ?? 0
 
   const customerName = booking.walk_in_name || booking.users?.name || 'Walk-In Guest'
@@ -255,103 +253,22 @@ export default async function StaffPickupPage({
           </div>
         )}
 
-        {/* Bags Checklist */}
-        <div className="bg-white/10 rounded-2xl p-4">
-          <h2 className="font-bold text-sm mb-3 flex items-center gap-2">
-            <Package size={15} className="text-brand-accent" />
-            Checklist: Retrieve bags from allocated slot
-          </h2>
-          <div className="space-y-2">
-            {booking.booking_bags.map((bag) => (
-              <div key={bag.id} className="flex items-center justify-between text-sm py-2.5 border-b border-white/5 last:border-0">
-                <div className="flex flex-col">
-                  <span className="text-white/80 font-bold">{BAG_LABELS[bag.bag_type]}</span>
-                  {bag.seal_status === 'sealed' ? (
-                    <span className="text-[10px] text-brand-accent font-mono font-bold mt-0.5">
-                      🔒 Seal Serial: {bag.seal_number || 'Missing'}
-                    </span>
-                  ) : (
-                    <span className="text-[10px] text-white/40 font-bold italic mt-0.5">
-                      Unsealable (No Seal Applied)
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Late Fee calculations */}
-        {isOverdue && fee > 0 && (
-          <div className="bg-red-500/20 border border-red-400/30 rounded-2xl p-4">
-            <div className="flex items-start gap-2">
-              <AlertTriangle size={16} className="text-red-300 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-red-300 font-semibold text-sm">Late pickup fee applies</p>
-                <p className="text-red-200/70 text-xs mt-0.5">
-                  Overdue session requires cash payment or supervisor waiver.
-                </p>
-              </div>
-            </div>
-            <div className="mt-3 flex justify-between items-center text-sm">
-              <span className="text-white/60">Base fee</span>
-              <span>LKR {booking.total_price.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between items-center text-sm mt-1">
-              <span className="text-red-300">Overdue fee</span>
-              <span className="text-red-300 font-bold">+ LKR {fee.toLocaleString()}</span>
-            </div>
-            <div className="border-t border-red-400/20 mt-2 pt-2 flex justify-between items-center font-bold">
-              <span>Total to collect</span>
-              <span>LKR {(booking.total_price + fee).toLocaleString()}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Paid / Waiver clear message */}
-        {!isOverdue && (
-          <div className="bg-white/10 rounded-2xl p-4 flex justify-between items-center">
-            <span className="text-white/60 text-sm">Total paid</span>
-            <span className="font-bold text-green-400">LKR {booking.total_price.toLocaleString()}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Handover action CTAs */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-ocean-900 border-t border-white/10 px-4 py-4 pb-safe space-y-2">
-        <p className="text-white/40 text-xs text-center mb-1 leading-normal max-w-md mx-auto">
-          Confirm that Reusable Tag codes and zipper Seal numbers match this screen perfectly before cutting seals.
-        </p>
-
-        {booking.status === 'exception_hold' ? (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-3 text-center text-xs font-bold text-red-300 mx-4">
-            ⚠️ Release locked. Incidents must be resolved by a Supervisor to unlock.
-          </div>
-        ) : (booking.status === 'overstayed' || booking.status === 'late_fee_pending') ? (
-          <div className="space-y-2 px-4">
-            <div className="bg-red-500/10 border border-red-400/20 rounded-xl px-4 py-2 text-center">
-              <p className="text-red-300 text-xs font-bold">Collect LKR {fee.toLocaleString()} Cash or wait for online payment.</p>
-            </div>
-            
-            {isSupervisor ? (
-              <form action={waiveAndCompletePickupAction.bind(null, booking.id)}>
-                <Button type="submit" fullWidth size="lg" className="bg-amber-600 hover:bg-amber-500 text-white">
-                  ⚠️ Authorize Waiver (Supervisor Override)
-                </Button>
-              </form>
-            ) : (
-              <div className="text-center text-white/40 text-xs italic bg-white/5 py-3 rounded-xl">
-                * Supervisor approval required to waive late fees
-              </div>
-            )}
-          </div>
-        ) : (
-          <form action={completePickupAction.bind(null, booking.id)} className="px-4">
-            <Button type="submit" fullWidth size="lg">
-              ✓ Confirm Handover Complete & Release Tags
-            </Button>
-          </form>
-        )}
+        {/* Retrieve Console */}
+        <StaffPickupConsole
+          booking={{
+            id: booking.id,
+            status: booking.status,
+            end_time: booking.end_time,
+            total_price: booking.total_price,
+            slot_number: booking.slot_number,
+            walk_in_name: booking.walk_in_name,
+            walk_in_phone: booking.walk_in_phone,
+            walk_in_nic_passport_ref: booking.walk_in_nic_passport_ref
+          }}
+          bags={booking.booking_bags}
+          fee={fee}
+          isSupervisor={isSupervisor || false}
+        />
       </div>
     </div>
   )

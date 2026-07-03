@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { ShieldCheck, AlertTriangle, RefreshCw, XCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ShieldCheck, AlertTriangle, RefreshCw, XCircle, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { verifyIdentity, rejectBookingIdentity } from '@/lib/staff/actions'
+import { verifyIdentity, rejectBookingIdentity, getSupervisorsAction, processSupervisorIdOverrideAction } from '@/lib/staff/actions'
 
 interface StaffVerificationFormProps {
   bookingId: string
@@ -24,6 +24,20 @@ export function StaffVerificationForm({ bookingId }: StaffVerificationFormProps)
   // Rejection/escalation state
   const [showRejectForm, setShowRejectForm] = useState(false)
   const [rejectionReason, setRejectionReason] = useState('')
+
+  // Supervisor override state
+  const [showOverrideForm, setShowOverrideForm] = useState(false)
+  const [supervisors, setSupervisors] = useState<{ id: string; name: string }[]>([])
+  const [selectedSupervisorId, setSelectedSupervisorId] = useState('')
+  const [overrideReason, setOverrideReason] = useState('Guest forgot physical document but verified digitally')
+
+  useEffect(() => {
+    if (showOverrideForm) {
+      getSupervisorsAction().then(res => {
+        if (res.supervisors) setSupervisors(res.supervisors)
+      })
+    }
+  }, [showOverrideForm])
 
   const handleCheckboxChange = (key: keyof typeof checklist) => {
     setChecklist(prev => ({ ...prev, [key]: !prev[key] }))
@@ -85,6 +99,25 @@ export function StaffVerificationForm({ bookingId }: StaffVerificationFormProps)
     }
   }
 
+  async function handleSupervisorOverride() {
+    if (!selectedSupervisorId) return
+    setError(null)
+    setLoading(true)
+    try {
+      const result = await processSupervisorIdOverrideAction(bookingId, selectedSupervisorId, overrideReason)
+      if (result.error) {
+        setError(result.error)
+      } else {
+        setSuccess('Supervisor override verification applied successfully!')
+        window.location.reload()
+      }
+    } catch {
+      setError('An error occurred during supervisor override verification.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="bg-white/5 border border-white/10 rounded-3xl p-6 space-y-6">
       <div className="flex items-center gap-2">
@@ -128,19 +161,34 @@ export function StaffVerificationForm({ bookingId }: StaffVerificationFormProps)
       </div>
 
       {/* Warning if ID mismatched / suspicious */}
-      <div className="border-t border-white/5 pt-4 flex flex-col sm:flex-row gap-3">
+      <div className="border-t border-white/5 pt-4 flex flex-col sm:flex-row gap-2">
         <Button
           onClick={handleApprove}
-          disabled={!allTicked || loading || showRejectForm}
+          disabled={!allTicked || loading || showRejectForm || showOverrideForm}
           className="flex-1 bg-green-600 hover:bg-green-500 disabled:bg-gray-700 disabled:text-white/40"
         >
-          {loading && !showRejectForm ? <RefreshCw className="animate-spin mr-2" size={16} /> : <ShieldCheck className="mr-2" size={16} />}
+          {loading && !showRejectForm && !showOverrideForm ? <RefreshCw className="animate-spin mr-2" size={16} /> : <ShieldCheck className="mr-2" size={16} />}
           Approve Match & Verify Identity
         </Button>
 
         <button
           type="button"
-          onClick={() => setShowRejectForm(!showRejectForm)}
+          onClick={() => {
+            setShowOverrideForm(!showOverrideForm)
+            setShowRejectForm(false)
+          }}
+          className="px-4 py-2.5 rounded-xl border border-amber-500/30 hover:border-amber-500/60 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold text-xs transition-all flex items-center justify-center gap-1.5"
+        >
+          <ShieldAlert size={15} />
+          Supervisor Override
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setShowRejectForm(!showRejectForm)
+            setShowOverrideForm(false)
+          }}
           className="px-4 py-2.5 rounded-xl border border-red-500/30 hover:border-red-500/60 bg-red-500/10 hover:bg-red-500/20 text-red-300 font-bold text-xs transition-all flex items-center justify-center gap-1.5"
         >
           <XCircle size={15} />
@@ -166,6 +214,48 @@ export function StaffVerificationForm({ bookingId }: StaffVerificationFormProps)
             className="w-full bg-red-600 hover:bg-red-500"
           >
             Submit Rejection & Notify Supervisor
+          </Button>
+        </div>
+      )}
+
+      {/* Supervisor Override Form */}
+      {showOverrideForm && (
+        <div className="bg-amber-950/20 border border-amber-500/20 rounded-2xl p-4 space-y-3">
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-black text-amber-300 uppercase tracking-widest pl-1">
+              Select Supervisor
+            </label>
+            <select
+              value={selectedSupervisorId}
+              onChange={e => setSelectedSupervisorId(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:ring-1 focus:ring-brand-light font-bold"
+            >
+              <option value="" className="bg-ocean-900 text-white/40">Select Supervisor...</option>
+              {supervisors.map(s => (
+                <option key={s.id} value={s.id} className="bg-ocean-900 text-white font-bold">{s.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-black text-amber-300 uppercase tracking-widest pl-1">
+              Override Reason
+            </label>
+            <input
+              type="text"
+              value={overrideReason}
+              onChange={e => setOverrideReason(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:ring-1 focus:ring-brand-light"
+            />
+          </div>
+
+          <Button
+            onClick={handleSupervisorOverride}
+            disabled={loading || !selectedSupervisorId}
+            className="w-full bg-amber-500 hover:bg-amber-600 text-ocean-900 font-extrabold"
+          >
+            {loading ? <RefreshCw className="animate-spin mr-2" size={16} /> : null}
+            Authorize ID Bypass & Proceed
           </Button>
         </div>
       )}

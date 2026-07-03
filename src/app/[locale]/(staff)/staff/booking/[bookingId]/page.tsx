@@ -16,6 +16,7 @@ import { CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react'
 import { type BookingStatus, type BagType } from '@/types/database'
 import { BAG_LABELS, calculateLateFee } from '@/lib/utils/pricing'
 import { LiveStorageCountdown } from '@/components/staff/LiveStorageCountdown'
+import { ControlledAccessButton } from '@/components/staff/ControlledAccessButton'
 
 type BookingFull = {
   id: string
@@ -352,6 +353,7 @@ export default async function StaffBookingPage({
             <p className="text-green-200/60 text-xs mt-1">
               All bags are sealed and confirmed. Staff can process pickup directly below.
             </p>
+            <ControlledAccessButton bookingId={booking.id} bags={booking.booking_bags} />
           </div>
         )}
       </div>
