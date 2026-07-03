@@ -102,9 +102,36 @@ export async function markArrived(
   
   const { svc, hubId, userId } = await requireStaff()
 
+  // Fetch current booking start_time and end_time
+  const { data: booking } = await svc
+    .from('bookings' as never)
+    .select('start_time, end_time')
+    .eq('id', bookingId)
+    .single() as { data: { start_time: string; end_time: string } | null }
+
+  if (!booking) return { error: 'Booking not found.' }
+
+  const bookedStart = new Date(booking.start_time)
+  const bookedEnd = new Date(booking.end_time)
+  const now = new Date()
+
+  let newStart = bookedStart.toISOString()
+  let newEnd = bookedEnd.toISOString()
+
+  // Shift pickup deadline if checking in early
+  if (now < bookedStart) {
+    const earlyArrivalMs = bookedStart.getTime() - now.getTime()
+    newStart = now.toISOString()
+    newEnd = new Date(bookedEnd.getTime() - earlyArrivalMs).toISOString()
+  }
+
   const { error } = await svc
     .from('bookings' as never)
-    .update({ status: 'arrived' })
+    .update({ 
+      status: 'arrived',
+      start_time: newStart,
+      end_time: newEnd
+    })
     .eq('id', bookingId)
     .eq('hub_id', hubId)
     .eq('status', 'confirmed')
