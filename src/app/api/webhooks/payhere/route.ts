@@ -96,14 +96,28 @@ export async function POST(req: NextRequest) {
 
       const { data: ecPayment } = await supabase
         .from('payments' as never)
-        .select('id, booking_id, amount')
+        .select('id, booking_id, amount, status')
         .eq('id', paymentId)
         .eq('type', 'early_checkin')
-        .eq('status', 'pending')
-        .maybeSingle() as { data: { id: string; booking_id: string; amount: number } | null }
+        .maybeSingle() as { data: { id: string; booking_id: string; amount: number; status: string } | null }
 
-      if (!ecPayment || Number(payhere_amount) !== Number(ecPayment.amount)) {
-        console.warn('[PayHere IPN] Early check-in amount mismatch', { paymentId, payhere_amount })
+      if (!ecPayment) {
+        console.warn('[PayHere IPN] Early check-in payment not found', { paymentId })
+        return NextResponse.json({ received: true })
+      }
+
+      if (ecPayment.status === 'paid') {
+        console.log('[PayHere IPN] Early check-in payment already processed (idempotent)', { paymentId })
+        return NextResponse.json({ received: true })
+      }
+
+      if (ecPayment.status !== 'pending') {
+        console.warn('[PayHere IPN] Early check-in payment not pending', { paymentId, status: ecPayment.status })
+        return NextResponse.json({ received: true })
+      }
+
+      if (Number(payhere_amount) !== Number(ecPayment.amount)) {
+        console.warn('[PayHere IPN] Early check-in amount mismatch', { paymentId, payhere_amount, expected: ecPayment.amount })
         return NextResponse.json({ received: true })
       }
 
@@ -111,30 +125,40 @@ export async function POST(req: NextRequest) {
         .from('payments' as never)
         .update({ status: 'paid', gateway_ref: payment_id })
         .eq('id', ecPayment.id)
-        .eq('status', 'pending')
 
       if (ecPayment.booking_id) {
         const bookingId = ecPayment.booking_id
-        const { error } = await supabase
+        
+        const { data: booking } = await supabase
           .from('bookings' as never)
-          .update({ 
-            status: 'arrived', 
-            early_checkin_payment_status: 'paid' 
-          })
+          .select('status')
           .eq('id', bookingId)
-          .eq('status', 'early_checkin_pending_payment')
+          .single() as { data: { status: string } | null }
 
-        if (error) {
-          console.error('[PayHere IPN] Failed to update booking after early check-in payment', bookingId, error)
+        if (booking && booking.status === 'early_checkin_pending_payment') {
+          const { error } = await supabase
+            .from('bookings' as never)
+            .update({ 
+              status: 'arrived', 
+              early_checkin_payment_status: 'paid' 
+            })
+            .eq('id', bookingId)
+            .eq('status', 'early_checkin_pending_payment')
+
+          if (error) {
+            console.error('[PayHere IPN] Failed to update booking after early check-in payment', bookingId, error)
+          } else {
+            console.log('[PayHere IPN] Early check-in payment confirmed, booking status: arrived', bookingId)
+            await supabase
+              .from('payments' as never)
+              .update({ status: 'paid', gateway_ref: 'CASH_PAYMENT_AT_HUB' })
+              .eq('booking_id', bookingId)
+              .eq('status', 'pending')
+              .eq('type', 'booking')
+              .eq('gateway_ref', 'PAY_AT_HUB')
+          }
         } else {
-          console.log('[PayHere IPN] Early check-in payment confirmed, booking status: arrived', bookingId)
-          await supabase
-            .from('payments' as never)
-            .update({ status: 'paid', gateway_ref: 'CASH_PAYMENT_AT_HUB' })
-            .eq('booking_id', bookingId)
-            .eq('status', 'pending')
-            .eq('type', 'booking')
-            .eq('gateway_ref', 'PAY_AT_HUB')
+          console.log('[PayHere IPN] Booking is already processed or not in early_checkin_pending_payment status', { bookingId, status: booking?.status })
         }
       }
 

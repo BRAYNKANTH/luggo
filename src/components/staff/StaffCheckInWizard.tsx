@@ -76,9 +76,8 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending }: StaffCheck
   async function handleNormalCheckIn() {
     setLoading(true)
     setError(null)
-    const checkInType = earlyMinutes > 0 && earlyMinutes <= 15 ? 'free_buffer' : 'none'
     try {
-      const res = await processStandardCheckInAction(booking.id, Math.max(0, earlyMinutes), checkInType)
+      const res = await processStandardCheckInAction(booking.id)
       if (res.error) {
         setError(res.error)
       } else {
@@ -97,7 +96,7 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending }: StaffCheck
     setLoading(true)
     setError(null)
     try {
-      const res = await processCashEarlyCheckInAction(booking.id, earlyMinutes, extraHours, earlyCheckinFee)
+      const res = await processCashEarlyCheckInAction(booking.id)
       if (res.error) {
         setError(res.error)
       } else {
@@ -115,7 +114,7 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending }: StaffCheck
     setLoading(true)
     setError(null)
     try {
-      const res = await processOnlineEarlyCheckInAction(booking.id, earlyMinutes, extraHours, earlyCheckinFee)
+      const res = await processOnlineEarlyCheckInAction(booking.id)
       if (res.error) {
         setError(res.error)
       } else if (res.paymentLink) {
@@ -129,7 +128,7 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending }: StaffCheck
           .eq('status', 'pending')
           .order('created_at', { ascending: false })
           .limit(1)
-          .maybeSingle()
+          .maybeSingle() as { data: { id: string } | null }
         
         if (p) setPaymentId(p.id)
         setStep('waiting_online_payment')
@@ -150,7 +149,7 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending }: StaffCheck
         .from('payments')
         .select('status')
         .eq('id', paymentId)
-        .single()
+        .single() as { data: { status: string } | null }
       
       if (pay?.status === 'paid') {
         setPaymentPaid(true)
@@ -190,15 +189,7 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending }: StaffCheck
     setLoading(true)
     setError(null)
     try {
-      const res = await processShiftBookingCheckInAction(
-        booking.id,
-        earlyMinutes,
-        actualCheckInTime.toISOString(),
-        shiftedStartTime.toISOString(),
-        shiftedEndTime.toISOString(),
-        booking.start_time,
-        booking.end_time
-      )
+      const res = await processShiftBookingCheckInAction(booking.id)
       if (res.error) {
         setError(res.error)
       } else {
@@ -222,7 +213,6 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending }: StaffCheck
     try {
       const res = await processSupervisorOverrideCheckInAction(
         booking.id,
-        earlyMinutes,
         selectedSupervisorId,
         overrideReason
       )
