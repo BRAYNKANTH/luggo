@@ -13,7 +13,8 @@ import {
   processShiftBookingCheckInAction,
   processSupervisorOverrideCheckInAction,
   completeOnlineEarlyCheckInAction,
-  getSupervisorsAction
+  getSupervisorsAction,
+  createEarlyCheckinPaymentLink
 } from '@/lib/staff/actions'
 import { formatInSLT } from '@/lib/utils/timezone'
 import { type BookingStatus, type BagType } from '@/types/database'
@@ -54,7 +55,9 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending }: StaffCheck
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [step, setStep] = useState<'initial' | 'waiting_online_payment' | 'supervisor_override'>('initial')
+  const [step, setStep] = useState<'initial' | 'waiting_online_payment' | 'supervisor_override'>(
+    booking.status === 'early_checkin_pending_payment' ? 'waiting_online_payment' : 'initial'
+  )
   const [paymentId, setPaymentId] = useState<string | null>(null)
   const [paymentLink, setPaymentLink] = useState<string | null>(null)
   const [paymentPaid, setPaymentPaid] = useState(false)
@@ -63,6 +66,38 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending }: StaffCheck
   const [supervisors, setSupervisors] = useState<{ id: string; name: string }[]>([])
   const [selectedSupervisorId, setSelectedSupervisorId] = useState('')
   const [overrideReason, setOverrideReason] = useState('Staff-approved exception')
+
+  // Load existing payment if already in pending payment status on mount
+  useEffect(() => {
+    async function loadPendingPayment() {
+      if (booking.status === 'early_checkin_pending_payment') {
+        setLoading(true)
+        try {
+          const { data } = await supabase
+            .from('payments')
+            .select('id')
+            .eq('booking_id', booking.id)
+            .eq('type', 'early_checkin')
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          
+          const p = data as { id: string } | null
+          if (p) {
+            setPaymentId(p.id)
+            const link = await createEarlyCheckinPaymentLink(booking.id)
+            setPaymentLink(link)
+          }
+        } catch (err) {
+          console.error('Failed to load pending early payment:', err)
+        } finally {
+          setLoading(false)
+        }
+      }
+    }
+    loadPendingPayment()
+  }, [booking.status, booking.id, supabase])
 
   useEffect(() => {
     if (step === 'supervisor_override') {
