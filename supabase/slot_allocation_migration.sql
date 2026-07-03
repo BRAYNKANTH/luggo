@@ -17,3 +17,8 @@ WHERE slot_number IS NOT NULL AND status IN (
   'overstayed',
   'late_fee_pending'
 );
+
+-- Slot-based bookings do not use reusable bag tags (bag_tag_id) anymore.
+-- Drop check constraint that requires bag_tag_id when status = 'stored'.
+ALTER TABLE public.booking_bags DROP CONSTRAINT IF EXISTS check_stored_bag_has_tag;
+

@@ -100,11 +100,12 @@ export default async function StaffBookingPage({
       case 'identity_verified': return 'bags'
       case 'sealing_in_progress': return 'bags'
       case 'sealed_waiting_user_confirmation': return 'waiting'
-      case 'active_storage': return 'stored'
-      case 'pickup_requested': return 'pickup'
-      case 'overstayed': return 'late_fee_pending'
-      case 'late_fee_pending': return 'pickup'
-      case 'ready_for_release': return 'pickup'
+      case 'active_storage':
+      case 'pickup_requested':
+      case 'overstayed':
+      case 'late_fee_pending':
+      case 'ready_for_release':
+        return 'pickup'
       default: return 'none'
     }
   })()
@@ -332,11 +333,11 @@ export default async function StaffBookingPage({
             </form>
           </div>
         )}
-        {nextAction === 'stored' && (
+        {booking.status === 'active_storage' && (
           <div className="bg-green-500/10 border border-green-400/20 rounded-2xl p-4">
             <p className="text-green-300 font-semibold text-sm">Bags in storage ✓</p>
             <p className="text-green-200/60 text-xs mt-1">
-              All bags are sealed and confirmed. Awaiting customer pickup request.
+              All bags are sealed and confirmed. Staff can process pickup directly below.
             </p>
           </div>
         )}
