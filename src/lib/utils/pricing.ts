@@ -1,9 +1,9 @@
 import { type BagType } from '@/types/database'
 
 export const BAG_RATES: Record<BagType, number> = {
-  small: 200,    // LKR per hour
-  regular: 300,
-  large: 400,
+  small: 100,    // LKR per hour
+  regular: 150,
+  large: 200,
 }
 
 export const BAG_LABELS: Record<BagType, string> = {
