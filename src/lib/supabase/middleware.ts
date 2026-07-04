@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { type Database, type UserRole } from '@/types/database'
 
 export async function updateSession(request: NextRequest, response?: NextResponse) {
-  let supabaseResponse = response || NextResponse.next({ request })
+  const supabaseResponse = response || NextResponse.next({ request })
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,16 +15,6 @@ export async function updateSession(request: NextRequest, response?: NextRespons
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          
-          // Re-create the response object while copying headers from the old one
-          // to preserve localization headers/rewrites from next-intl.
-          const newResponse = NextResponse.next({ request })
-          supabaseResponse.headers.forEach((value, key) => {
-            newResponse.headers.set(key, value)
-          })
-          
-          supabaseResponse = newResponse
-          
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
