@@ -76,8 +76,11 @@ export function calculateEarlyCheckinDecision(params: {
 
   const isWithinBuffer = earlyMinutes <= earlyBufferMinutes
   const requiresAction = !isWithinBuffer
-  const extraHours = requiresAction ? Math.ceil(earlyMinutes / 60) : 0
-  const earlyCheckinFee = extraHours * totalHourlyBagRate
+  
+  // Calculate based on 30-minute blocks (half-hourly billing)
+  const extraHalfHours = requiresAction ? Math.ceil(earlyMinutes / 30) : 0
+  const earlyCheckinFee = extraHalfHours * (totalHourlyBagRate / 2)
+  const extraHours = Math.ceil(earlyMinutes / 60) // Keep integer for DB compatibility
 
   const originalDurationMs = bookedEndTime.getTime() - bookedStartTime.getTime()
   const shiftedStartTime = actualCheckInTime
