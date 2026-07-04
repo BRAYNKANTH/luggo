@@ -561,40 +561,49 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
     setError(null)
     if (!timesValid) {
       setError('Please select valid drop-off and pick-up times within operating hours.')
+      document.getElementById('section-times')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
     if (totalBags === 0) {
       setError('Please add at least one bag.')
+      document.getElementById('section-bags')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
     if (!isLoggedIn) {
       if (name.trim().length < 2) {
         setError('Please enter your full name (minimum 2 characters).')
+        document.getElementById('section-details')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         return
       }
       if (!isEmail(email)) {
         setError('Please enter a valid email address.')
+        document.getElementById('section-details')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         return
       }
       if (!isValidSriLankanPhone(phone)) {
         setError('Please enter a valid Sri Lankan phone number (e.g. +94 77 123 4567).')
+        document.getElementById('section-details')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         return
       }
       if (phoneVerificationStatus !== 'verified') {
         setError('Please verify your phone number with the SMS OTP code.')
+        document.getElementById('section-details')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         return
       }
       if (idNumber.trim() && !isValidId(idType, idNumber)) {
         setError(`Please enter a valid ${idType} number.`)
+        document.getElementById('section-details')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         return
       }
     }
     if (!noIllegalItems) {
       setError('Please confirm the prohibited items declaration.')
+      document.getElementById('section-declarations')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
     if (!termsAccepted) {
       setError('Please accept the Terms of Service and Privacy Policy.')
+      document.getElementById('section-declarations')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
     submitBooking()
@@ -748,7 +757,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                     </div>
 
                     {/* Time selection */}
-                    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
+                    <div id="section-times" className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
                       <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 pl-1">Storage Times</h3>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -832,7 +841,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                     </div>
 
                     {/* Bag selection */}
-                    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
+                    <div id="section-bags" className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
                       <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 pl-1">Luggage Items</h3>
                       <div className="space-y-3.5">
                         {(Object.keys(LOCAL_BAG_LABELS) as BagType[]).map((type) => {
@@ -901,7 +910,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                     </div>
 
                     {!isLoggedIn && (
-                      <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 lg:p-8 space-y-6">
+                      <div id="section-details" className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 lg:p-8 space-y-6">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-brand/10 rounded-xl flex items-center justify-center text-brand">
                             <User size={20} />
@@ -1081,7 +1090,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 space-y-4">
+                    <div id="section-declarations" className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 space-y-4">
                       <label className={`flex items-start gap-4 cursor-pointer transition-all`}>
                         <div className="relative shrink-0 mt-1">
                           <input
