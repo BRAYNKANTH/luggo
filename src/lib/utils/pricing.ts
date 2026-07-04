@@ -28,8 +28,12 @@ export function calculateLateFee(
 ): number {
   const GRACE_PERIOD_MS = 15 * 60 * 1000 // 15 minutes grace period
   if (now.getTime() <= endTime.getTime() + GRACE_PERIOD_MS) return 0
-  const overdueHours = Math.ceil((now.getTime() - endTime.getTime()) / (1000 * 60 * 60))
-  return bags.reduce((total, bag) => total + BAG_RATES[bag.bag_type] * overdueHours, 0)
+
+  const overdueMs = now.getTime() - endTime.getTime()
+  const overdueMinutes = Math.ceil(overdueMs / (60 * 1000))
+  const overdueHalfHours = Math.ceil(overdueMinutes / 30)
+
+  return bags.reduce((total, bag) => total + (BAG_RATES[bag.bag_type] / 2) * overdueHalfHours, 0)
 }
 
 export interface EarlyCheckinDecision {
