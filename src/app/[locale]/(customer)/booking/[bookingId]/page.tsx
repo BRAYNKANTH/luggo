@@ -17,6 +17,7 @@ import { formatDateSLT, formatDateTimeSLT } from '@/lib/utils/timezone'
 import { type BookingStatus, type BagType } from '@/types/database'
 import { BAG_LABELS, BAG_RATES, calculateLateFee } from '@/lib/utils/pricing'
 import { EarlyCheckinPayButton } from '@/components/customer/EarlyCheckinPayButton'
+import { BookingPaymentRetryButton } from '@/components/customer/BookingPaymentRetryButton'
 
 type BookingDetail = {
   id: string
@@ -133,7 +134,7 @@ export default async function BookingDetailPage({
             </div>
           </div>
         )}
-        {searchParams.payment === 'success' && (
+        {searchParams.payment === 'success' && booking.status !== 'pending_payment' && (
           <>
             <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
               <CheckCircle size={18} className="text-green-600 shrink-0" />
@@ -146,6 +147,36 @@ export default async function BookingDetailPage({
               __html: `try { localStorage.removeItem('luggo_booking_${booking.hub_id}'); } catch(e){}`
             }} />
           </>
+        )}
+
+        {/* ── Payment Pending / Declined Alert ── */}
+        {booking.status === 'pending_payment' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl md:rounded-2xl p-5 space-y-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <AlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-amber-950 text-sm">⚠️ Payment Pending / Declined</p>
+                <p className="text-xs text-amber-700 mt-1 leading-normal">
+                  Your payment was not completed or was declined by the bank. Please try paying again to confirm your luggage storage reservation.
+                </p>
+              </div>
+            </div>
+            
+            {/* Retry Payment Button */}
+            <div className="pt-1">
+              <BookingPaymentRetryButton bookingId={booking.id} price={booking.total_price} />
+            </div>
+            
+            {/* Edit Booking Link */}
+            <div className="text-center pt-1">
+              <Link
+                href={`/book/${booking.hub_id}`}
+                className="text-xs font-bold text-amber-700 hover:text-amber-800 underline"
+              >
+                ← Back to Edit Booking Details
+              </Link>
+            </div>
+          </div>
         )}
         {searchParams.payment === 'ext_success' && (
           <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">

@@ -312,3 +312,75 @@ export async function createEarlyCheckinPayment(
 
   return { formData }
 }
+
+// ---------------------------------------------------------------------------
+// createBookingRetryPayment
+// Generates PayHere form data for retrying the base booking payment.
+// ---------------------------------------------------------------------------
+export async function createBookingRetryPayment(
+  bookingId: string
+): Promise<{ error?: string; formData?: PayhereFormData }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  // Verify ownership + current status
+  const { data: booking } = await supabase
+    .from('bookings')
+    .select('id, status, total_price, users ( name, email, phone ), hubs ( name )')
+    .eq('id', bookingId)
+    .eq('user_id', user.id)
+    .single() as {
+      data: {
+        id: string
+        status: string
+        total_price: number
+        users: { name: string; email: string; phone: string | null } | null
+        hubs: { name: string } | null
+      } | null
+      error: unknown
+    }
+
+  if (!booking) return { error: 'Booking not found' }
+  if (booking.status !== 'pending_payment') {
+    return { error: 'Booking is not in pending payment status' }
+  }
+
+  const merchantId = process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID!
+  const merchantSecret = process.env.PAYHERE_MERCHANT_SECRET!
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL!
+  const orderId = booking.id
+  const currency = 'LKR'
+
+  const hash = generatePayhereHash(merchantId, orderId, booking.total_price, currency, merchantSecret)
+
+  const nameParts = (booking.users?.name ?? 'Customer').split(' ')
+  const firstName = nameParts[0]
+  const lastName = nameParts.slice(1).join(' ') || firstName
+
+  const formData: PayhereFormData = {
+    merchant_id: merchantId,
+    return_url: `${baseUrl}/booking/${bookingId}?payment=success`,
+    cancel_url: `${baseUrl}/booking/${bookingId}?payment=cancelled`,
+    notify_url: process.env.NEXT_PUBLIC_PAYHERE_NOTIFY_URL || `${baseUrl}/api/webhooks/payhere`,
+    order_id: orderId,
+    items: `Luggage storage — ${booking.hubs?.name}`,
+    currency,
+    amount: booking.total_price.toFixed(2),
+    first_name: firstName,
+    last_name: lastName,
+    email: booking.users?.email ?? '',
+    phone: booking.users?.phone ?? '',
+    address: 'N/A',
+    city: 'Colombo',
+    country: 'Sri Lanka',
+    hash,
+    endpoint: PAYHERE_ENDPOINT,
+  }
+
+  return { formData }
+}
