@@ -15,7 +15,7 @@ import {
 import { BookingProgressTracker } from '@/components/customer/BookingProgressTracker'
 import { formatDateSLT, formatDateTimeSLT } from '@/lib/utils/timezone'
 import { type BookingStatus, type BagType } from '@/types/database'
-import { BAG_LABELS, BAG_RATES } from '@/lib/utils/pricing'
+import { BAG_LABELS, BAG_RATES, calculateLateFee } from '@/lib/utils/pricing'
 import { EarlyCheckinPayButton } from '@/components/customer/EarlyCheckinPayButton'
 
 type BookingDetail = {
@@ -87,12 +87,27 @@ export default async function BookingDetailPage({
   const isCancellable   = CANCELLABLE.includes(booking.status)
   const showQR          = !['cancelled', 'expired', 'pending_payment'].includes(booking.status)
   const showConfirmSeal = booking.status === 'sealed_waiting_user_confirmation'
-  const showPickupCTA   = false
+  const showPickupCTA   = ['active_storage', 'overstayed', 'late_fee_pending'].includes(booking.status)
   const isPickupPending = booking.status === 'pickup_requested'
   const showExtendCTA   = EXTEND_ELIGIBLE.includes(booking.status)
   const hourlyRate      = booking.booking_bags.reduce((t, b) => t + (BAG_RATES[b.bag_type] || 0), 0)
   const bookingPayment  = booking.payments?.find(p => p.type === 'booking')
   const isCashPaymentPending = !bookingPayment || (bookingPayment.status === 'pending' && bookingPayment.gateway_ref === 'PAY_AT_HUB')
+
+  // Calculate late fee if overstayed or late fee is pending
+  const isOverdue = ['overstayed', 'late_fee_pending'].includes(booking.status)
+  let lateFeeAmount = 0
+  let overdueHours = 0
+  let overdueHalfHours = 0
+  if (isOverdue) {
+    lateFeeAmount = calculateLateFee(booking.booking_bags, end, new Date())
+    if (lateFeeAmount > 0) {
+      const overdueMs = Date.now() - end.getTime()
+      const overdueMinutes = Math.ceil(overdueMs / (60 * 1000))
+      overdueHalfHours = Math.ceil(overdueMinutes / 30)
+      overdueHours = overdueHalfHours * 0.5
+    }
+  }
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -246,6 +261,42 @@ export default async function BookingDetailPage({
             <div>
               <p className="font-semibold text-red-700 text-sm leading-tight">Pickup request failed</p>
               <p className="text-xs text-red-500 mt-0.5">{decodeURIComponent(searchParams.pickup_error)}</p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Late Fee Pending Alert ── */}
+        {isOverdue && lateFeeAmount > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-xl md:rounded-2xl p-5 space-y-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <AlertTriangle size={20} className="text-red-500 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-red-950 text-sm">⚠️ Late Overstay Fee Required</p>
+                <p className="text-xs text-red-700 mt-1 leading-normal">
+                  Your storage has exceeded the booked pick-up time. A late fee must be paid before you can request bag pickup.
+                </p>
+                
+                {/* Pricing Calculation breakdown table */}
+                <div className="bg-white/60 p-3.5 rounded-xl border border-red-100 text-xs space-y-1.5 mt-3 text-red-900">
+                  <div className="flex justify-between">
+                    <span>Overstay Duration:</span>
+                    <span className="font-bold">{overdueHours} hour{overdueHours !== 1 ? 's' : ''} ({overdueHalfHours} half-hour blocks)</span>
+                  </div>
+                  <div className="flex justify-between border-t border-red-100/50 pt-1.5 mt-1.5 font-bold">
+                    <span>Total Late Fee Payable:</span>
+                    <span className="text-red-600">LKR {lateFeeAmount.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Pay Online Button */}
+            <div className="pt-1">
+              <Link href={`/pickup/${booking.id}`}>
+                <Button fullWidth className="bg-red-600 hover:bg-red-500 text-white border-none font-bold">
+                  💳 Pay Late Fee Online & Request Pickup
+                </Button>
+              </Link>
             </div>
           </div>
         )}

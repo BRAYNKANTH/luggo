@@ -18,7 +18,7 @@ import {
 } from '@/lib/staff/actions'
 import { formatInSLT } from '@/lib/utils/timezone'
 import { type BookingStatus, type BagType } from '@/types/database'
-import { BAG_RATES } from '@/lib/utils/pricing'
+import { calculateEarlyCheckinDecision } from '@/lib/utils/pricing'
 
 interface StaffCheckInWizardProps {
   booking: {
@@ -38,20 +38,26 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending }: StaffCheck
   const router = useRouter()
   const supabase = createClient()
 
-  // Calculate early minutes
+  // Calculate early check-in decision using pricing module
   const [actualCheckInTime] = useState(() => new Date())
   const bookedStartTime = new Date(booking.start_time)
   const bookedEndTime = new Date(booking.end_time)
 
-  const earlyMinutes = Math.ceil((bookedStartTime.getTime() - actualCheckInTime.getTime()) / (60 * 1000))
-  const totalHourlyBagRate = booking.booking_bags.reduce((total, bag) => total + BAG_RATES[bag.bag_type], 0)
-  const extraHours = earlyMinutes > 15 ? Math.ceil(earlyMinutes / 60) : 0
-  const earlyCheckinFee = extraHours * totalHourlyBagRate
+  const decision = calculateEarlyCheckinDecision({
+    bookedStartTime,
+    bookedEndTime,
+    actualCheckInTime,
+    bags: booking.booking_bags as { bag_type: BagType }[],
+    earlyBufferMinutes: 15
+  })
 
-  // Option B shift values
-  const originalDurationMs = bookedEndTime.getTime() - bookedStartTime.getTime()
-  const shiftedStartTime = actualCheckInTime
-  const shiftedEndTime = new Date(actualCheckInTime.getTime() + originalDurationMs)
+  const {
+    earlyMinutes,
+    extraHours,
+    earlyCheckinFee,
+    shiftedStartTime,
+    shiftedEndTime
+  } = decision
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -264,7 +270,7 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending }: StaffCheck
   }
 
   // ── Render Case 1: Within Booked Drop-Off time ──
-  if (earlyMinutes <= 0) {
+  if (!decision.isEarly) {
     return (
       <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
         <div className="flex items-start gap-3 text-emerald-400">
@@ -293,7 +299,7 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending }: StaffCheck
   }
 
   // ── Render Case 2: Within 15-minute free buffer ──
-  if (earlyMinutes > 0 && earlyMinutes <= 15) {
+  if (decision.isEarly && decision.isWithinBuffer) {
     return (
       <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
         <div className="flex items-start gap-3 text-brand-light">

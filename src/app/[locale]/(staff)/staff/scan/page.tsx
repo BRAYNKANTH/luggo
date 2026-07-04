@@ -27,6 +27,7 @@ export default function StaffScanPage() {
   const router = useRouter()
   const [resolving, setResolving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [manualCode, setManualCode] = useState('')
 
   const handleScan = useCallback(
     async (code: string) => {
@@ -45,6 +46,15 @@ export default function StaffScanPage() {
       router.push(`/staff/booking/${result.bookingId}`)
     },
     [resolving, router]
+  )
+
+  const handleManualSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault()
+      if (!manualCode.trim()) return
+      await handleScan(manualCode.trim())
+    },
+    [manualCode, handleScan]
   )
 
   return (
@@ -72,6 +82,28 @@ export default function StaffScanPage() {
         ) : (
           <QRScanner onScan={handleScan} disabled={resolving} />
         )}
+
+        {/* Manual Lookup Card */}
+        <div className="w-full max-w-xs bg-white/5 border border-white/10 rounded-2xl p-4 mt-2">
+          <p className="text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Can&apos;t scan? Type Reference</p>
+          <form onSubmit={handleManualSubmit} className="flex gap-2">
+            <input
+              type="text"
+              placeholder="e.g. Booking UUID or QR"
+              value={manualCode}
+              onChange={(e) => setManualCode(e.target.value)}
+              className="flex-1 px-3 py-2 text-xs rounded-xl bg-white/10 border border-white/15 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-brand"
+              disabled={resolving}
+            />
+            <button
+              type="submit"
+              className="px-4 py-2 bg-brand text-ocean-900 rounded-xl text-xs font-bold hover:bg-brand-light disabled:opacity-50 transition-colors"
+              disabled={resolving || !manualCode.trim()}
+            >
+              Lookup
+            </button>
+          </form>
+        </div>
 
         {/* Error */}
         {error && (
