@@ -405,16 +405,14 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hub.id, isLoggedIn])
 
-  // Save guest state
+  // Save state
   useEffect(() => {
-    if (isLoggedIn) return
     localStorage.setItem(`luggo_booking_${hub.id}`, JSON.stringify({ bags, start: startValue, end: endValue, name, email, phone, idType, idNumber }))
-  }, [bags, startValue, endValue, name, email, phone, idType, idNumber, hub.id, isLoggedIn])
+  }, [bags, startValue, endValue, name, email, phone, idType, idNumber, hub.id])
 
   // Auto-submit PayHere form
   useEffect(() => {
     if (payhereData && payhereFormRef.current) {
-      localStorage.removeItem(`luggo_booking_${hub.id}`)
       payhereFormRef.current.submit()
     }
   }, [payhereData, hub.id])

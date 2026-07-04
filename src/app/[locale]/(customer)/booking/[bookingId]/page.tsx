@@ -27,6 +27,7 @@ type BookingDetail = {
   qr_code: string
   created_at: string
   slot_number: number | null
+  hub_id: string
   hubs: { name: string; alias: string; address: string } | null
   booking_bags: { id: string; bag_type: BagType; sticker_number: string | null; seal_number: string | null }[]
   payments: { status: string; gateway_ref: string | null; type: string }[]
@@ -54,7 +55,7 @@ export default async function BookingDetailPage({
   const { data: booking } = await supabase
     .from('bookings')
     .select(`
-      id, status, start_time, end_time, total_price, qr_code, created_at, slot_number,
+      id, status, start_time, end_time, total_price, qr_code, created_at, slot_number, hub_id,
       early_checkin_minutes, early_checkin_type, early_checkin_extra_hours, early_checkin_fee, early_checkin_payment_status,
       hubs ( name, alias, address ),
       booking_bags ( id, bag_type, sticker_number, seal_number ),
@@ -133,13 +134,18 @@ export default async function BookingDetailPage({
           </div>
         )}
         {searchParams.payment === 'success' && (
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
-            <CheckCircle size={18} className="text-green-600 shrink-0" />
-            <div>
-              <p className="font-semibold text-green-900 text-sm">Payment confirmed!</p>
-              <p className="text-xs text-green-700 mt-0.5">Your booking is secured. We&apos;ll see you at the hub.</p>
+          <>
+            <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
+              <CheckCircle size={18} className="text-green-600 shrink-0" />
+              <div>
+                <p className="font-semibold text-green-900 text-sm">Payment confirmed!</p>
+                <p className="text-xs text-green-700 mt-0.5">Your booking is secured. We&apos;ll see you at the hub.</p>
+              </div>
             </div>
-          </div>
+            <script dangerouslySetInnerHTML={{
+              __html: `try { localStorage.removeItem('luggo_booking_${booking.hub_id}'); } catch(e){}`
+            }} />
+          </>
         )}
         {searchParams.payment === 'ext_success' && (
           <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
