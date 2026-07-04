@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
           console.error('[PayHere IPN] Failed to advance booking after late fee', bookingId, error)
         } else {
           console.log('[PayHere IPN] Late fee paid, pickup_requested', bookingId)
-          sendLateFeeNotification(supabase, bookingId, Number(payhere_amount)).catch(console.error)
+          await sendLateFeeNotification(supabase, bookingId, Number(payhere_amount)).catch(console.error)
         }
       }
 
@@ -216,7 +216,7 @@ export async function POST(req: NextRequest) {
                 .eq('id', bookingId)
 
               console.log(`[PayHere IPN] Booking ${bookingId} extended by ${addedHours}h to ${newEnd.toISOString()}`)
-              sendExtensionNotification(supabase, bookingId, extPayment.amount, addedHours).catch(console.error)
+              await sendExtensionNotification(supabase, bookingId, extPayment.amount, addedHours).catch(console.error)
             } else {
               console.error(`[PayHere IPN] Extension amount LKR ${extPayment.amount} too small for hourly rate LKR ${hourlyRate}`, bookingId)
             }
@@ -261,8 +261,8 @@ export async function POST(req: NextRequest) {
       console.log('[PayHere IPN] Booking confirmed', order_id)
       // Auto-assign sticker numbers to all bags at confirmation time
       const { autoAssignStickers } = await import('@/lib/utils/stickerAssignment')
-      autoAssignStickers(order_id).catch(console.error)
-      sendBookingConfirmedNotification(supabase, order_id).catch(console.error)
+      await autoAssignStickers(order_id).catch(console.error)
+      await sendBookingConfirmedNotification(supabase, order_id).catch(console.error)
     }
 
     return NextResponse.json({ received: true })
@@ -300,7 +300,7 @@ async function sendBookingConfirmedNotification(supabase: any, bookingId: string
   // Email
   if (userEmail) {
     const { sendBookingConfirmedEmail } = await import('@/lib/utils/email')
-    sendBookingConfirmedEmail(userEmail, userName, hubName, bookingId, appUrl, {
+    await sendBookingConfirmedEmail(userEmail, userName, hubName, bookingId, appUrl, {
       startTime: booking.start_time,
       endTime: booking.end_time,
       totalPrice: booking.total_price,
@@ -313,7 +313,7 @@ async function sendBookingConfirmedNotification(supabase: any, bookingId: string
     const { sendSMS } = await import('@/lib/utils/sms')
     const start = new Date(booking.start_time)
     const dateStr = start.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })
-    sendSMS(
+    await sendSMS(
       userPhone,
       `Luggo: Booking confirmed at ${hubName}! Drop-off: ${dateStr}. Total: LKR ${Number(booking.total_price).toLocaleString()}. View QR: ${appUrl}/booking/${bookingId}`
     ).catch(console.error)
@@ -344,12 +344,12 @@ async function sendLateFeeNotification(supabase: any, bookingId: string, amount:
 
   if (userPhone) {
     const { sendSMS } = await import('@/lib/utils/sms')
-    sendSMS(userPhone, `Luggo: Late fee of LKR ${amount.toLocaleString()} received. Please collect your bags at ${hubName}.`).catch(console.error)
+    await sendSMS(userPhone, `Luggo: Late fee of LKR ${amount.toLocaleString()} received. Please collect your bags at ${hubName}.`).catch(console.error)
   }
 
   if (userEmail) {
     const { sendLateFeeReceiptEmail } = await import('@/lib/utils/email')
-    sendLateFeeReceiptEmail(userEmail, userName, hubName, amount).catch(console.error)
+    await sendLateFeeReceiptEmail(userEmail, userName, hubName, amount).catch(console.error)
   }
 }
 
@@ -377,6 +377,6 @@ async function sendExtensionNotification(supabase: any, bookingId: string, amoun
 
   if (userPhone) {
     const { sendSMS } = await import('@/lib/utils/sms')
-    sendSMS(userPhone, `Luggo: Extension of ${hours}h confirmed! New pickup: ${dateStr} @ ${timeStr}. Paid: LKR ${amount.toLocaleString()}.`).catch(console.error)
+    await sendSMS(userPhone, `Luggo: Extension of ${hours}h confirmed! New pickup: ${dateStr} @ ${timeStr}. Paid: LKR ${amount.toLocaleString()}.`).catch(console.error)
   }
 }
