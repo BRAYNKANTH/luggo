@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/Button'
 import { type BagCounts } from '@/components/customer/BagSelector'
 import { type PayhereFormData } from '@/lib/utils/payhere'
 import { type BagType } from '@/types/database'
+import { BAG_RATES, BAG_DAILY_CAPS, calculateBagPriceForHours } from '@/lib/utils/pricing'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -59,11 +60,7 @@ const LOCAL_BAG_DESC: Record<BagType, string> = {
   large: 'Large check-in suitcase, backpacker pack, golf clubs, or oversized gear',
 }
 
-const LOCAL_BAG_RATES: Record<BagType, number> = {
-  small: 200,
-  regular: 300,
-  large: 400,
-}
+// Pricing rates imported dynamically from '@/lib/utils/pricing'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -127,7 +124,7 @@ function computeTotal(bags: BagCounts, start: Date | null, end: Date | null): nu
   const hours = calculateBillableHours(start, end)
   if (hours <= 0) return 0
   return (Object.entries(bags) as [BagType, number][])
-    .reduce((sum, [type, qty]) => sum + LOCAL_BAG_RATES[type] * qty * hours, 0)
+    .reduce((sum, [type, qty]) => sum + calculateBagPriceForHours(type, hours) * qty, 0)
 }
 
 function isWithinOperatingHours(date: Date | null, openTimeStr: string, closeTimeStr: string): boolean {
@@ -681,8 +678,8 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 opacity-60">Price Breakdown</p>
             {(Object.entries(bags) as [BagType, number][]).filter(([, q]) => q > 0).map(([type, qty]) => (
               <div key={type} className="flex justify-between text-xs mb-1.5">
-                <span className="text-gray-500 font-medium">{qty}× {LOCAL_BAG_LABELS[type]} × {hours}h</span>
-                <span className="font-bold text-gray-900 tabular-nums font-mono">LKR {(LOCAL_BAG_RATES[type] * qty * hours).toLocaleString()}</span>
+                <span className="text-gray-500 font-medium">{qty}× {LOCAL_BAG_LABELS[type]} ({hours}h)</span>
+                <span className="font-bold text-gray-900 tabular-nums font-mono">LKR {(calculateBagPriceForHours(type, hours) * qty).toLocaleString()}</span>
               </div>
             ))}
             {hasInsurance && (
@@ -867,7 +864,9 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                                 <p className="text-xs font-bold text-gray-400 mt-0.5 line-clamp-1">{LOCAL_BAG_DESC[type]}</p>
                                 <div className="flex items-center gap-1.5 mt-2">
                                   <span className="text-[10px] uppercase font-black text-brand tracking-widest">Rate</span>
-                                  <p className="text-sm font-black text-brand tabular-nums font-mono">LKR {LOCAL_BAG_RATES[type].toLocaleString()}/hr</p>
+                                  <p className="text-xs font-black text-brand tabular-nums font-mono">
+                                    LKR {BAG_RATES[type].toLocaleString()}/hr (Max LKR {BAG_DAILY_CAPS[type].toLocaleString()}/day)
+                                  </p>
                                 </div>
                               </div>
 
