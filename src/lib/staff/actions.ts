@@ -18,16 +18,17 @@ async function requireStaff() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/staff/login')
 
-  const { data: staffRow } = await supabase
+  const { data: staffRows } = await supabase
     .from('hub_staff')
     .select('hub_id, hubs(alias)')
     .eq('user_id', user.id)
     .eq('active', true)
-    .single() as {
-      data: { hub_id: string; hubs: { alias: string } | null } | null
+    .limit(1) as {
+      data: { hub_id: string; hubs: { alias: string } | null }[] | null
       error: PostgrestError | null
     }
 
+  const staffRow = staffRows?.[0] || null
   if (!staffRow) {
     redirect('/staff/login')
   }

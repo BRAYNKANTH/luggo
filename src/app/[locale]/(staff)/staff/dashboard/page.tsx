@@ -59,12 +59,12 @@ export default async function StaffDashboardPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/staff/login')
 
-  const { data: staffRow } = await supabase
+  const { data: staffRows } = await supabase
     .from('hub_staff')
     .select('hub_id, hubs(name, alias, address, capacity, open_time, close_time, active)')
     .eq('user_id', user.id)
     .eq('active', true)
-    .single() as {
+    .limit(1) as {
       data: {
         hub_id: string
         hubs: {
@@ -76,10 +76,11 @@ export default async function StaffDashboardPage({
           close_time: string
           active: boolean
         } | null
-      } | null
+      }[] | null
       error: unknown
     }
 
+  const staffRow = staffRows?.[0] || null
   if (!staffRow) redirect('/staff/login')
 
   const search = searchParams?.search || ''
