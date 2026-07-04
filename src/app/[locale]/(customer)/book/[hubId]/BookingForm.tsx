@@ -676,12 +676,23 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
         {totalPrice > 0 && (
           <div className="p-4 bg-gray-50/50">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 opacity-60">Price Breakdown</p>
-            {(Object.entries(bags) as [BagType, number][]).filter(([, q]) => q > 0).map(([type, qty]) => (
-              <div key={type} className="flex justify-between text-xs mb-1.5">
-                <span className="text-gray-500 font-medium">{qty}× {LOCAL_BAG_LABELS[type]} ({hours}h)</span>
-                <span className="font-bold text-gray-900 tabular-nums font-mono">LKR {(calculateBagPriceForHours(type, hours) * qty).toLocaleString()}</span>
-              </div>
-            ))}
+            {(Object.entries(bags) as [BagType, number][]).filter(([, q]) => q > 0).map(([type, qty]) => {
+              const singleBagPrice = calculateBagPriceForHours(type, hours)
+              const isCapped = (hours * BAG_RATES[type]) > BAG_DAILY_CAPS[type]
+              return (
+                <div key={type} className="flex justify-between items-center text-xs mb-1.5">
+                  <span className="text-gray-500 font-medium flex items-center gap-1.5">
+                    {qty}× {LOCAL_BAG_LABELS[type]} ({hours}h)
+                    {isCapped && (
+                      <span className="text-[8px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
+                        Cap Applied
+                      </span>
+                    )}
+                  </span>
+                  <span className="font-bold text-gray-900 tabular-nums font-mono">LKR {(singleBagPrice * qty).toLocaleString()}</span>
+                </div>
+              )
+            })}
             {hasInsurance && (
               <div className="flex justify-between text-xs mb-1.5">
                 <span className="text-gray-500 font-medium">🛡️ Luggage Protection ({totalBags} bag{totalBags > 1 ? 's' : ''})</span>
