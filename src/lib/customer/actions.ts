@@ -83,7 +83,7 @@ export async function requestPickup(bookingId: string): Promise<{ error?: string
 
   // SMS to customer
   if (booking.users?.phone) {
-    sendSMS(
+    await sendSMS(
       booking.users.phone,
       `Luggo: Your pickup request at ${booking.hubs?.name} is confirmed. Please show your QR code at the counter.`
     ).catch(console.error)
@@ -97,7 +97,7 @@ export async function requestPickup(bookingId: string): Promise<{ error?: string
     .single() as { data: { email: string } | null; error: unknown }
 
   if (userRow?.email) {
-    sendPickupRequestedEmail(
+    await sendPickupRequestedEmail(
       userRow.email,
       booking.users?.name ?? 'Customer',
       booking.hubs?.name ?? 'the hub'

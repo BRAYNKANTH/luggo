@@ -385,7 +385,7 @@ export async function finalizeCheckInAction(
     const { sendSMS } = await import('@/lib/utils/sms')
     const hubName = booking.hubs?.name ?? 'the hub'
     const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? ''
-    sendSMS(
+    await sendSMS(
       booking.users.phone,
       `Luggo: Your bags at ${hubName} have been sealed and are in secure storage! View details: ${appUrl}/booking/${bookingId}`
     ).catch(console.error)
@@ -580,7 +580,7 @@ export async function completePickup(
 
   if (booking.users?.phone) {
     const { sendSMS } = await import('@/lib/utils/sms')
-    sendSMS(
+    await sendSMS(
       booking.users.phone,
       `Luggo: Your bags have been collected from ${hubName}. Thank you for using Luggo! 🧳`
     ).catch(console.error)
@@ -718,7 +718,7 @@ export async function createWalkInBooking(input: {
   // Send SMS confirmation
   if (input.phone) {
     const { sendSMS } = await import('@/lib/utils/sms')
-    sendSMS(
+    await sendSMS(
       input.phone,
       `Luggo: Walk-in booking confirmed! Ref: WI-${booking.id.slice(0, 8).toUpperCase()}. Expected pickup: ${input.expectedPickupTime}. Thank you!`
     ).catch(console.error)
@@ -918,7 +918,7 @@ export async function registerBags(
 
     if (bookingDetail.users?.phone) {
       const { sendSMS } = await import('@/lib/utils/sms')
-      sendSMS(bookingDetail.users.phone, `Luggo: Your drop-off at ${hubName} is complete and bags are in active storage!`).catch(console.error)
+      await sendSMS(bookingDetail.users.phone, `Luggo: Your drop-off at ${hubName} is complete and bags are in active storage!`).catch(console.error)
     }
   }
 
@@ -1377,7 +1377,7 @@ export async function completePickupWithCash(
 
   if (booking.users?.phone) {
     const { sendSMS } = await import('@/lib/utils/sms')
-    sendSMS(
+    await sendSMS(
       booking.users.phone,
       `Luggo: Your bags have been collected from ${hubName}. LKR ${lateFeeAmount.toLocaleString()} late fee paid in cash. Thank you! 🧳`
     ).catch(console.error)
@@ -1721,7 +1721,7 @@ export async function processOnlineEarlyCheckInAction(
 
   if (bookingDetail?.users?.phone) {
     const { sendSMS } = await import('@/lib/utils/sms')
-    sendSMS(
+    await sendSMS(
       bookingDetail.users.phone,
       `Luggo: You arrived early. Please pay LKR ${decision.earlyCheckinFee} to confirm early storage. ${paymentLink}`
     ).catch(console.error)
