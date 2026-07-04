@@ -25,7 +25,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { hub_id, start_time, end_time, bags, payment_method = 'pay_online', has_insurance = false } = parsed.data
+    const {
+      hub_id,
+      start_time,
+      end_time,
+      bags,
+      payment_method = 'pay_online',
+      has_insurance = false,
+      terms_accepted,
+      terms_version,
+      privacy_version,
+    } = parsed.data
 
     // Fetch hub
     const { data: hub } = await supabase
@@ -87,6 +97,10 @@ export async function POST(req: NextRequest) {
         end_time,
         total_price: totalPrice,
         qr_code: qrCode,
+        terms_accepted,
+        terms_version: terms_version || 'v1.0',
+        privacy_version: privacy_version || 'v1.0',
+        terms_accepted_at: terms_accepted ? new Date().toISOString() : null,
       })
       .select('id, qr_code')
       .single() as { data: { id: string; qr_code: string } | null; error: unknown }

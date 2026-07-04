@@ -33,6 +33,8 @@ type Booking = {
   users: { name: string; phone: string | null } | null
   booking_bags: Bag[]
   hubs: { alias: string } | null
+  pickup_otp_verified_at: string | null
+  pickup_override_supervisor_id: string | null
 }
 
 type Incident = {
@@ -69,6 +71,7 @@ export default async function StaffPickupPage({
     .select(`
       id, status, end_time, total_price, slot_number,
       walk_in_name, walk_in_phone, walk_in_nic_passport_ref,
+      pickup_otp_verified_at, pickup_override_supervisor_id,
       users ( name, phone ),
       booking_bags ( id, bag_type, sticker_number, seal_number, bag_tag_id, seal_status, status, bag_tags ( tag_code ) ),
       hubs ( alias )
@@ -263,7 +266,9 @@ export default async function StaffPickupPage({
             slot_number: booking.slot_number,
             walk_in_name: booking.walk_in_name,
             walk_in_phone: booking.walk_in_phone,
-            walk_in_nic_passport_ref: booking.walk_in_nic_passport_ref
+            walk_in_nic_passport_ref: booking.walk_in_nic_passport_ref,
+            pickup_otp_verified_at: booking.pickup_otp_verified_at,
+            pickup_override_supervisor_id: booking.pickup_override_supervisor_id
           }}
           bags={booking.booking_bags}
           fee={fee}

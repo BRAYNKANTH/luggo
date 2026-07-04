@@ -1,15 +1,14 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ChevronLeft, Shield, Tag, Package } from 'lucide-react'
+import { ChevronLeft, Shield, Tag } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { Logo } from '@/components/ui/Logo'
 import { SealConfirmForm } from '@/components/customer/SealConfirmForm'
 import { BAG_LABELS } from '@/lib/utils/pricing'
 import { type BagType } from '@/types/database'
 
-type Bag = { id: string; bag_type: BagType; sticker_number: string | null; hub_alias: string | null }
-type SealProof = { id: string; photo_url: string; uploaded_at: string }
+type Bag = { id: string; bag_type: BagType; sticker_number: string | null; hub_alias: string | null; seal_status: string; seal_number: string | null }
 
 export default async function ConfirmSealPage({
   params,
@@ -26,7 +25,7 @@ export default async function ConfirmSealPage({
     .select(`
       id, status,
       hubs ( name, alias ),
-      booking_bags ( id, bag_type, sticker_number, hub_alias )
+      booking_bags ( id, bag_type, sticker_number, hub_alias, seal_status, seal_number )
     `)
     .eq('id', params.bookingId)
     .eq('user_id', user.id)
@@ -47,23 +46,25 @@ export default async function ConfirmSealPage({
     redirect(`/booking/${params.bookingId}`)
   }
 
-  // Load seal proof
-  const { data: proof } = await supabase
-    .from('seal_proofs')
-    .select('id, photo_url, uploaded_at')
-    .eq('booking_id', params.bookingId)
-    .single() as { data: SealProof | null; error: unknown }
+  // Load seal proof evidence
+  const { data: evidences } = await supabase
+    .from('booking_bag_evidence')
+    .select('id, bag_id, file_url, uploaded_at')
+    .eq('booking_id', params.bookingId) as { data: { id: string; bag_id: string | null; file_url: string; uploaded_at: string }[] | null }
 
-  if (!proof) {
-    redirect(`/booking/${params.bookingId}`)
+  const signedEvidencesMap: Record<string, string> = {}
+  if (evidences && evidences.length > 0) {
+    for (const ev of evidences) {
+      if (ev.bag_id) {
+        const { data: signedData } = await supabase.storage
+          .from('seal-proofs')
+          .createSignedUrl(ev.file_url, 3600)
+        if (signedData?.signedUrl) {
+          signedEvidencesMap[ev.bag_id] = signedData.signedUrl
+        }
+      }
+    }
   }
-
-  // Generate signed URL for the private photo (valid 1 hour)
-  const { data: signedData } = await supabase.storage
-    .from('seal-proofs')
-    .createSignedUrl(proof.photo_url, 3600)
-
-  const photoUrl = signedData?.signedUrl ?? null
 
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
@@ -94,67 +95,58 @@ export default async function ConfirmSealPage({
           <p className="text-sm text-gray-500 mt-1">
             Hub staff have sealed your bags at{' '}
             <span className="font-semibold text-ocean-900">{booking.hubs?.name}</span>.
-            Review the photo below before confirming.
+            Review each bag&apos;s photo below before confirming.
           </p>
         </div>
 
-        {/* Seal photo */}
-        <div className="card overflow-hidden p-0">
-          <div className="bg-ocean-900 px-4 py-2.5 flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-brand-success animate-pulse" />
-            <p className="text-white text-xs font-medium">
-              Photo taken by hub staff
-            </p>
-          </div>
-          {photoUrl ? (
-            <div className="relative w-full">
-              <Image
-                src={photoUrl}
-                alt="Sealed bags photo"
-                width={600}
-                height={400}
-                className="w-full object-cover max-h-80"
-                unoptimized
-                priority
-              />
-            </div>
-          ) : (
-            <div className="h-48 flex items-center justify-center bg-gray-100">
-              <p className="text-sm text-gray-400">Photo unavailable</p>
-            </div>
-          )}
-          <div className="px-4 py-3 border-t border-gray-100">
-            <p className="text-xs text-gray-400">
-              Tap and hold to zoom on mobile
-            </p>
-          </div>
-        </div>
-
         {/* Sticker checklist */}
-        <div className="card">
-          <h2 className="font-bold text-ocean-900 text-sm mb-3 flex items-center gap-2">
+        <div className="card space-y-4">
+          <h2 className="font-bold text-ocean-900 text-sm mb-1 flex items-center gap-2">
             <Tag size={14} className="text-brand" />
-            Check sticker labels on each bag
+            Check sticker labels and seal photos
           </h2>
-          <div className="space-y-2">
-            {booking.booking_bags.map((bag) => (
-              <div
-                key={bag.id}
-                className="flex items-center justify-between text-sm py-2 border-b border-gray-50 last:border-0"
-              >
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Package size={14} className="text-gray-400" />
-                  {BAG_LABELS[bag.bag_type]}
+          <div className="divide-y divide-gray-100">
+            {booking.booking_bags.map((bag, i) => {
+              const photoUrl = signedEvidencesMap[bag.id]
+              const isSealed = bag.seal_status === 'sealed'
+              return (
+                <div key={bag.id} className="py-4 first:pt-0 last:pb-0 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-brand tracking-wider">Bag #{i + 1}</p>
+                      <p className="text-sm font-bold text-gray-900">{BAG_LABELS[bag.bag_type]}</p>
+                      {isSealed && (
+                        <p className="text-xs font-semibold text-amber-600 mt-0.5">🔒 Seal: {bag.seal_number || 'Pending'}</p>
+                      )}
+                    </div>
+                    {bag.sticker_number ? (
+                      <span className="font-mono text-xs font-black bg-brand/10 text-brand px-2.5 py-1 rounded-xl">
+                        {bag.hub_alias ?? booking.hubs?.alias}-{bag.sticker_number}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400 font-bold">No sticker</span>
+                    )}
+                  </div>
+                  {isSealed && photoUrl && (
+                    <div className="relative rounded-2xl overflow-hidden border border-gray-100 bg-gray-100">
+                      <Image
+                        src={photoUrl}
+                        alt={`Seal photo for bag #${i + 1}`}
+                        width={600}
+                        height={400}
+                        className="w-full object-cover max-h-56"
+                        unoptimized
+                      />
+                    </div>
+                  )}
+                  {isSealed && !photoUrl && (
+                    <div className="h-28 rounded-2xl flex items-center justify-center bg-gray-50 border border-dashed border-gray-200">
+                      <p className="text-xs text-gray-400 italic">No seal photo uploaded</p>
+                    </div>
+                  )}
                 </div>
-                {bag.sticker_number ? (
-                  <span className="font-mono text-xs font-bold bg-brand/10 text-brand px-2.5 py-1 rounded-lg">
-                    {bag.hub_alias ?? booking.hubs?.alias}-{bag.sticker_number}
-                  </span>
-                ) : (
-                  <span className="text-xs text-gray-400">No sticker</span>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 

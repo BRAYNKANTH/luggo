@@ -257,81 +257,9 @@ export async function confirmStickers(
 // ─────────────────────────────────────────────
 // SAVE SEAL PROOF  sealing_in_progress → sealed_waiting_user_confirmation
 // ─────────────────────────────────────────────
-export async function saveSealProof(
-  bookingId: string,
-  photoPath: string
-): Promise<{ error?: string }> {
-  const validId = uuidSchema.safeParse(bookingId)
-  if (!validId.success) return { error: validId.error.issues[0].message }
-  if (!photoPath) return { error: 'Photo path is required' }
-
-  const { svc, userId, hubId } = await requireStaff()
-
-  // Verify booking
-  const { data: booking } = await svc
-    .from('bookings' as never)
-    .select('id, status, user_id, hubs(name), users(name, phone, email)')
-    .eq('id', bookingId)
-    .eq('hub_id', hubId)
-    .single() as {
-      data: { id: string; status: string; user_id: string; hubs: { name: string } | null; users: { name: string; phone: string | null; email: string } | null } | null
-    }
-
-  if (!booking) return { error: 'Booking not found.' }
-  if (booking.status !== 'sealing_in_progress' && booking.status !== 'disputed') {
-    return { error: `Expected "sealing_in_progress" or "disputed" status. Got: ${booking.status}` }
-  }
-
-  // Save seal proof record with automated customer confirmation
-  const { error: proofError } = await svc
-    .from('seal_proofs' as never)
-    .insert({
-      booking_id: bookingId,
-      photo_url: photoPath,
-      uploaded_by_staff_id: userId,
-      confirmed_by_user_at: new Date().toISOString()
-    }) as { error: { message: string } | null }
-
-  if (proofError) return { error: proofError.message }
-
-  // Advance booking status directly to active_storage
-  await svc.from('bookings' as never).update({ status: 'active_storage' }).eq('id', bookingId)
-
-  // Audit
-  await svc.rpc('write_audit_log', {
-    p_actor_id: userId,
-    p_actor_role: 'hub_staff',
-    p_action: 'seal_proof_uploaded',
-    p_entity: 'bookings',
-    p_entity_id: bookingId,
-    p_metadata: { photo: photoPath }
-  })
-
-  const hubName = booking.hubs?.name ?? 'the hub'
-  const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? ''
-
-  // In-app notification (seal is ready & active in storage)
-  await svc.from('notifications' as never).insert({
-    user_id: booking.user_id,
-    type: 'seal_ready',
-    message: `Your bags at ${hubName} have been sealed and are now in secure storage. You can view the seal photo in the app.`,
-    read: false,
-  })
-
-  // SMS — let customer know their bags are in secure storage
-  if (booking.users?.phone) {
-    const { sendSMS } = await import('@/lib/utils/sms')
-    sendSMS(
-      booking.users.phone,
-      `Luggo: Your bags at ${hubName} have been sealed and are in secure storage! View details: ${appUrl}/booking/${bookingId}`
-    ).catch(console.error)
-  }
-
-  return {}
-}
-
 export async function uploadSealProof(
   bookingId: string,
+  bagId: string,
   formData: FormData
 ): Promise<{ error?: string }> {
   const validId = uuidSchema.safeParse(bookingId)
@@ -350,9 +278,9 @@ export async function uploadSealProof(
     return { error: 'Photo must be under 10 MB.' }
   }
 
-  const { svc } = await requireStaff()
+  const { svc, userId } = await requireStaff()
   const ext = file.name.split('.').pop() ?? 'jpg'
-  const path = `${bookingId}/${Date.now()}.${ext}`
+  const path = `${bookingId}/${bagId}_${Date.now()}.${ext}`
   const arrayBuffer = await file.arrayBuffer()
 
   const { error: uploadError } = await svc.storage
@@ -366,7 +294,103 @@ export async function uploadSealProof(
     return { error: `Upload failed: ${uploadError.message}` }
   }
 
-  return saveSealProof(bookingId, path)
+  // Insert evidence
+  const { error: evidenceError } = await svc
+    .from('booking_bag_evidence' as never)
+    .insert({
+      booking_id: bookingId,
+      bag_id: bagId,
+      evidence_type: 'seal_photo',
+      file_url: path,
+      uploaded_by_staff_id: userId
+    }) as { error: { message: string } | null }
+
+  if (evidenceError) return { error: evidenceError.message }
+
+  // Audit
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'booking_bag_evidence_uploaded',
+    p_entity: 'booking_bag_evidence',
+    p_entity_id: bookingId,
+    p_metadata: { photo: path, bag_id: bagId, evidence_type: 'seal_photo' }
+  })
+
+  return {}
+}
+
+export async function finalizeCheckInAction(
+  bookingId: string
+): Promise<{ error?: string }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, hubId, userId } = await requireStaff()
+
+  // Verify that all bags have a seal photo upload (if they are sealed)
+  const { data: booking } = await svc
+    .from('bookings' as never)
+    .select('id, status, user_id, hubs(name), users(name, phone, email), booking_bags(id, seal_status)')
+    .eq('id', bookingId)
+    .eq('hub_id', hubId)
+    .single() as {
+      data: { id: string; status: string; user_id: string; hubs: { name: string } | null; users: { name: string; phone: string | null; email: string } | null; booking_bags: { id: string; seal_status: string }[] } | null
+    }
+
+  if (!booking) return { error: 'Booking not found.' }
+
+  const allowed = ['sealing_in_progress', 'arrived', 'confirmed']
+  if (!allowed.includes(booking.status)) {
+    return { error: `Invalid status: ${booking.status}` }
+  }
+
+  // Check if at least one photo is uploaded for each sealed bag
+  const sealedBagIds = booking.booking_bags.filter(b => b.seal_status === 'sealed').map(b => b.id)
+  if (sealedBagIds.length > 0) {
+    const { data: uploaded } = await svc
+      .from('booking_bag_evidence' as never)
+      .select('bag_id')
+      .eq('booking_id', bookingId)
+      .in('bag_id', sealedBagIds) as { data: { bag_id: string }[] | null }
+
+    const uploadedBagIds = new Set(uploaded?.map(u => u.bag_id) || [])
+    for (const id of sealedBagIds) {
+      if (!uploadedBagIds.has(id)) {
+        return { error: 'Please upload a seal photo for all sealed bags before finalizing.' }
+      }
+    }
+  }
+
+  // Update booking status directly to active_storage
+  const { error: bookingError } = await svc
+    .from('bookings' as never)
+    .update({ status: 'active_storage' })
+    .eq('id', bookingId)
+
+  if (bookingError) return { error: bookingError.message }
+
+  // Audit
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'booking_checkin_finalized',
+    p_entity: 'bookings',
+    p_entity_id: bookingId
+  })
+
+  // SMS — let customer know their bags are in secure storage
+  if (booking.users?.phone) {
+    const { sendSMS } = await import('@/lib/utils/sms')
+    const hubName = booking.hubs?.name ?? 'the hub'
+    const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? ''
+    sendSMS(
+      booking.users.phone,
+      `Luggo: Your bags at ${hubName} have been sealed and are in secure storage! View details: ${appUrl}/booking/${bookingId}`
+    ).catch(console.error)
+  }
+
+  return {}
 }
 
 // ─────────────────────────────────────────────
@@ -476,14 +500,18 @@ export async function completePickup(
 
   const { data: booking } = await svc
     .from('bookings' as never)
-    .select('id, status, end_time, user_id, hubs(name), users(name, phone, email), booking_bags(id, bag_tag_id)')
+    .select('id, status, end_time, user_id, hubs(name), users(name, phone, email), booking_bags(id, bag_tag_id), pickup_otp_verified_at, pickup_override_supervisor_id')
     .eq('id', bookingId)
     .eq('hub_id', hubId)
     .single() as {
-      data: { id: string; status: string; end_time: string; user_id: string; hubs: { name: string } | null; users: { name: string; phone: string | null; email: string } | null; booking_bags: { id: string; bag_tag_id: string | null }[] } | null
+      data: { id: string; status: string; end_time: string; user_id: string; hubs: { name: string } | null; users: { name: string; phone: string | null; email: string } | null; booking_bags: { id: string; bag_tag_id: string | null }[]; pickup_otp_verified_at: string | null; pickup_override_supervisor_id: string | null } | null
     }
 
   if (!booking) return { error: 'Booking not found.' }
+
+  if (!booking.pickup_otp_verified_at && !booking.pickup_override_supervisor_id) {
+    return { error: 'OTP verification or Supervisor Override is required before releasing bags.' }
+  }
 
   if (booking.status === 'overstayed' || booking.status === 'late_fee_pending') {
     return { error: 'Customer must settle the late fee before pickup can be completed.' }
@@ -515,12 +543,20 @@ export async function completePickup(
 
     await svc
       .from('booking_bags' as never)
-      .update({ status: 'released' })
+      .update({ status: 'released', bag_tag_id: null })
       .eq('id', bag.id)
   }
 
-  // 2. Complete the booking
-  await svc.from('bookings' as never).update({ status: 'completed' }).eq('id', bookingId)
+  // 2. Complete the booking and clear OTP states
+  await svc.from('bookings' as never).update({
+    status: 'completed',
+    pickup_otp: null,
+    pickup_otp_expires_at: null,
+    pickup_otp_verified_at: null,
+    pickup_override_supervisor_id: null,
+    pickup_override_reason: null,
+    pickup_override_at: null
+  }).eq('id', bookingId)
 
   // 3. Audit pickup completed
   await svc.rpc('write_audit_log', {
@@ -570,6 +606,31 @@ export async function createWalkInBooking(input: {
   // Calculate pricing
   const now = new Date()
   const expected = new Date(input.expectedPickupTime)
+  
+  // Fetch hub capacity
+  const { data: hub } = await svc
+    .from('hubs' as never)
+    .select('capacity')
+    .eq('id', input.hubId)
+    .single() as { data: { capacity: number } | null }
+
+  if (!hub) return { error: 'Hub not found.' }
+
+  // Overlap capacity check — matching online bookings logic
+  const { data: overlappingBookings } = await svc
+    .from('bookings' as never)
+    .select('id, booking_bags(id)')
+    .eq('hub_id', input.hubId)
+    .not('status', 'in', '("cancelled","expired","completed")')
+    .lt('start_time', expected.toISOString())
+    .gt('end_time', now.toISOString()) as { data: { id: string; booking_bags: unknown[] }[] | null }
+
+  const curBags = overlappingBookings?.reduce((acc, b) => acc + (b.booking_bags?.length ?? 0), 0) ?? 0
+
+  if (curBags + input.bagTypes.length > hub.capacity) {
+    return { error: `This hub does not have enough space for walk-in booking. Current load: ${curBags}/${hub.capacity} bags.` }
+  }
+
   const hours = Math.max(1, Math.ceil((expected.getTime() - now.getTime()) / (1000 * 60 * 60)))
   const rates = { small: 200, regular: 300, large: 400 }
   const bagPrice = input.bagTypes.reduce((sum, type) => sum + (rates[type as keyof typeof rates] || 300), 0)
@@ -2052,7 +2113,13 @@ export async function processPhoneDeadPickupOverrideAction(
   // Update status to ready_for_release
   const { error } = await svc
     .from('bookings' as never)
-    .update({ status: 'ready_for_release' })
+    .update({
+      status: 'ready_for_release',
+      pickup_override_supervisor_id: supervisorId,
+      pickup_override_reason: reason,
+      pickup_override_at: new Date().toISOString(),
+      pickup_otp_verified_at: null
+    })
     .eq('id', bookingId)
     .eq('hub_id', hubId)
 
@@ -2135,18 +2202,59 @@ export async function completePartialPickupAction(
 
   const { svc, hubId, userId } = await requireStaff()
 
+  // Verify booking
+  const { data: booking } = await svc
+    .from('bookings' as never)
+    .select('id, status, pickup_otp_verified_at, pickup_override_supervisor_id')
+    .eq('id', bookingId)
+    .eq('hub_id', hubId)
+    .single() as { data: { id: string; status: string; pickup_otp_verified_at: string | null; pickup_override_supervisor_id: string | null } | null }
+
+  if (!booking) return { error: 'Booking not found.' }
+
+  if (!booking.pickup_otp_verified_at && !booking.pickup_override_supervisor_id) {
+    return { error: 'OTP verification or Supervisor Override is required before releasing bags.' }
+  }
+
   // Verify all bags exist and belong to the booking
   const { data: bookingBags } = await svc
     .from('booking_bags' as never)
-    .select('id, status')
-    .eq('booking_id', bookingId) as { data: { id: string; status: string }[] | null }
+    .select('id, status, bag_tag_id')
+    .eq('booking_id', bookingId) as { data: { id: string; status: string; bag_tag_id: string | null }[] | null }
 
   if (!bookingBags) return { error: 'No bags found for this booking.' }
 
-  // Update status of selected bags to 'released'
+  // 1. Release bag tags for the selected bags
+  const tagIds = bookingBags
+    .filter(b => bagIds.includes(b.id) && b.bag_tag_id)
+    .map(b => b.bag_tag_id)
+    .filter((id): id is string => !!id)
+
+  if (tagIds.length > 0) {
+    await svc
+      .from('bag_tags' as never)
+      .update({ status: 'available', current_booking_id: null })
+      .in('id', tagIds)
+
+    for (const tid of tagIds) {
+      const b = bookingBags.find(bag => bag.bag_tag_id === tid)
+      if (b) {
+        await svc.rpc('write_audit_log', {
+          p_actor_id: userId,
+          p_actor_role: 'hub_staff',
+          p_action: 'bag_tag_released',
+          p_entity: 'booking_bags',
+          p_entity_id: b.id,
+          p_metadata: { bag_tag_id: tid }
+        })
+      }
+    }
+  }
+
+  // 2. Update status of selected bags to 'released' and clear tag reference
   const { error } = await svc
     .from('booking_bags' as never)
-    .update({ status: 'released' })
+    .update({ status: 'released', bag_tag_id: null })
     .in('id', bagIds)
 
   if (error) return { error: error.message }
@@ -2155,15 +2263,22 @@ export async function completePartialPickupAction(
   const remainingBags = bookingBags.filter(b => !bagIds.includes(b.id) && b.status !== 'released')
   const isFullyCompleted = remainingBags.length === 0
 
-  if (isFullyCompleted) {
-    // Transition booking to completed
-    const { error: bError } = await svc
-      .from('bookings' as never)
-      .update({ status: 'completed' })
-      .eq('id', bookingId)
-      .eq('hub_id', hubId)
-    if (bError) return { error: bError.message }
-  }
+  // 3. Update booking status and clear OTP/override
+  const { error: bError } = await svc
+    .from('bookings' as never)
+    .update({
+      status: isFullyCompleted ? 'completed' : 'active_storage',
+      pickup_otp: null,
+      pickup_otp_expires_at: null,
+      pickup_otp_verified_at: null,
+      pickup_override_supervisor_id: null,
+      pickup_override_reason: null,
+      pickup_override_at: null
+    })
+    .eq('id', bookingId)
+    .eq('hub_id', hubId)
+
+  if (bError) return { error: bError.message }
 
   // Audit log
   await svc.rpc('write_audit_log', {
@@ -2397,5 +2512,133 @@ export async function updateBookingBagsAction(
   })
 
   return { difference: priceDifference }
+}
+
+export async function sendPickupOTPAction(
+  bookingId: string
+): Promise<{ error?: string; success?: boolean }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, hubId, userId } = await requireStaff()
+
+  // Verify booking at the staff's hub
+  const { data: booking } = await svc
+    .from('bookings' as never)
+    .select('id, status, users(phone), hubs(name)')
+    .eq('id', bookingId)
+    .eq('hub_id', hubId)
+    .single() as { data: { id: string; status: string; users: { phone: string | null } | null; hubs: { name: string } | null } | null }
+
+  if (!booking) return { error: 'Booking not found.' }
+
+  const allowed = ['active_storage', 'overstayed', 'pickup_requested', 'ready_for_release']
+  if (!allowed.includes(booking.status)) {
+    return { error: 'Booking is not eligible for pickup OTP verification.' }
+  }
+
+  const phone = booking.users?.phone
+  if (!phone) {
+    return { error: 'No verified phone number found on the customer profile.' }
+  }
+
+  // Generate 4-digit OTP
+  const crypto = await import('crypto')
+  const otp = crypto.randomInt(1000, 10000).toString()
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 min
+
+  // Save to booking
+  const { error: updateError } = await svc
+    .from('bookings' as never)
+    .update({
+      pickup_otp: otp,
+      pickup_otp_expires_at: expiresAt.toISOString(),
+      pickup_otp_verified_at: null // Reset verification state if re-sending
+    })
+    .eq('id', bookingId)
+
+  if (updateError) return { error: 'Failed to generate OTP.' }
+
+  // Send SMS
+  const { sendSMS } = await import('@/lib/utils/sms')
+  const hubName = booking.hubs?.name ?? 'the hub'
+  try {
+    await sendSMS(
+      phone,
+      `Luggo: Your pickup verification code for ${hubName} is: ${otp}. Valid for 10 minutes. Do not share this code. 🧳`
+    )
+  } catch (err) {
+    console.error('Failed to send SMS OTP:', err)
+    return { error: 'OTP generated, but failed to send SMS. Please verify manually or try again.' }
+  }
+
+  // Audit
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'pickup_otp_sent',
+    p_entity: 'bookings',
+    p_entity_id: bookingId
+  })
+
+  return { success: true }
+}
+
+export async function verifyPickupOTPAction(
+  bookingId: string,
+  otp: string
+): Promise<{ error?: string; success?: boolean }> {
+  const validId = uuidSchema.safeParse(bookingId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const cleanOtp = otp.trim()
+  if (!cleanOtp) return { error: 'OTP code is required.' }
+
+  const { svc, hubId, userId } = await requireStaff()
+
+  // Verify booking
+  const { data: booking } = await svc
+    .from('bookings' as never)
+    .select('id, pickup_otp, pickup_otp_expires_at')
+    .eq('id', bookingId)
+    .eq('hub_id', hubId)
+    .single() as { data: { id: string; pickup_otp: string | null; pickup_otp_expires_at: string | null } | null }
+
+  if (!booking) return { error: 'Booking not found.' }
+
+  if (!booking.pickup_otp || !booking.pickup_otp_expires_at) {
+    return { error: 'No OTP requested for this booking. Please trigger code resend.' }
+  }
+
+  const now = new Date()
+  const expiry = new Date(booking.pickup_otp_expires_at)
+  if (now > expiry) {
+    return { error: 'OTP has expired. Please trigger code resend.' }
+  }
+
+  if (booking.pickup_otp !== cleanOtp) {
+    return { error: 'Incorrect OTP code.' }
+  }
+
+  // Update verified status
+  const { error: updateError } = await svc
+    .from('bookings' as never)
+    .update({
+      pickup_otp_verified_at: now.toISOString()
+    })
+    .eq('id', bookingId)
+
+  if (updateError) return { error: 'Failed to verify OTP.' }
+
+  // Audit
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: 'hub_staff',
+    p_action: 'pickup_otp_verified',
+    p_entity: 'bookings',
+    p_entity_id: bookingId
+  })
+
+  return { success: true }
 }
 

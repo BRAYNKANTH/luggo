@@ -15,7 +15,16 @@ export async function updateSession(request: NextRequest, response?: NextRespons
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
+          
+          // Re-create the response object while copying headers from the old one
+          // to preserve localization headers/rewrites from next-intl.
+          const newResponse = NextResponse.next({ request })
+          supabaseResponse.headers.forEach((value, key) => {
+            newResponse.headers.set(key, value)
+          })
+          
+          supabaseResponse = newResponse
+          
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
@@ -30,19 +39,31 @@ export async function updateSession(request: NextRequest, response?: NextRespons
 
   const { pathname } = request.nextUrl
 
+  // Normalize localized pathnames (e.g. /en/booking -> /booking)
+  let checkPathname = pathname
+  const localeMatch = pathname.match(/^\/(en|si|ta)(\/|$)/)
+  if (localeMatch) {
+    checkPathname = pathname.replace(/^\/(en|si|ta)/, '')
+    if (!checkPathname.startsWith('/')) {
+      checkPathname = '/' + checkPathname
+    }
+  }
+
   // Public routes: /dashboard, /hubs, /book — guests can browse and book without an account
   // Protected routes: /booking (view existing), /pickup, /profile, /bookings (order history)
   const customerProtected = ['/booking', '/pickup', '/profile', '/bookings']
-  if (customerProtected.some(p => pathname.startsWith(p))) {
+  if (customerProtected.some(p => checkPathname.startsWith(p))) {
     if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url))
+      const locale = localeMatch ? localeMatch[1] : 'en'
+      return NextResponse.redirect(new URL(`/${locale}/login`, request.url))
     }
   }
 
   // Protect staff routes
-  if (pathname.startsWith('/staff') && pathname !== '/staff/login') {
+  if (checkPathname.startsWith('/staff') && checkPathname !== '/staff/login') {
     if (!user) {
-      return NextResponse.redirect(new URL('/staff/login', request.url))
+      const locale = localeMatch ? localeMatch[1] : 'en'
+      return NextResponse.redirect(new URL(`/${locale}/staff/login`, request.url))
     }
     const { data: profile } = await supabase
       .from('users')
@@ -50,14 +71,16 @@ export async function updateSession(request: NextRequest, response?: NextRespons
       .eq('id', user.id)
       .single() as { data: { role: UserRole } | null; error: unknown }
     if (!profile || profile.role !== 'hub_staff') {
-      return NextResponse.redirect(new URL('/staff/login', request.url))
+      const locale = localeMatch ? localeMatch[1] : 'en'
+      return NextResponse.redirect(new URL(`/${locale}/staff/login`, request.url))
     }
   }
 
   // Protect admin routes
-  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+  if (checkPathname.startsWith('/admin') && checkPathname !== '/admin/login') {
     if (!user) {
-      return NextResponse.redirect(new URL('/admin/login', request.url))
+      const locale = localeMatch ? localeMatch[1] : 'en'
+      return NextResponse.redirect(new URL(`/${locale}/admin/login`, request.url))
     }
     const { data: profile } = await supabase
       .from('users')
@@ -66,7 +89,8 @@ export async function updateSession(request: NextRequest, response?: NextRespons
       .single() as { data: { role: UserRole } | null; error: unknown }
     const adminRoles: UserRole[] = ['support_admin', 'ops_admin', 'master_admin']
     if (!profile || !adminRoles.includes(profile.role)) {
-      return NextResponse.redirect(new URL('/admin/login', request.url))
+      const locale = localeMatch ? localeMatch[1] : 'en'
+      return NextResponse.redirect(new URL(`/${locale}/admin/login`, request.url))
     }
   }
 

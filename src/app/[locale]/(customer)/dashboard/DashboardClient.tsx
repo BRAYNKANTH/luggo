@@ -105,7 +105,11 @@ function HubImagePlaceholder() {
 function FeaturedHubCard({ hub, distanceKm }: { hub: HubCard; distanceKm: number | null }) {
   const t = useTranslations('Common')
   const avail = getAvailability(hub)
-  const open = isOpenNow(hub.open_time, hub.close_time)
+  const [open, setOpen] = useState(true)
+
+  useEffect(() => {
+    setOpen(isOpenNow(hub.open_time, hub.close_time))
+  }, [hub.open_time, hub.close_time])
 
   return (
     <Link href={`/hubs/${hub.id}`} className="block shrink-0 w-52">
@@ -171,7 +175,11 @@ function FeaturedHubCard({ hub, distanceKm }: { hub: HubCard; distanceKm: number
 function HubListCard({ hub, distanceKm }: { hub: HubCard; distanceKm: number | null }) {
   const t = useTranslations('Common')
   const avail = getAvailability(hub)
-  const open = isOpenNow(hub.open_time, hub.close_time)
+  const [open, setOpen] = useState(true)
+
+  useEffect(() => {
+    setOpen(isOpenNow(hub.open_time, hub.close_time))
+  }, [hub.open_time, hub.close_time])
 
   return (
     <Link href={`/hubs/${hub.id}`}>
@@ -228,9 +236,10 @@ function ActiveBookingBanner({ booking }: { booking: ActiveBooking }) {
 
   const [timeLeft, setTimeLeft] = useState('')
   const [urgency, setUrgency] = useState<'none' | 'warning' | 'critical'>('none')
+  const [overdue, setOverdue] = useState(false)
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    const checkTime = () => {
       const end = new Date(booking.end_time).getTime()
       const now = new Date().getTime()
       const diff = end - now
@@ -247,11 +256,14 @@ function ActiveBookingBanner({ booking }: { booking: ActiveBooking }) {
         else if (h === 0 && m <= 60) setUrgency('warning')
         else setUrgency('none')
       }
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [booking.end_time])
 
-  const overdue = isPast(new Date(booking.end_time)) && booking.status === 'active_storage'
+      setOverdue(isPast(new Date(booking.end_time)) && booking.status === 'active_storage')
+    }
+
+    checkTime()
+    const timer = setInterval(checkTime, 1000)
+    return () => clearInterval(timer)
+  }, [booking.end_time, booking.status])
 
   return (
     <div className={`rounded-2xl border overflow-hidden transition-all duration-500 ${

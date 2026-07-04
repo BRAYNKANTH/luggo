@@ -14,6 +14,9 @@ export const createBookingSchema = z.object({
     .max(10, 'Maximum 10 bags per booking'),
   payment_method: z.enum(['pay_online', 'pay_at_hub']).optional(),
   has_insurance: z.boolean().optional(),
+  terms_accepted: z.boolean().refine(v => v === true, 'You must agree to the Terms of Service and Privacy Policy.'),
+  terms_version: z.string().optional(),
+  privacy_version: z.string().optional(),
 }).superRefine((data, ctx) => {
   const start = new Date(data.start_time)
   const end = new Date(data.end_time)

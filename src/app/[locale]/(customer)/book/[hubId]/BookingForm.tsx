@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
   CalendarDays, Clock, AlertCircle, Shield,
@@ -227,6 +228,7 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
 
   // Declarations
   const [noIllegalItems, setNoIllegalItems] = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [isProhibitedExpanded, setIsProhibitedExpanded] = useState(false)
 
   // OTP flow state
@@ -442,6 +444,9 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
           bags: bagArray,
           payment_method: paymentMethod,
           has_insurance: hasInsurance,
+          terms_accepted: termsAccepted,
+          terms_version: 'v1.0',
+          privacy_version: 'v1.0',
         }),
       })
       const data = await res.json()
@@ -588,6 +593,10 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
     }
     if (!noIllegalItems) {
       setError('Please confirm the prohibited items declaration.')
+      return
+    }
+    if (!termsAccepted) {
+      setError('Please accept the Terms of Service and Privacy Policy.')
       return
     }
     submitBooking()
@@ -1099,6 +1108,36 @@ export function BookingForm({ hub, initialProfile }: BookingFormProps) {
                           </p>
                           <p className="text-xs text-gray-400 mt-1 leading-relaxed">
                             ⚠️ Luggo may refuse storage if luggage appears unsafe, leaking, damaged, suspicious, or against storage rules.
+                          </p>
+                        </div>
+                      </label>
+
+                      <div className="border-t border-gray-100 my-4" />
+
+                      <label className={`flex items-start gap-4 cursor-pointer transition-all`}>
+                        <div className="relative shrink-0 mt-1">
+                          <input
+                            type="checkbox"
+                            checked={termsAccepted}
+                            onChange={e => setTermsAccepted(e.target.checked)}
+                            className="sr-only"
+                          />
+                          <div className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all ${
+                            termsAccepted ? 'bg-brand border-brand shadow-lg shadow-brand/20' : 'border-gray-200 bg-white'
+                          }`}>
+                            {termsAccepted && (
+                              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={3}>
+                                <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-bold text-gray-900 leading-snug">
+                            I agree to the <Link href="/terms" target="_blank" className="text-brand hover:underline">Terms of Service</Link> and <Link href="/privacy" target="_blank" className="text-brand hover:underline">Privacy Policy</Link>.
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                            💡 These terms are governed by the Consumer Affairs Authority Act of Sri Lanka and local laws.
                           </p>
                         </div>
                       </label>

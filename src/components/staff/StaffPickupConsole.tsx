@@ -10,7 +10,9 @@ import {
   processPhoneDeadPickupOverrideAction,
   waiveAndCompletePickupAction,
   completePickupAction,
-  getSupervisorsAction
+  getSupervisorsAction,
+  sendPickupOTPAction,
+  verifyPickupOTPAction
 } from '@/lib/staff/actions'
 import { BAG_LABELS } from '@/lib/utils/pricing'
 import { type BagType } from '@/types/database'
@@ -25,7 +27,7 @@ interface Bag {
   status: string
 }
 
-interface Booking {
+interface PickupBooking {
   id: string
   status: string
   end_time: string
@@ -34,10 +36,12 @@ interface Booking {
   walk_in_name: string | null
   walk_in_phone: string | null
   walk_in_nic_passport_ref: string | null
+  pickup_otp_verified_at: string | null
+  pickup_override_supervisor_id: string | null
 }
 
 interface StaffPickupConsoleProps {
-  booking: Booking
+  booking: PickupBooking
   bags: Bag[]
   fee: number
   isSupervisor: boolean
@@ -52,6 +56,12 @@ export function StaffPickupConsole({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+
+  // OTP States
+  const [otpValue, setOtpValue] = useState('')
+  const [otpSending, setOtpSending] = useState(false)
+  const [otpVerifying, setOtpVerifying] = useState(false)
+  const [otpSent, setOtpSent] = useState(false)
 
   // Checkboxes for partial pickup selection
   const [selectedBagIds, setSelectedBagIds] = useState<string[]>(() => bags.filter(b => b.status !== 'released').map(b => b.id))
@@ -150,6 +160,43 @@ export function StaffPickupConsole({
       setError('Failed to apply supervisor override.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleSendOTP() {
+    setOtpSending(true)
+    setError(null)
+    try {
+      const res = await sendPickupOTPAction(booking.id)
+      if (res.error) {
+        setError(res.error)
+      } else {
+        setOtpSent(true)
+        setSuccess('Pickup SMS OTP sent to customer phone.')
+      }
+    } catch {
+      setError('Failed to send OTP.')
+    } finally {
+      setOtpSending(false)
+    }
+  }
+
+  async function handleVerifyOTP() {
+    if (!otpValue.trim()) return
+    setOtpVerifying(true)
+    setError(null)
+    try {
+      const res = await verifyPickupOTPAction(booking.id, otpValue)
+      if (res.error) {
+        setError(res.error)
+      } else {
+        setSuccess('OTP verified successfully!')
+        window.location.reload()
+      }
+    } catch {
+      setError('Failed to verify OTP.')
+    } finally {
+      setOtpVerifying(false)
     }
   }
 
@@ -343,6 +390,80 @@ export function StaffPickupConsole({
         </div>
       </div>
 
+      {/* Pickup Verification Card */}
+      <div className="bg-white/5 border border-white/10 rounded-3xl p-5 space-y-4">
+        <h2 className="font-bold text-sm flex items-center gap-2">
+          <CheckCircle size={16} className="text-brand-light" />
+          Pickup Identity Verification
+        </h2>
+
+        {booking.pickup_otp_verified_at ? (
+          <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 flex items-center gap-3 text-green-300">
+            <CheckCircle size={20} className="shrink-0" />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider">✓ Verified via SMS OTP</p>
+              <p className="text-[10px] text-green-400/80 mt-0.5">
+                Customer phone OTP verification succeeded at {new Date(booking.pickup_otp_verified_at).toLocaleTimeString()}
+              </p>
+            </div>
+          </div>
+        ) : booking.pickup_override_supervisor_id ? (
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center gap-3 text-amber-300">
+            <CheckCircle size={20} className="shrink-0" />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider">✓ Supervisor Override Approved</p>
+              <p className="text-[10px] text-amber-400/80 mt-0.5">Physical ID checked & approved by supervisor</p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-xs text-white/60 leading-relaxed font-semibold">
+              Verification of customer identity is required. Send a one-time passcode to the customer&apos;s registered phone, or request a supervisor override if they cannot access their phone.
+            </p>
+
+            {otpSent ? (
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    maxLength={4}
+                    placeholder="Enter 4-digit code"
+                    value={otpValue}
+                    onChange={e => setOtpValue(e.target.value.replace(/\D/g, ''))}
+                    className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:ring-1 focus:ring-brand font-mono font-bold tracking-widest text-center"
+                  />
+                  <Button
+                    onClick={handleVerifyOTP}
+                    loading={otpVerifying}
+                    disabled={otpValue.length < 4}
+                    className="bg-brand text-white font-extrabold px-6"
+                  >
+                    Verify OTP
+                  </Button>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSendOTP}
+                  className="text-[10px] font-black uppercase text-brand hover:underline"
+                >
+                  Resend Code
+                </button>
+              </div>
+            ) : (
+              <Button
+                onClick={handleSendOTP}
+                loading={otpSending}
+                fullWidth
+                variant="outline"
+                className="border-white/20 text-white hover:bg-white/5"
+              >
+                Send SMS Verification OTP
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Incident / Dispute Reporting Console (Priority 12) */}
       {showDisputeForm && (
         <div className="bg-red-950/20 border border-red-500/20 rounded-2xl p-5 space-y-4">
@@ -433,9 +554,18 @@ export function StaffPickupConsole({
             </div>
           ) : (
             <div className="px-4 max-w-lg mx-auto">
+              {(!booking.pickup_otp_verified_at && !booking.pickup_override_supervisor_id) ? (
+                <p className="text-center text-[10px] text-amber-400 font-extrabold uppercase tracking-wider mb-2">
+                  ⚠️ Verification Required to Complete Release
+                </p>
+              ) : null}
               <Button
                 onClick={handleHandover}
-                disabled={loading || selectedBagIds.length === 0}
+                disabled={
+                  loading ||
+                  selectedBagIds.length === 0 ||
+                  (!booking.pickup_otp_verified_at && !booking.pickup_override_supervisor_id)
+                }
                 fullWidth
                 size="lg"
               >
