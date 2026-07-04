@@ -6,7 +6,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { type PostgrestError, type SupabaseClient } from '@supabase/supabase-js'
 import { uuidSchema } from '@/lib/validators/common'
 import { type BagType } from '@/types/database'
-import { calculateLateFee, calculateEarlyCheckinDecision, BAG_RATES, calculateBookingPrice } from '@/lib/utils/pricing'
+import { calculateLateFee, calculateEarlyCheckinDecision, calculateBookingPrice } from '@/lib/utils/pricing'
 
 
 // ─────────────────────────────────────────────
@@ -1421,13 +1421,12 @@ export async function processStandardCheckInAction(
   const bagCollectedAt = new Date()
   const bookedStartTime = new Date(booking.start_time)
   const bookedEndTime = new Date(booking.end_time)
-  const totalHourlyBagRate = booking.booking_bags.reduce((total, bag) => total + BAG_RATES[bag.bag_type], 0)
 
   const decision = calculateEarlyCheckinDecision({
     bookedStartTime,
     bookedEndTime,
     actualCheckInTime: bagCollectedAt,
-    totalHourlyBagRate,
+    bags: booking.booking_bags,
     earlyBufferMinutes: 15
   })
 
@@ -1509,13 +1508,12 @@ export async function processCashEarlyCheckInAction(
   const bagCollectedAt = new Date()
   const bookedStartTime = new Date(booking.start_time)
   const bookedEndTime = new Date(booking.end_time)
-  const totalHourlyBagRate = booking.booking_bags.reduce((total, bag) => total + BAG_RATES[bag.bag_type], 0)
 
   const decision = calculateEarlyCheckinDecision({
     bookedStartTime,
     bookedEndTime,
     actualCheckInTime: bagCollectedAt,
-    totalHourlyBagRate,
+    bags: booking.booking_bags,
     earlyBufferMinutes: 15
   })
 
@@ -1635,13 +1633,12 @@ export async function processOnlineEarlyCheckInAction(
   const bagCollectedAt = new Date()
   const bookedStartTime = new Date(booking.start_time)
   const bookedEndTime = new Date(booking.end_time)
-  const totalHourlyBagRate = booking.booking_bags.reduce((total, bag) => total + BAG_RATES[bag.bag_type], 0)
 
   const decision = calculateEarlyCheckinDecision({
     bookedStartTime,
     bookedEndTime,
     actualCheckInTime: bagCollectedAt,
-    totalHourlyBagRate,
+    bags: booking.booking_bags,
     earlyBufferMinutes: 15
   })
 
@@ -1771,13 +1768,12 @@ export async function processShiftBookingCheckInAction(
   const bagCollectedAt = new Date()
   const bookedStartTime = new Date(booking.start_time)
   const bookedEndTime = new Date(booking.end_time)
-  const totalHourlyBagRate = booking.booking_bags.reduce((total, bag) => total + BAG_RATES[bag.bag_type], 0)
 
   const decision = calculateEarlyCheckinDecision({
     bookedStartTime,
     bookedEndTime,
     actualCheckInTime: bagCollectedAt,
-    totalHourlyBagRate,
+    bags: booking.booking_bags,
     earlyBufferMinutes: 15
   })
 
@@ -1887,13 +1883,12 @@ export async function processSupervisorOverrideCheckInAction(
   const bagCollectedAt = new Date()
   const bookedStartTime = new Date(booking.start_time)
   const bookedEndTime = new Date(booking.end_time)
-  const totalHourlyBagRate = booking.booking_bags.reduce((total, bag) => total + BAG_RATES[bag.bag_type], 0)
 
   const decision = calculateEarlyCheckinDecision({
     bookedStartTime,
     bookedEndTime,
     actualCheckInTime: bagCollectedAt,
-    totalHourlyBagRate,
+    bags: booking.booking_bags,
     earlyBufferMinutes: 15
   })
 
