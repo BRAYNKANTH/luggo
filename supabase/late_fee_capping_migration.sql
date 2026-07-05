@@ -57,8 +57,8 @@ DECLARE
   v_start_time      timestamptz;
   v_end_time        timestamptz;
   v_now             timestamptz := now();
-  v_orig_hours      integer;
-  v_actual_hours    integer;
+  v_orig_hours      numeric;
+  v_actual_hours    numeric;
   v_orig_price      numeric := 0;
   v_actual_price    numeric := 0;
   v_bag             record;
@@ -77,7 +77,7 @@ BEGIN
   END IF;
 
   v_orig_hours := CEIL(EXTRACT(EPOCH FROM (v_end_time - v_start_time)) / 3600);
-  v_actual_hours := CEIL(EXTRACT(EPOCH FROM (v_now - v_start_time)) / 3600);
+  v_actual_hours := v_orig_hours + (CEIL(EXTRACT(EPOCH FROM (v_now - v_end_time)) / 1800) * 0.5);
 
   FOR v_bag IN
     SELECT bag_type FROM public.booking_bags WHERE booking_id = p_booking_id
