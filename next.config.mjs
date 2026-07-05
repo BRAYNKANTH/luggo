@@ -8,8 +8,8 @@ const withPWA = withPWAInit({
   cacheOnFrontEndNav: true,
   aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
-  // Disable PWA for now to bypass build issues with missing local dependencies
-  disable: true,
+  // Enable PWA in production/staging builds
+  disable: process.env.NODE_ENV === 'development',
   fallbacks: {
     // Serve /offline when navigating while offline
     document: '/offline',

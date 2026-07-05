@@ -82,19 +82,6 @@ export default async function RootLayout({
 
       <body suppressHydrationWarning>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                if ('serviceWorker' in navigator) {
-                  navigator.serviceWorker.getRegistrations().then((registrations) => {
-                    for (let registration of registrations) {
-                      registration.unregister();
-                    }
-                  });
-                }
-              `,
-            }}
-          />
           {children}
         </NextIntlClientProvider>
       </body>
