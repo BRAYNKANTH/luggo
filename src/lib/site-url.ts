@@ -1,4 +1,4 @@
-const DEFAULT_SITE_URL = 'https://luggo.lk'
+const DEFAULT_SITE_URL = 'https://www.luggo.lk'
 
 function normalizeSiteUrl(value: string | undefined) {
   if (!value) {

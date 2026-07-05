@@ -1446,7 +1446,7 @@ export async function completePickupWithCash(
 
 export async function createEarlyCheckinPaymentLink(bookingId: string): Promise<string> {
   // Uses the customer's booking detail page which contains the PayHere payment button
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://luggo.lk'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.luggo.lk'
   return `${baseUrl}/booking/${bookingId}`
 }
 
