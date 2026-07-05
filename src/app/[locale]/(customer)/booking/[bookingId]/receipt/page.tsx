@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Logo } from '@/components/ui/Logo'
 import { CheckCircle, MapPin, Clock, Package, CreditCard, ArrowLeft } from 'lucide-react'
 import { formatDateSLT, formatInSLT } from '@/lib/utils/timezone'
-import { BAG_LABELS, BAG_RATES } from '@/lib/utils/pricing'
+import { BAG_LABELS, BAG_RATES, calculateBagPriceForHours } from '@/lib/utils/pricing'
 import { type BagType } from '@/types/database'
 
 type Bag = { id: string; bag_type: BagType; sticker_number: string | null; seal_number: string | null }
@@ -67,7 +67,7 @@ export default async function BookingReceiptPage({
     label: BAG_LABELS[bag.bag_type],
     rate:  BAG_RATES[bag.bag_type],
     hours,
-    total: BAG_RATES[bag.bag_type] * hours,
+    total: calculateBagPriceForHours(bag.bag_type, hours),
     sticker: bag.sticker_number,
     seal: bag.seal_number,
   }))

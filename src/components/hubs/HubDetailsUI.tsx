@@ -10,7 +10,7 @@ import {
   MapPin, Clock, ChevronLeft,
   ArrowRight, ShieldCheck, Star
 } from 'lucide-react'
-import { BAG_LABELS, BAG_RATES } from '@/lib/utils/pricing'
+import { BAG_LABELS, BAG_RATES, BAG_DAILY_CAPS } from '@/lib/utils/pricing'
 import { type BagType } from '@/types/database'
 import { getConfig } from '@/lib/utils/ui'
 
@@ -236,8 +236,8 @@ export function HubDetailsUI({
                       <span className="font-semibold text-gray-800 text-sm">{label}</span>
                     </div>
                     <div className="text-right">
-                      <p className="text-base font-bold text-gray-900">LKR {BAG_RATES[type].toLocaleString()}</p>
-                      <p className="text-[10px] text-gray-400 font-medium">per hour</p>
+                      <p className="text-sm font-black text-gray-900 leading-tight">LKR {BAG_RATES[type].toLocaleString()}/hr</p>
+                      <p className="text-[9px] text-brand font-black uppercase mt-0.5 tracking-wider">Max LKR {BAG_DAILY_CAPS[type].toLocaleString()}/day</p>
                     </div>
                   </div>
                 ))}

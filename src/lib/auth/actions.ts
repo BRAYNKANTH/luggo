@@ -329,7 +329,7 @@ export async function extendBooking(
   const { data: booking } = await supabase
     .from('bookings')
     .select(`
-      id, end_time, user_id, status,
+      id, start_time, end_time, user_id, status,
       hubs ( name, alias ),
       booking_bags ( bag_type )
     `)
@@ -346,10 +346,19 @@ export async function extendBooking(
   }
 
   // Calculate price for extension
-  const { BAG_RATES } = await import('@/lib/utils/pricing')
+  const { calculateBagPriceForHours } = await import('@/lib/utils/pricing')
+  const start = new Date(booking.start_time)
+  const end = new Date(booking.end_time)
+  const originalHours = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60))
+  const newHours = originalHours + additionalHours
+
   const extensionPrice = booking.booking_bags.reduce(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (total: number, bag: any) => total + (BAG_RATES[bag.bag_type as keyof typeof BAG_RATES] || 0) * additionalHours,
+    (total: number, bag: any) => {
+      const originalPrice = calculateBagPriceForHours(bag.bag_type, originalHours)
+      const newPrice = calculateBagPriceForHours(bag.bag_type, newHours)
+      return total + (newPrice - originalPrice)
+    },
     0
   )
 
