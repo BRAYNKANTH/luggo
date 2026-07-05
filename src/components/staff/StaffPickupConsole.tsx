@@ -534,7 +534,7 @@ export function StaffPickupConsole({
       {/* Pickup Action Buttons */}
       {booking.status !== 'exception_hold' && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-ocean-900 border-t border-white/10 px-4 py-4 pb-safe space-y-2">
-          {(booking.status === 'overstayed' || booking.status === 'late_fee_pending') ? (
+          {fee > 0 ? (
             <div className="space-y-2 px-4 max-w-lg mx-auto">
               <div className="bg-red-500/10 border border-red-400/20 rounded-xl px-4 py-2 text-center">
                 <p className="text-red-300 text-xs font-bold">Collect LKR {fee.toLocaleString()} Cash or wait for online payment.</p>

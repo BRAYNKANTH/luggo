@@ -501,11 +501,11 @@ export async function completePickup(
 
   const { data: booking } = await svc
     .from('bookings' as never)
-    .select('id, status, end_time, user_id, hubs(name), users(name, phone, email), booking_bags(id, bag_tag_id), pickup_otp_verified_at, pickup_override_supervisor_id')
+    .select('id, status, start_time, end_time, user_id, hubs(name), users(name, phone, email), booking_bags(id, bag_tag_id, bag_type), pickup_otp_verified_at, pickup_override_supervisor_id')
     .eq('id', bookingId)
     .eq('hub_id', hubId)
     .single() as {
-      data: { id: string; status: string; end_time: string; user_id: string; hubs: { name: string } | null; users: { name: string; phone: string | null; email: string } | null; booking_bags: { id: string; bag_tag_id: string | null }[]; pickup_otp_verified_at: string | null; pickup_override_supervisor_id: string | null } | null
+      data: { id: string; status: string; start_time: string; end_time: string; user_id: string; hubs: { name: string } | null; users: { name: string; phone: string | null; email: string } | null; booking_bags: { id: string; bag_tag_id: string | null; bag_type: BagType }[]; pickup_otp_verified_at: string | null; pickup_override_supervisor_id: string | null } | null
     }
 
   if (!booking) return { error: 'Booking not found.' }
@@ -514,13 +514,33 @@ export async function completePickup(
     return { error: 'OTP verification or Supervisor Override is required before releasing bags.' }
   }
 
-  if (booking.status === 'overstayed' || booking.status === 'late_fee_pending') {
-    return { error: 'Customer must settle the late fee before pickup can be completed.' }
-  }
-
   const allowedStatuses = ['pickup_requested', 'active_storage', 'ready_for_release']
   if (!allowedStatuses.includes(booking.status)) {
     return { error: `Cannot complete pickup. Current status: ${booking.status}` }
+  }
+
+  // Calculate late fee dynamically at checkout
+  const start = new Date(booking.start_time)
+  const end = new Date(booking.end_time)
+  const now = new Date()
+  const lateFeeAmount = calculateLateFee(booking.booking_bags, start, end, now)
+
+  if (lateFeeAmount > 0) {
+    // Check if they paid it or if it is waived
+    const { data: paidLateFees } = await svc
+      .from('payments' as never)
+      .select('amount, gateway_ref')
+      .eq('booking_id', bookingId)
+      .eq('type', 'late_fee')
+      .eq('status', 'paid') as { data: { amount: number; gateway_ref: string | null }[] | null }
+
+    const isWaived = paidLateFees?.some(p => p.gateway_ref?.startsWith('WAIVED_BY_SUPERVISOR_')) ?? false
+    if (!isWaived) {
+      const totalPaid = paidLateFees?.reduce((acc, p) => acc + p.amount, 0) ?? 0
+      if (totalPaid < lateFeeAmount) {
+        return { error: `Customer must settle the late fee of LKR ${(lateFeeAmount - totalPaid).toLocaleString()} before pickup can be completed.` }
+      }
+    }
   }
 
   // 1. Release all bag tags and update bag statuses
@@ -1304,29 +1324,33 @@ export async function completePickupWithCash(
   // Fetch booking with bags
   const { data: booking } = await svc
     .from('bookings' as never)
-    .select('id, status, end_time, user_id, hubs(name), users(name, phone, email), booking_bags(id, bag_type)')
+    .select('id, status, start_time, end_time, user_id, hubs(name), users(name, phone, email), booking_bags(id, bag_type, bag_tag_id)')
     .eq('id', bookingId)
     .eq('hub_id', hubId)
     .single() as {
       data: {
         id: string
         status: string
+        start_time: string
         end_time: string
         user_id: string
         hubs: { name: string } | null
         users: { name: string; phone: string | null; email: string } | null
-        booking_bags: { id: string; bag_type: BagType }[]
+        booking_bags: { id: string; bag_type: BagType; bag_tag_id: string | null }[]
       } | null
     }
 
   if (!booking) return { error: 'Booking not found.' }
-  if (booking.status !== 'overstayed') {
-    return { error: `Cash payment bypass is only valid for overstayed bookings. Current status: ${booking.status}` }
+  const allowed = ['active_storage', 'overstayed', 'pickup_requested', 'late_fee_pending']
+  if (!allowed.includes(booking.status)) {
+    return { error: `Cash payment bypass is not valid for bookings in status: ${booking.status}` }
   }
 
   // Calculate late fee
+  const start = new Date(booking.start_time)
   const end = new Date(booking.end_time)
-  const lateFeeAmount = calculateLateFee(booking.booking_bags, end)
+  const now = new Date()
+  const lateFeeAmount = calculateLateFee(booking.booking_bags, start, end, now)
 
   if (lateFeeAmount > 0) {
     // 1. Create a paid payment record for cash
@@ -1349,11 +1373,41 @@ export async function completePickupWithCash(
       .eq('status', 'pending')
   }
 
-  // 3. Mark booking as completed
-  await svc
-    .from('bookings' as never)
-    .update({ status: 'completed' })
-    .eq('id', bookingId)
+  // 3. Release all bag tags and update bag statuses
+  for (const bag of booking.booking_bags) {
+    if (bag.bag_tag_id) {
+      await svc
+        .from('bag_tags' as never)
+        .update({ status: 'available', current_booking_id: null })
+        .eq('id', bag.bag_tag_id)
+      
+      // Audit bag tag released
+      await svc.rpc('write_audit_log', {
+        p_actor_id: userId,
+        p_actor_role: 'hub_staff',
+        p_action: 'bag_tag_released',
+        p_entity: 'booking_bags',
+        p_entity_id: bag.id,
+        p_metadata: { bag_tag_id: bag.bag_tag_id }
+      })
+    }
+
+    await svc
+      .from('booking_bags' as never)
+      .update({ status: 'released', bag_tag_id: null })
+      .eq('id', bag.id)
+  }
+
+  // 4. Complete the booking and clear OTP states
+  await svc.from('bookings' as never).update({
+    status: 'completed',
+    pickup_otp: null,
+    pickup_otp_expires_at: null,
+    pickup_otp_verified_at: null,
+    pickup_override_supervisor_id: null,
+    pickup_override_reason: null,
+    pickup_override_at: null
+  }).eq('id', bookingId)
 
   // Audit log
   await svc.rpc('write_audit_log', {

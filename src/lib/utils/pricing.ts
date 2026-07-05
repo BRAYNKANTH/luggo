@@ -41,18 +41,20 @@ export function calculateBookingPrice(
 
 export function calculateLateFee(
   bags: { bag_type: BagType }[],
+  startTime: Date,
   endTime: Date,
   now: Date = new Date()
 ): number {
   const GRACE_PERIOD_MS = 15 * 60 * 1000 // 15 minutes grace period
   if (now.getTime() <= endTime.getTime() + GRACE_PERIOD_MS) return 0
 
-  const overdueMs = now.getTime() - endTime.getTime()
-  const overdueMinutes = Math.ceil(overdueMs / (60 * 1000))
-  const overdueHalfHours = Math.ceil(overdueMinutes / 30)
-  const overdueHours = overdueHalfHours * 0.5
+  const originalHours = Math.ceil((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60))
+  const actualHours = Math.ceil((now.getTime() - startTime.getTime()) / (1000 * 60 * 60))
 
-  return bags.reduce((total, bag) => total + calculateBagPriceForHours(bag.bag_type, overdueHours), 0)
+  const originalPrice = bags.reduce((total, bag) => total + calculateBagPriceForHours(bag.bag_type, originalHours), 0)
+  const actualPrice = bags.reduce((total, bag) => total + calculateBagPriceForHours(bag.bag_type, actualHours), 0)
+
+  return Math.max(0, actualPrice - originalPrice)
 }
 
 export interface EarlyCheckinDecision {

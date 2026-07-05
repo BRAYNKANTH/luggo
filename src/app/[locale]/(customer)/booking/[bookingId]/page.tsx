@@ -96,15 +96,16 @@ export default async function BookingDetailPage({
   const bookingPayment  = booking.payments?.find(p => p.type === 'booking')
   const isCashPaymentPending = !bookingPayment || (bookingPayment.status === 'pending' && bookingPayment.gateway_ref === 'PAY_AT_HUB')
 
-  // Calculate late fee if overstayed or late fee is pending
-  const isOverdue = ['overstayed', 'late_fee_pending'].includes(booking.status)
+  // Calculate late fee if overstayed or late fee is pending or time passed (grace period of 15 min)
+  const now = new Date()
+  const isOverdue = ['overstayed', 'late_fee_pending'].includes(booking.status) || now.getTime() > end.getTime() + 15 * 60 * 1000
   let lateFeeAmount = 0
   let overdueHours = 0
   let overdueHalfHours = 0
   if (isOverdue) {
-    lateFeeAmount = calculateLateFee(booking.booking_bags, end, new Date())
+    lateFeeAmount = calculateLateFee(booking.booking_bags, start, end, now)
     if (lateFeeAmount > 0) {
-      const overdueMs = Date.now() - end.getTime()
+      const overdueMs = now.getTime() - end.getTime()
       const overdueMinutes = Math.ceil(overdueMs / (60 * 1000))
       overdueHalfHours = Math.ceil(overdueMinutes / 30)
       overdueHours = overdueHalfHours * 0.5

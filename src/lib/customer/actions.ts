@@ -7,6 +7,8 @@ import { generatePayhereHash, PAYHERE_ENDPOINT, type PayhereFormData } from '@/l
 import { sendSMS } from '@/lib/utils/sms'
 import { sendPickupRequestedEmail } from '@/lib/utils/email'
 import { uuidSchema } from '@/lib/validators/common'
+import { calculateLateFee } from '@/lib/utils/pricing'
+import { type BagType } from '@/types/database'
 
 // ---------------------------------------------------------------------------
 // requestPickup
@@ -25,7 +27,7 @@ export async function requestPickup(bookingId: string): Promise<{ error?: string
   // Verify ownership + current status
   const { data: booking } = await supabase
     .from('bookings')
-    .select('id, status, hub_id, users ( name, phone ), hubs ( name )')
+    .select('id, status, hub_id, start_time, end_time, users ( name, phone ), hubs ( name ), booking_bags ( bag_type )')
     .eq('id', bookingId)
     .eq('user_id', user.id)
     .single() as {
@@ -33,8 +35,11 @@ export async function requestPickup(bookingId: string): Promise<{ error?: string
         id: string
         status: string
         hub_id: string
+        start_time: string
+        end_time: string
         users: { name: string; phone: string | null } | null
         hubs: { name: string } | null
+        booking_bags: { bag_type: BagType }[]
       } | null
       error: unknown
     }
@@ -44,6 +49,15 @@ export async function requestPickup(bookingId: string): Promise<{ error?: string
   const allowed = ['active_storage', 'overstayed']
   if (!allowed.includes(booking.status)) {
     return { error: 'Booking is not eligible for pickup' }
+  }
+
+  // Calculate late fee dynamically to block pickup request if unpaid
+  const start = new Date(booking.start_time)
+  const end = new Date(booking.end_time)
+  const now = new Date()
+  const lateFeeAmount = calculateLateFee(booking.booking_bags, start, end, now)
+  if (lateFeeAmount > 0) {
+    return { error: 'A late fee is required. Please pay the late fee online or at the hub counter first.' }
   }
 
   // Advance status

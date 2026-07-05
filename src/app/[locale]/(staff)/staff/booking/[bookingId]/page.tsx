@@ -93,8 +93,9 @@ export default async function StaffBookingPage({
   const start = new Date(booking.start_time)
   const end = new Date(booking.end_time)
   const hasInsurance = booking.qr_code.endsWith('_ins')
-  const isOverdue = isPast(end)
-  const lateFeeAmount = isOverdue && (booking.status === 'overstayed' || booking.status === 'late_fee_pending') ? calculateLateFee(booking.booking_bags, end) : 0
+  const now = new Date()
+  const isOverdue = now.getTime() > end.getTime() + 15 * 60 * 1000
+  const lateFeeAmount = isOverdue && ['active_storage', 'overstayed', 'late_fee_pending', 'pickup_requested'].includes(booking.status) ? calculateLateFee(booking.booking_bags, start, end, now) : 0
 
   // Determine next action
   const nextAction = (() => {
@@ -288,7 +289,7 @@ export default async function StaffBookingPage({
           </div>
         </div>
 
-        {lateFeeAmount > 0 && (booking.status === 'overstayed' || booking.status === 'late_fee_pending') && (
+        {lateFeeAmount > 0 && ['active_storage', 'overstayed', 'late_fee_pending', 'pickup_requested'].includes(booking.status) && (
           <div className="bg-red-500/10 border border-red-400/20 rounded-2xl p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <div>
