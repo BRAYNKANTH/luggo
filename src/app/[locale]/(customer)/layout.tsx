@@ -1,5 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { CustomerShell } from '@/components/shared/CustomerShell'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  manifest: '/api/manifest/customer',
+}
 
 export default async function CustomerLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
