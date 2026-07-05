@@ -36,7 +36,7 @@ export function HubCard({ hub, bags }: HubCardProps) {
 
   if (isEditing) {
     return (
-      <div className="bg-white rounded-2xl border border-brand/20 p-5 shadow-sm">
+      <div className="bg-white rounded-3xl border border-brand/20 p-6 shadow-premium">
         <h3 className="font-bold text-ocean-900 text-sm mb-4">Edit Hub: {hub.name}</h3>
         <HubForm
           hub={hub}
@@ -51,13 +51,13 @@ export function HubCard({ hub, bags }: HubCardProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-3xl border border-gray-100/80 p-6 hover:shadow-premium-hover hover:border-brand/20 hover:-translate-y-0.5 transition-all duration-300 shadow-premium">
       <div className="flex items-start justify-between gap-4">
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h2 className="font-bold text-ocean-900 truncate">{hub.name}</h2>
-            <span className="text-xs font-mono bg-gray-100 text-gray-500 px-2 py-0.5 rounded-lg shrink-0">
+            <span className="text-xs font-mono bg-gray-150 text-gray-500 px-2 py-0.5 rounded-lg shrink-0">
               {hub.alias}
             </span>
           </div>
@@ -87,14 +87,14 @@ export function HubCard({ hub, bags }: HubCardProps) {
           <div>
             <div className="flex justify-between text-xs text-gray-500 mb-1">
               <span>{bags} bags in storage</span>
-              <span className={isHigh ? 'text-red-500 font-semibold' : ''}>
+              <span className={isHigh ? 'text-rose-500 font-bold' : ''}>
                 {pct}%
               </span>
             </div>
-            <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+            <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden border border-gray-100/50">
               <div
                 className={`h-full rounded-full transition-all ${
-                  isHigh ? 'bg-red-400' : 'bg-brand'
+                  isHigh ? 'bg-gradient-to-r from-red-400 to-rose-500 shadow-sm' : 'bg-gradient-to-r from-brand to-ocean-400 shadow-glow-brand'
                 }`}
                 style={{ width: `${pct}%` }}
               />

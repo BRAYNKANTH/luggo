@@ -323,7 +323,7 @@ export function StaffPickupConsole({
             const condition = bagConditions[bag.id] || 'intact'
 
             return (
-              <div key={bag.id} className={`p-4 rounded-2xl border transition-all ${isReleased ? 'bg-white/5 opacity-50 border-white/5' : isChecked ? 'bg-white/10 border-white/25' : 'bg-white/5 border-white/5'}`}>
+              <div key={bag.id} className={`p-4.5 rounded-3xl border transition-all duration-300 ${isReleased ? 'bg-white/5 opacity-40 border-white/5' : isChecked ? 'bg-white/15 border-white/30 shadow-premium' : 'bg-white/5 border-white/10'}`}>
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3">
                     <input
@@ -331,7 +331,7 @@ export function StaffPickupConsole({
                       disabled={isReleased || loading}
                       checked={isChecked}
                       onChange={() => handleBagToggle(bag.id)}
-                      className="mt-1 w-4 h-4 rounded text-brand border-white/20 bg-white/10 checked:bg-brand focus:ring-0 cursor-pointer"
+                      className="mt-1 w-5 h-5 rounded-lg text-brand border-white/30 bg-white/5 checked:bg-brand focus:ring-2 focus:ring-brand/40 cursor-pointer transition-all duration-300"
                     />
                     <div>
                       <p className={`font-bold text-sm ${isChecked ? 'text-white' : 'text-white/50'}`}>
@@ -358,25 +358,25 @@ export function StaffPickupConsole({
                   {!isReleased && (
                     <div className="flex flex-col gap-1 items-end">
                       <span className="text-[9px] text-white/40 font-bold uppercase tracking-wider">Seal Status</span>
-                      <div className="flex gap-1 bg-black/20 p-1 rounded-xl border border-white/5 text-[10px] font-bold">
+                      <div className="flex gap-1 bg-black/35 p-1 rounded-2xl border border-white/10 text-[10px] font-black uppercase tracking-wider">
                         <button
                           type="button"
                           onClick={() => handleConditionChange(bag.id, 'intact')}
-                          className={`px-2.5 py-1 rounded-lg transition-colors ${condition === 'intact' ? 'bg-green-600 text-white' : 'text-white/50'}`}
+                          className={`px-3 py-1.5 rounded-xl transition-all duration-300 ${condition === 'intact' ? 'bg-emerald-600 text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}
                         >
                           Intact
                         </button>
                         <button
                           type="button"
                           onClick={() => handleConditionChange(bag.id, 'broken')}
-                          className={`px-2.5 py-1 rounded-lg transition-colors ${condition === 'broken' ? 'bg-red-600 text-white font-extrabold' : 'text-white/50'}`}
+                          className={`px-3 py-1.5 rounded-xl transition-all duration-300 ${condition === 'broken' ? 'bg-rose-600 text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}
                         >
                           Broken
                         </button>
                         <button
                           type="button"
                           onClick={() => handleConditionChange(bag.id, 'missing')}
-                          className={`px-2.5 py-1 rounded-lg transition-colors ${condition === 'missing' ? 'bg-amber-600 text-white font-extrabold' : 'text-white/50'}`}
+                          className={`px-3 py-1.5 rounded-xl transition-all duration-300 ${condition === 'missing' ? 'bg-amber-600 text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}
                         >
                           Missing
                         </button>

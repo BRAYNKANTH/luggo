@@ -32,12 +32,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={id}
             type={inputType}
             className={cn(
-              'w-full px-4 py-3 rounded-2xl border text-ocean-900 text-sm',
-              'bg-white placeholder:text-gray-400',
-              'transition-colors duration-150',
-              'focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent',
+              'w-full px-4 py-3.5 rounded-2xl border text-ocean-900 text-sm shadow-sm transition-all duration-300',
+              'bg-white hover:bg-gray-50/30 placeholder:text-gray-400',
+              'focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand focus:bg-white',
               error
-                ? 'border-brand-danger ring-1 ring-brand-danger'
+                ? 'border-brand-danger ring-1 ring-brand-danger focus:ring-brand-danger/30'
                 : 'border-gray-200 hover:border-gray-300',
               isPassword && 'pr-12',
               className

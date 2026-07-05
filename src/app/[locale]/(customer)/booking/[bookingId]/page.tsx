@@ -372,45 +372,45 @@ export default async function BookingDetailPage({
 
         {/* ── QR Code ── */}
         {showQR && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 md:p-6 flex flex-col items-center gap-4">
-            <div className="flex items-center gap-2 self-start">
+          <div className="bg-white rounded-3xl border border-gray-100/80 shadow-premium p-6 flex flex-col items-center gap-4 animate-pop-in">
+            <div className="flex items-center gap-2 self-start pb-2 border-b border-gray-100 w-full">
               <QrCode size={16} className="text-brand" />
-              <span className="text-sm font-semibold text-gray-700">Your Entry QR</span>
+              <span className="text-sm font-extrabold text-gray-800 uppercase tracking-wider">Your Entry QR</span>
             </div>
-            <div className="scale-75 md:scale-100 -my-4 md:my-0">
+            <div className="scale-75 md:scale-100 -my-4 md:my-0 p-4 bg-gradient-to-tr from-brand/5 to-ocean-50/20 rounded-3xl border border-brand/10 shadow-inner animate-pulse-glow">
               <BookingQR qrCode={booking.qr_code} bookingId={booking.id} />
             </div>
-            <p className="text-[10px] md:text-xs text-gray-400 text-center">Show this at the hub desk for drop-off and collection</p>
+            <p className="text-[10px] md:text-xs text-gray-400 font-bold uppercase tracking-wider text-center">Show this at the hub desk for drop-off and collection</p>
           </div>
         )}
 
         {/* ── Seal Proof Photo ── */}
         {signedSealPhotoUrl && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 md:p-6 flex flex-col gap-4">
-            <div className="flex items-center justify-between">
+          <div className="bg-white rounded-3xl border border-gray-100/80 shadow-premium p-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-2 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <ShieldCheck size={16} className="text-emerald-500" />
-                <span className="text-sm font-semibold text-gray-700">Storage Seal Proof</span>
+                <ShieldCheck size={16} className="text-emerald-600" />
+                <span className="text-sm font-extrabold text-gray-800 uppercase tracking-wider">Storage Seal Proof</span>
               </div>
-              <span className="text-[10px] bg-green-50 text-green-700 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+              <span className="badge-success">
                 Sealed & Secure
               </span>
             </div>
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-gray-100 bg-gray-50 flex items-center justify-center">
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-gray-150 bg-gray-50 flex items-center justify-center shadow-inner group">
               <img
                 src={signedSealPhotoUrl}
                 alt="Luggage storage seal proof"
-                className="object-cover w-full h-full"
+                className="object-cover w-full h-full group-hover:scale-[1.02] transition-transform duration-500"
               />
             </div>
-            <p className="text-[10px] md:text-xs text-gray-400 text-center">
+            <p className="text-[10px] md:text-xs text-gray-400 font-bold uppercase tracking-wider text-center">
               This photo confirms that your luggage zip ties/locks are sealed and secure in our hub.
             </p>
           </div>
         )}
 
         {/* ── Details grid ── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
+        <div className="bg-white rounded-3xl border border-gray-100/80 shadow-premium divide-y divide-gray-100/60 overflow-hidden">
           {/* Location */}
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">

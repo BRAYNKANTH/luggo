@@ -11,6 +11,8 @@
     --brand-accent: #f0c040;
     --brand-success: #22c98e;
     --brand-danger: #e24b4a;
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.35);
   }
 
   * { @apply box-border; }
@@ -21,37 +23,54 @@
   }
 
   body {
-    @apply font-sans text-gray-900 bg-gray-50 antialiased;
+    @apply font-sans text-gray-900 bg-gray-50/50 antialiased selection:bg-brand/20 selection:text-brand-dark;
   }
 
   /* Custom scrollbar */
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 999px; }
-  ::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
+  ::-webkit-scrollbar-thumb { background: rgba(3, 140, 201, 0.2); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(3, 140, 201, 0.4); }
 }
 
 @layer components {
-  /* Cards */
+  /* Cards & Panels */
   .card {
-    @apply bg-white rounded-2xl border border-gray-100 shadow-sm p-5;
+    @apply bg-white rounded-3xl border border-gray-100/80 shadow-premium p-6 transition-all duration-300;
+  }
+
+  .hover-lift {
+    @apply hover:translate-y-[-4px] hover:shadow-premium-hover active:translate-y-[0px] transition-all duration-300;
+  }
+
+  /* Premium Glassmorphism styling */
+  .glass-card {
+    @apply rounded-3xl border shadow-premium p-6 backdrop-blur-xl transition-all duration-300;
+    background-color: var(--glass-bg);
+    border-color: var(--glass-border);
+  }
+
+  .glass-panel {
+    @apply border backdrop-blur-2xl transition-all duration-300;
+    background-color: rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 255, 255, 0.25);
   }
 
   /* Status badges */
   .badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border;
   }
-  .badge-success { @apply badge bg-green-50 text-green-700; }
-  .badge-warning { @apply badge bg-amber-50 text-amber-700; }
-  .badge-danger  { @apply badge bg-red-50 text-red-600; }
-  .badge-info    { @apply badge bg-blue-50 text-blue-700; }
-  .badge-neutral { @apply badge bg-gray-100 text-gray-600; }
+  .badge-success { @apply badge bg-emerald-50 text-emerald-700 border-emerald-100; }
+  .badge-warning { @apply badge bg-amber-50 text-amber-700 border-amber-100; }
+  .badge-danger  { @apply badge bg-rose-50 text-rose-700 border-rose-100; }
+  .badge-info    { @apply badge bg-sky-50 text-sky-700 border-sky-100; }
+  .badge-neutral { @apply badge bg-slate-50 text-slate-700 border-slate-100; }
 }
 
 @layer utilities {
   .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
   .pt-safe { padding-top: env(safe-area-inset-top); }
-  .pb-nav  { padding-bottom: calc(env(safe-area-inset-bottom) + 60px); }
+  .pb-nav  { padding-bottom: calc(env(safe-area-inset-bottom) + 72px); }
 
   .text-balance { text-wrap: balance; }
 
@@ -61,4 +80,20 @@
     scrollbar-width: none;
   }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  /* Custom text gradients */
+  .text-gradient-brand {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand to-ocean-600;
+  }
+  .text-gradient-accent {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-accent to-amber-500;
+  }
+  
+  /* Skeleton load shimmer animation background */
+  .shimmer-bg {
+    @apply relative overflow-hidden bg-gray-200/65;
+  }
+  .shimmer-bg::after {
+    @apply absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent content-[''] animate-shimmer;
+  }
 }
