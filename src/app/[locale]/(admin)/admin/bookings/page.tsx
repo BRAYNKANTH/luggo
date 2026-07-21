@@ -5,6 +5,9 @@ import { AdminShell } from '@/components/admin/AdminShell'
 import { HubFilter } from '@/components/admin/HubFilter'
 import { BookingsTable } from '@/components/admin/BookingsTable'
 import { type UserRole, type BookingStatus } from '@/types/database'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Bookings — Admin' }
 
 const PAGE_SIZE = 30
 

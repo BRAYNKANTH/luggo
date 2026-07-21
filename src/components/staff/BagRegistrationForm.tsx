@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import { SealScanner } from '@/components/staff/SealScanner'
 import { registerBags, updateBookingBagsAction } from '@/lib/staff/actions'
+import { DEFAULT_BAG_RATES, type BagRates } from '@/lib/utils/pricing'
 import { type BagType } from '@/types/database'
 
 interface BagRegistrationFormProps {
@@ -20,6 +21,7 @@ interface BagRegistrationFormProps {
     notes: string | null
   }>
   slotNumber: number
+  rates?: BagRates
 }
 
 interface BagInput {
@@ -30,7 +32,7 @@ interface BagInput {
   notes: string
 }
 
-export function BagRegistrationForm({ bookingId, initialBags, slotNumber }: BagRegistrationFormProps) {
+export function BagRegistrationForm({ bookingId, initialBags, slotNumber, rates = DEFAULT_BAG_RATES }: BagRegistrationFormProps) {
   const router = useRouter()
   const [bags, setBags] = useState<BagInput[]>(() => {
     if (initialBags && initialBags.length > 0) {
@@ -232,9 +234,9 @@ export function BagRegistrationForm({ bookingId, initialBags, slotNumber }: BagR
                   onChange={(e) => updateBagField(index, 'bag_type', e.target.value as BagType)}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:ring-1 focus:ring-brand-light font-bold"
                 >
-                  <option value="small" className="bg-ocean-900 text-white">Small (Backpack - LKR 200/hr)</option>
-                  <option value="regular" className="bg-ocean-900 text-white font-bold">Regular (Cabin - LKR 300/hr)</option>
-                  <option value="large" className="bg-ocean-900 text-white font-black">Large (Check-in - LKR 400/hr)</option>
+                  <option value="small" className="bg-ocean-900 text-white">Small (Backpack - LKR {rates.small.hourlyRate}/hr)</option>
+                  <option value="regular" className="bg-ocean-900 text-white font-bold">Regular (Cabin - LKR {rates.regular.hourlyRate}/hr)</option>
+                  <option value="large" className="bg-ocean-900 text-white font-black">Large (Check-in - LKR {rates.large.hourlyRate}/hr)</option>
                 </select>
               </div>
 

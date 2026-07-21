@@ -18,7 +18,7 @@ import {
 } from '@/lib/staff/actions'
 import { formatInSLT } from '@/lib/utils/timezone'
 import { type BookingStatus, type BagType } from '@/types/database'
-import { calculateEarlyCheckinDecision } from '@/lib/utils/pricing'
+import { calculateEarlyCheckinDecision, DEFAULT_BAG_RATES, type BagRates } from '@/lib/utils/pricing'
 
 interface StaffCheckInWizardProps {
   booking: {
@@ -32,9 +32,10 @@ interface StaffCheckInWizardProps {
     booking_bags: { id: string; bag_type: BagType }[]
   }
   isCashPaymentPending: boolean
+  rates?: BagRates
 }
 
-export function StaffCheckInWizard({ booking, isCashPaymentPending }: StaffCheckInWizardProps) {
+export function StaffCheckInWizard({ booking, isCashPaymentPending, rates = DEFAULT_BAG_RATES }: StaffCheckInWizardProps) {
   const router = useRouter()
   const supabase = createClient()
 
@@ -48,7 +49,8 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending }: StaffCheck
     bookedEndTime,
     actualCheckInTime,
     bags: booking.booking_bags as { bag_type: BagType }[],
-    earlyBufferMinutes: 15
+    earlyBufferMinutes: 15,
+    rates
   })
 
   const {
@@ -448,7 +450,7 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending }: StaffCheck
         <div>
           <p className="font-bold text-sm text-white">Early drop-off detected</p>
           <p className="text-white/60 text-xs mt-0.5">
-            Customer is **{earlyMinutes} minutes early**. Payment or window shifting is required before checking in.
+            Customer is <strong>{earlyMinutes} minutes early</strong>. Payment or window shifting is required before checking in.
           </p>
         </div>
       </div>

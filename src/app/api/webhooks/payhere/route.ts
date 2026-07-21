@@ -149,13 +149,6 @@ export async function POST(req: NextRequest) {
             console.error('[PayHere IPN] Failed to update booking after early check-in payment', bookingId, error)
           } else {
             console.log('[PayHere IPN] Early check-in payment confirmed, booking status: arrived', bookingId)
-            await supabase
-              .from('payments' as never)
-              .update({ status: 'paid', gateway_ref: 'CASH_PAYMENT_AT_HUB' })
-              .eq('booking_id', bookingId)
-              .eq('status', 'pending')
-              .eq('type', 'booking')
-              .eq('gateway_ref', 'PAY_AT_HUB')
           }
         } else {
           console.log('[PayHere IPN] Booking is already processed or not in early_checkin_pending_payment status', { bookingId, status: booking?.status })
@@ -165,9 +158,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true })
     }
 
-    // ── Extension payment: order_id = "ext-{paymentId}" ───────────────────
-    if (order_id.startsWith('ext-')) {
-      const paymentId = order_id.slice(4)
+    // ── Extension payment: order_id = "ext_{paymentId}_{hours}" ───────────────────
+    if (order_id.startsWith('ext_') || order_id.startsWith('ext-')) {
+      const isUnderscore = order_id.startsWith('ext_')
+      const parts = isUnderscore ? order_id.split('_') : order_id.split('-')
+      const paymentId = parts[1]
+      let addedHours = parts[2] ? parseInt(parts[2], 10) : 0
 
       const { data: extPayment } = await supabase
         .from('payments' as never)
@@ -193,35 +189,44 @@ export async function POST(req: NextRequest) {
         
         const { data: booking } = await supabase
           .from('bookings' as never)
-          .select('end_time, booking_bags(bag_type)')
+          .select('hub_id, end_time, status, booking_bags(bag_type)')
           .eq('id', bookingId)
-          .single() as { data: { end_time: string; booking_bags: { bag_type: string }[] } | null }
+          .single() as { data: { hub_id: string; end_time: string; status: string; booking_bags: { bag_type: string }[] } | null }
 
         if (booking) {
-          const { BAG_RATES } = await import('@/lib/utils/pricing')
-          const hourlyRate = booking.booking_bags.reduce(
-            (total, bag) => total + (BAG_RATES[bag.bag_type as keyof typeof BAG_RATES] || 0),
-            0
-          )
-
-          if (hourlyRate > 0) {
-            const addedHours = Math.round(extPayment.amount / hourlyRate)
-            if (addedHours > 0) {
-              const oldEnd = new Date(booking.end_time)
-              const newEnd = new Date(oldEnd.getTime() + addedHours * 60 * 60 * 1000)
-
-              await supabase
-                .from('bookings' as never)
-                .update({ end_time: newEnd.toISOString() })
-                .eq('id', bookingId)
-
-              console.log(`[PayHere IPN] Booking ${bookingId} extended by ${addedHours}h to ${newEnd.toISOString()}`)
-              await sendExtensionNotification(supabase, bookingId, extPayment.amount, addedHours).catch(console.error)
-            } else {
-              console.error(`[PayHere IPN] Extension amount LKR ${extPayment.amount} too small for hourly rate LKR ${hourlyRate}`, bookingId)
+          if (!addedHours) {
+            // Fallback to calculation if hours not in orderId
+            const { getHubBagRates } = await import('@/lib/utils/hubPricing')
+            const fallbackRates = await getHubBagRates(supabase, booking.hub_id)
+            const hourlyRate = booking.booking_bags.reduce(
+              (total, bag) => total + (fallbackRates[bag.bag_type as keyof typeof fallbackRates]?.hourlyRate || 0),
+              0
+            )
+            if (hourlyRate > 0) {
+              addedHours = Math.round(extPayment.amount / hourlyRate)
             }
+          }
+
+          if (addedHours > 0) {
+            const oldEnd = new Date(booking.end_time)
+            const baseTime = Math.max(oldEnd.getTime(), Date.now())
+            const newEnd = new Date(baseTime + addedHours * 60 * 60 * 1000)
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const updateData: any = { end_time: newEnd.toISOString() }
+            if (['overstayed', 'late_fee_pending'].includes(booking.status)) {
+              updateData.status = 'active_storage'
+            }
+
+            await supabase
+              .from('bookings' as never)
+              .update(updateData)
+              .eq('id', bookingId)
+
+            console.log(`[PayHere IPN] Booking ${bookingId} extended by ${addedHours}h to ${newEnd.toISOString()} (status reset to active_storage if overdue)`)
+            await sendExtensionNotification(supabase, bookingId, extPayment.amount, addedHours).catch(console.error)
           } else {
-            console.error(`[PayHere IPN] Cannot extend booking — hourlyRate is 0 (unknown bag types)`, bookingId, booking.booking_bags)
+            console.error(`[PayHere IPN] Failed to calculate or find addedHours for extension`, bookingId, extPayment.amount)
           }
         }
       }
@@ -277,7 +282,7 @@ export async function POST(req: NextRequest) {
 async function sendBookingConfirmedNotification(supabase: any, bookingId: string) {
   const { data: booking } = await supabase
     .from('bookings')
-    .select('user_id, start_time, end_time, total_price, hubs(name, address), users(name, email, phone)')
+    .select('user_id, start_time, end_time, total_price, qr_code, hubs(name, address), users(name, email, phone)')
     .eq('id', bookingId)
     .single()
 

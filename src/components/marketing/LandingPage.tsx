@@ -14,6 +14,7 @@ import {
   Zap, Lock, CreditCard, Clock, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import type { Variants } from 'framer-motion'
+import { DEFAULT_BAG_RATES, type BagRates } from '@/lib/utils/pricing'
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 16 },
@@ -49,9 +50,24 @@ const FEATURES = [
 ]
 
 const REVIEWS = [
-  { name: 'Sarah Miller', role: 'Travel Blogger', avatar: '👩‍💻' },
-  { name: 'James Wilson', role: 'Solo Traveler', avatar: '👨‍✈️' },
-  { name: 'Elena Rossi', role: 'Digital Nomad', avatar: '👩‍🌾' },
+  {
+    name: 'Sarah Miller',
+    role: 'Travel Blogger',
+    avatar: '👩‍💻',
+    quote: 'Dropped my bags at the Fort hub before an early train to Kandy and picked them up eight hours later without a hitch. The tamper-proof seal photo in the app is a nice touch for peace of mind.',
+  },
+  {
+    name: 'James Wilson',
+    role: 'Solo Traveler',
+    avatar: '👨‍✈️',
+    quote: "Landed at BIA on a red-eye with a 10-hour layover and nowhere to put my pack. Booked a slot from the airport Wi-Fi in under a minute and paid cash at the counter — didn't need to make an account.",
+  },
+  {
+    name: 'Elena Rossi',
+    role: 'Digital Nomad',
+    avatar: '👩‍🌾',
+    quote: "I extend my booking online whenever my work calls run long — it's saved me from rushing back across Galle Fort more than once. Support answered my hours question within minutes.",
+  },
 ]
 
 // ── NavBar ────────────────────────────────────────────────────────────────────
@@ -81,7 +97,12 @@ function NavBar() {
           <Link href="/login"     className="text-sm font-bold text-ocean-900 hover:text-brand px-4 py-2 transition-colors">{t('signIn')}</Link>
           <Link href="/dashboard" className="bg-brand text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-brand/90 transition-colors">{t('findStorage')}</Link>
         </div>
-        <button className="md:hidden p-2 rounded-lg" onClick={() => setOpen(!open)}>
+        <button
+          className="md:hidden p-2 rounded-lg"
+          onClick={() => setOpen(!open)}
+          aria-label={open ? 'Close menu' : 'Open menu'}
+          aria-expanded={open}
+        >
           {open ? <X size={22} className="text-ocean-900" /> : <Menu size={22} className="text-ocean-900" />}
         </button>
       </div>
@@ -236,7 +257,7 @@ function HeroSection() {
             </motion.div>
 
             <motion.div variants={fadeUp} className="hidden sm:flex flex-wrap gap-2.5 justify-center lg:justify-start opacity-70">
-              {['No account needed','Tamper-proof seals','LKR 150k Protection'].map(chip => (
+              {['No account needed','Tamper-proof seals','LKR 40k Protection'].map(chip => (
                 <span key={chip} className="flex items-center gap-1.5 bg-white/5 border border-white/10 text-white text-xs font-bold px-4 py-2 rounded-full">
                   <Check size={12} className="text-emerald-400" strokeWidth={3} /> {chip}
                 </span>
@@ -446,7 +467,7 @@ function ReviewsSection() {
               <div className="flex gap-1 mb-4">
                 {[1,2,3,4,5].map(s => <Star key={s} size={12} fill="#f59e0b" className="text-amber-500" />)}
               </div>
-              <p className="text-gray-600 text-sm leading-relaxed mb-6 italic">&ldquo;Luggo saved my trip! The best way to explore Sri Lanka hands-free.&rdquo;</p>
+              <p className="text-gray-600 text-sm leading-relaxed mb-6 italic">&ldquo;{rev.quote}&rdquo;</p>
               <p className="font-bold text-ocean-900 text-sm">{rev.name}</p>
               <p className="text-xs text-gray-400 font-medium">{rev.role}</p>
             </motion.div>
@@ -459,11 +480,11 @@ function ReviewsSection() {
 
 // ── Pricing ───────────────────────────────────────────────────────────────────
 
-function PricingSection() {
+function PricingSection({ rates }: { rates: BagRates }) {
   const bags = [
-    { e: '🎒', t: 'Small',   r: 200, popular: false },
-    { e: '🧳', t: 'Regular', r: 300, popular: true  },
-    { e: '🛄', t: 'Large',   r: 400, popular: false },
+    { e: '🎒', t: 'Small',   r: rates.small.hourlyRate,   popular: false },
+    { e: '🧳', t: 'Regular', r: rates.regular.hourlyRate, popular: true  },
+    { e: '🛄', t: 'Large',   r: rates.large.hourlyRate,   popular: false },
   ]
   return (
     <section className="bg-ocean-900 py-20 px-4 relative overflow-hidden">
@@ -471,7 +492,8 @@ function PricingSection() {
       <div className="relative z-10 max-w-6xl mx-auto text-center">
         <motion.div initial="hidden" whileInView="show" viewport={{ once:true }} variants={stagger}>
           <motion.span variants={fadeUp} className="text-brand font-bold text-xs uppercase tracking-widest block mb-2">Pricing</motion.span>
-          <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-black text-white mb-12">Simple, Hourly Rates</motion.h2>
+          <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-black text-white mb-3">Simple, Hourly Rates</motion.h2>
+          <motion.p variants={fadeUp} className="text-white/40 text-sm mb-9">Rates shown are our lowest across all hubs — exact pricing is confirmed at checkout for your chosen hub.</motion.p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {bags.map(item => (
@@ -482,6 +504,7 @@ function PricingSection() {
                 )}
                 <span className="text-5xl block mb-6">{item.e}</span>
                 <h3 className="font-bold text-white text-xl mb-6">{item.t} Bag</h3>
+                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">From</p>
                 <div className="flex items-baseline justify-center gap-1.5">
                   <span className="text-3xl font-black text-white">LKR {item.r}</span>
                   <span className="text-sm font-bold text-white/40">/ hr</span>
@@ -523,6 +546,25 @@ function LocationsSection() {
 
 // ── FAQ ───────────────────────────────────────────────────────────────────────
 
+const FAQS = [
+  {
+    q: 'How does it work?',
+    a: 'Find a hub on the map, book online in seconds, and drop your bags at the counter. Staff seal them with a tamper-proof tag and photograph the seal before you leave — you pick up whenever you\'re ready, up to closing time.',
+  },
+  {
+    q: "What if I'm running late to pick up my bags?",
+    a: "You get a 15-minute grace period after your booked pickup time at no extra charge. After that, storage continues billing in 30-minute blocks at your hub's rate, capped at the daily rate — so a short delay never costs more than a day would.",
+  },
+  {
+    q: "What's covered if something happens to my bags?",
+    a: 'Every hub is vetted and your bags are sealed and photographed at drop-off. You can also opt in to Luggo Guarantee for LKR 150 per bag, which covers up to LKR 40,000 against accidental damage, loss, or theft while stored.',
+  },
+  {
+    q: 'Do I need to create an account or pay upfront?',
+    a: "No — you can book as a guest and pay by card online, or reserve now and pay cash at the counter when you drop off. An account just makes it faster to book again and manage extensions.",
+  },
+]
+
 function FaqSection() {
   const nt = useTranslations('Nav')
   return (
@@ -533,14 +575,14 @@ function FaqSection() {
           <h2 className="text-3xl font-black text-ocean-900">Got Questions?</h2>
         </div>
         <div className="space-y-3">
-          {[1,2,3,4].map(q => (
+          {FAQS.map(({ q, a }) => (
             <details key={q} className="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-              <summary className="flex items-center justify-between p-6 cursor-pointer list-none font-bold text-ocean-900 text-sm sm:text-base">
-                How does it work?
-                <ChevronDown size={18} className="group-open:rotate-180 transition-transform" />
+              <summary className="flex items-center justify-between gap-4 p-6 cursor-pointer list-none font-bold text-ocean-900 text-sm sm:text-base">
+                {q}
+                <ChevronDown size={18} className="shrink-0 group-open:rotate-180 transition-transform" />
               </summary>
               <div className="px-6 pb-6 text-gray-500 text-sm leading-relaxed">
-                Just find a spot on the map, book online, and drop your bags. Every hub is vetted and secure.
+                {a}
               </div>
             </details>
           ))}
@@ -593,7 +635,7 @@ function Footer() {
 
 // ── Export ────────────────────────────────────────────────────────────────────
 
-export default function LandingPage() {
+export default function LandingPage({ rates = DEFAULT_BAG_RATES }: { rates?: BagRates }) {
   const [showSplash, setShowSplash] = useState(true)
 
   return (
@@ -607,7 +649,7 @@ export default function LandingPage() {
       <HowItWorksSection />
       <FeaturesSection />
       <ReviewsSection />
-      <PricingSection />
+      <PricingSection rates={rates} />
       <LocationsSection />
       <FaqSection />
       <FooterCta />

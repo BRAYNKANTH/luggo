@@ -17,6 +17,7 @@ import {
   X,
   ChevronRight,
   ShieldCheck,
+  DollarSign,
 } from 'lucide-react'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
@@ -25,6 +26,7 @@ const NAV = [
   { href: '/admin/dashboard',  label: 'Dashboard',       icon: LayoutDashboard },
   { href: '/admin/bookings',   label: 'Bookings',         icon: BookOpen },
   { href: '/admin/hubs',       label: 'Hubs',             icon: Building2 },
+  { href: '/admin/pricing',    label: 'Pricing',          icon: DollarSign },
   { href: '/admin/stickers',   label: 'Sticker Batches',  icon: Tag },
   { href: '/admin/nearby',     label: 'Nearby Places',    icon: MapPinned },
   { href: '/admin/payments',   label: 'Payments',         icon: CreditCard },

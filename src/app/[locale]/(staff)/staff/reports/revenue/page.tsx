@@ -5,6 +5,9 @@ import { Logo } from '@/components/ui/Logo'
 import { SignOutButton } from '@/components/shared/SignOutButton'
 import { getHubRevenue } from '@/lib/staff/actions'
 import { RevenueReport } from '@/components/staff/RevenueReport'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Revenue Report — Staff' }
 
 export default async function StaffRevenuePage() {
   const result = await getHubRevenue()

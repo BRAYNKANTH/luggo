@@ -5,6 +5,9 @@ import { Logo } from '@/components/ui/Logo'
 import { SignOutButton } from '@/components/shared/SignOutButton'
 import { createClient } from '@/lib/supabase/server'
 import { getStaffCashReconciliationAction } from '@/lib/staff/actions'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Reconciliation — Staff' }
 
 export default async function ReconciliationPage() {
   const supabase = await createClient()
@@ -52,7 +55,7 @@ export default async function ReconciliationPage() {
             💵 Cash Drawer Shift Report
           </h1>
           <p className="text-white/50 text-xs mt-1">
-            End of shift cash reconciliation for counter drawer at **{staffRow.hubs?.name}**.
+            End of shift cash reconciliation for counter drawer at <strong className="text-white/80 font-bold">{staffRow.hubs?.name}</strong>.
           </p>
         </div>
 

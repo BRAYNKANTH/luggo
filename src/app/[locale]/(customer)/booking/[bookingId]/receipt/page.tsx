@@ -4,7 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { Logo } from '@/components/ui/Logo'
 import { CheckCircle, MapPin, Clock, Package, CreditCard, ArrowLeft } from 'lucide-react'
 import { formatDateSLT, formatInSLT } from '@/lib/utils/timezone'
-import { BAG_LABELS, BAG_RATES, calculateBagPriceForHours } from '@/lib/utils/pricing'
+import { BAG_LABELS, calculateBagPriceForHours } from '@/lib/utils/pricing'
+import { getHubBagRates } from '@/lib/utils/hubPricing'
 import { type BagType } from '@/types/database'
 
 type Bag = { id: string; bag_type: BagType; sticker_number: string | null; seal_number: string | null }
@@ -22,7 +23,7 @@ export default async function BookingReceiptPage({
   const { data: booking } = await supabase
     .from('bookings')
     .select(`
-      id, status, start_time, end_time, total_price, created_at, slot_number,
+      id, status, start_time, end_time, total_price, created_at, slot_number, hub_id,
       hubs ( name, alias, address ),
       booking_bags ( id, bag_type, sticker_number, seal_number )
     `)
@@ -37,6 +38,7 @@ export default async function BookingReceiptPage({
         total_price: number
         created_at: string
         slot_number: number | null
+        hub_id: string
         hubs: { name: string; alias: string; address: string } | null
         booking_bags: Bag[]
       } | null
@@ -63,11 +65,12 @@ export default async function BookingReceiptPage({
   const hours       = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60))
   const isCompleted = booking.status === 'completed'
 
+  const receiptRates = await getHubBagRates(supabase, booking.hub_id)
   const lineItems = booking.booking_bags.map(bag => ({
     label: BAG_LABELS[bag.bag_type],
-    rate:  BAG_RATES[bag.bag_type],
+    rate:  receiptRates[bag.bag_type].hourlyRate,
     hours,
-    total: calculateBagPriceForHours(bag.bag_type, hours),
+    total: calculateBagPriceForHours(bag.bag_type, hours, receiptRates),
     sticker: bag.sticker_number,
     seal: bag.seal_number,
   }))

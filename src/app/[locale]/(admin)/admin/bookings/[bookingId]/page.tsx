@@ -2,12 +2,16 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
+import { requireAdmin } from '@/lib/admin/actions'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { type UserRole, type BookingStatus, type BagType } from '@/types/database'
 import { isPast } from 'date-fns'
 import { formatDateSLT, formatInSLT } from '@/lib/utils/timezone'
 import { BAG_LABELS } from '@/lib/utils/pricing'
 import { ChevronLeft, User, MapPin, Clock, Package, CreditCard, Tag, Shield, AlertTriangle } from 'lucide-react'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Booking Detail — Admin' }
 
 const STATUS_COLOUR: Record<string, string> = {
   pending_payment:                  'bg-amber-100 text-amber-700',
@@ -26,14 +30,16 @@ const STATUS_COLOUR: Record<string, string> = {
 
 async function forceCompleteAction(bookingId: string) {
   'use server'
-  const svc = createServiceClient()
+  const { svc, error } = await requireAdmin()
+  if (error || !svc) redirect('/admin/login')
   await svc.from('bookings' as never).update({ status: 'completed' }).eq('id', bookingId)
   redirect(`/admin/bookings/${bookingId}`)
 }
 
 async function forceCancelAction(bookingId: string) {
   'use server'
-  const svc = createServiceClient()
+  const { svc, error } = await requireAdmin()
+  if (error || !svc) redirect('/admin/login')
   await svc.from('bookings' as never).update({ status: 'cancelled' }).eq('id', bookingId)
   redirect(`/admin/bookings/${bookingId}`)
 }

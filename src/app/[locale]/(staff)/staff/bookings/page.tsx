@@ -5,6 +5,9 @@ import { Logo } from '@/components/ui/Logo'
 import { SignOutButton } from '@/components/shared/SignOutButton'
 import { getHubBookings } from '@/lib/staff/actions'
 import { BookingHistoryList } from '@/components/staff/BookingHistoryList'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Bookings — Staff' }
 
 export default async function StaffBookingsPage() {
   const result = await getHubBookings()

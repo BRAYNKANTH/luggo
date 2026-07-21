@@ -5,6 +5,9 @@ import { Logo } from '@/components/ui/Logo'
 import { SignOutButton } from '@/components/shared/SignOutButton'
 import { getHubProfile } from '@/lib/staff/actions'
 import { HubProfileForm } from '@/components/staff/HubProfileForm'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Profile — Staff' }
 
 export default async function StaffProfilePage() {
   const result = await getHubProfile()

@@ -1,11 +1,14 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { createServiceClient } from '@/lib/supabase/service'
+import { requireAdmin } from '@/lib/admin/actions'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { StaffForm } from '@/components/admin/StaffForm'
 import { type UserRole } from '@/types/database'
 import { format } from 'date-fns'
 import { UserCheck, UserX, Building2 } from 'lucide-react'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Staff — Admin' }
 
 type StaffRow = {
   id: string
@@ -17,7 +20,8 @@ type StaffRow = {
 
 async function toggleStaffAction(staffId: string, active: boolean) {
   'use server'
-  const svc = createServiceClient()
+  const { svc, error } = await requireAdmin()
+  if (error || !svc) redirect('/admin/login')
   await svc.from('hub_staff' as never).update({ active }).eq('id', staffId)
   redirect('/admin/staff')
 }

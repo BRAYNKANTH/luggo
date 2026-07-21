@@ -9,8 +9,11 @@ import { StaffPickupConsole } from '@/components/staff/StaffPickupConsole'
 import { resolveIncidentReport } from '@/lib/staff/actions'
 import { type BookingStatus, type BagType } from '@/types/database'
 import { LiveStorageCountdown } from '@/components/staff/LiveStorageCountdown'
+import type { Metadata } from 'next'
 
-type Bag = { 
+export const metadata: Metadata = { title: 'Pickup — Staff' }
+
+type Bag = {
   id: string
   bag_type: BagType
   sticker_number: string | null

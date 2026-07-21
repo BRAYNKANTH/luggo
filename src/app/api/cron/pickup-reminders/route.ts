@@ -25,7 +25,6 @@ export async function GET(req: NextRequest) {
   const supabase = createServiceClient()
   const now = Date.now()
 
-  const windowStart = new Date(now + 60 * 60 * 1000).toISOString()   // now + 60 min
   const windowEnd   = new Date(now + 90 * 60 * 1000).toISOString()   // now + 90 min
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,8 +35,8 @@ export async function GET(req: NextRequest) {
       hubs ( name )
     `)
     .eq('status', 'active_storage')
-    .gte('end_time', windowStart)
-    .lte('end_time', windowEnd) as {
+    .lte('end_time', windowEnd)
+    .is('reminder_sent_at', null) as {
       data: {
         id: string
         end_time: string
@@ -68,6 +67,12 @@ export async function GET(req: NextRequest) {
     const endTime  = new Date(booking.end_time)
     const minutesLeft = Math.round((endTime.getTime() - now) / 60000)
     const endFormatted = format(endTime, 'h:mm a')
+
+    // Mark as sent immediately to avoid race conditions or duplicate sends
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('bookings') as any)
+      .update({ reminder_sent_at: new Date().toISOString() })
+      .eq('id', booking.id)
 
     // In-app notification
     if (userId) {

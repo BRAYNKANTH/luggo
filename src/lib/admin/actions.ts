@@ -10,7 +10,7 @@ import { z } from 'zod'
 // ---------------------------------------------------------------------------
 // Guard: caller must be an admin role
 // ---------------------------------------------------------------------------
-async function requireAdmin() {
+export async function requireAdmin() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { supabase: null, error: 'Not authenticated' }
@@ -416,6 +416,68 @@ export async function updateHub(
   revalidatePath('/admin/hubs')
   revalidatePath('/hubs')
   revalidatePath('/')
+
+  return { success: true }
+}
+
+// ---------------------------------------------------------------------------
+// Hub Pricing — per-hub, per-bag-type hourly rate + daily cap
+// ---------------------------------------------------------------------------
+const bagRateSchema = z.object({
+  hourlyRate: z.number().positive('Hourly rate must be greater than 0'),
+  dailyCap: z.number().positive('Daily cap must be greater than 0'),
+})
+
+const hubRatesSchema = z.object({
+  small: bagRateSchema,
+  regular: bagRateSchema,
+  large: bagRateSchema,
+})
+
+export async function updateHubBagRates(
+  hubId: string,
+  rates: {
+    small: { hourlyRate: number; dailyCap: number }
+    regular: { hourlyRate: number; dailyCap: number }
+    large: { hourlyRate: number; dailyCap: number }
+  }
+): Promise<{ error?: string; success?: boolean }> {
+  const validId = uuidSchema.safeParse(hubId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
+
+  const { svc, userId, role, error: authError } = await requireAdmin()
+  if (authError || !svc) return { error: authError ?? 'Auth error' }
+
+  const parsed = hubRatesSchema.safeParse(rates)
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
+
+  const rows = (['small', 'regular', 'large'] as const).map(bagType => ({
+    hub_id: hubId,
+    bag_type: bagType,
+    hourly_rate: parsed.data[bagType].hourlyRate,
+    daily_cap: parsed.data[bagType].dailyCap,
+  }))
+
+  const { error } = await svc
+    .from('hub_bag_rates' as never)
+    .upsert(rows, { onConflict: 'hub_id,bag_type' })
+
+  if (error) return { error: 'Failed to update pricing.' }
+
+  await svc.rpc('write_audit_log', {
+    p_actor_id: userId,
+    p_actor_role: role,
+    p_action: 'hub_pricing_updated',
+    p_entity: 'hub_bag_rates',
+    p_entity_id: hubId,
+    p_metadata: parsed.data
+  })
+
+  revalidatePath('/admin/pricing')
+  revalidatePath(`/hubs/${hubId}`)
+  revalidatePath('/hubs')
+  revalidatePath('/dashboard')
+  revalidatePath(`/book/${hubId}`)
 
   return { success: true }
 }

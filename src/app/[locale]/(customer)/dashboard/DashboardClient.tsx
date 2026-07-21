@@ -12,7 +12,6 @@ import { HubMap } from '@/components/hubs/HubMap'
 import { BookingStatusBadge } from '@/components/customer/BookingStatusBadge'
 import { NotificationBell } from '@/components/dashboard/NotificationBell'
 import { type BookingStatus } from '@/types/database'
-import { BAG_RATES } from '@/lib/utils/pricing'
 import { useTranslations } from 'next-intl'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -29,6 +28,7 @@ export type HubCard = {
   image_url: string | null
   latitude: number | null
   longitude: number | null
+  minRate: number
 }
 
 export type ActiveBooking = {
@@ -38,6 +38,7 @@ export type ActiveBooking = {
   end_time: string
   total_price: number
   hubs: { name: string; alias: string; image_url: string | null } | null
+  booking_bags: { id: string }[]
 }
 
 type Notification = {
@@ -89,8 +90,6 @@ function getAvailability(hub: HubCard) {
   if (spots <= hub.capacity * 0.3) return { label: `${spots} left`, color: 'bg-amber-400', textColor: 'text-amber-600', spots }
   return { label: 'Available', color: 'bg-emerald-500', textColor: 'text-emerald-600', spots }
 }
-
-const minRate = Math.min(...Object.values(BAG_RATES) as number[])
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -159,7 +158,7 @@ function FeaturedHubCard({ hub, distanceKm }: { hub: HubCard; distanceKm: number
 
           <div className="flex items-center justify-between pt-1 border-t border-gray-100/50">
             <p className="text-xs font-black text-brand tracking-tight">
-              From LKR {minRate.toLocaleString()}<span className="text-gray-400 font-normal text-[9px]">/hr</span>
+              From LKR {hub.minRate.toLocaleString()}<span className="text-gray-400 font-normal text-[9px]">/hr</span>
             </p>
             <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider flex items-center gap-0.5">
               <MapPin size={9} className="text-gray-300" />
@@ -220,7 +219,7 @@ function HubListCard({ hub, distanceKm }: { hub: HubCard; distanceKm: number | n
           </div>
 
           <p className="text-xs font-black text-brand mt-1.5 tracking-tight">
-            From LKR {minRate.toLocaleString()}/hr
+            From LKR {hub.minRate.toLocaleString()}/hr
           </p>
         </div>
       </div>
@@ -282,7 +281,7 @@ function ActiveBookingBanner({ booking }: { booking: ActiveBooking }) {
             </div>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-[9px] font-black uppercase py-0.5 px-2 rounded-lg bg-black/5 text-gray-500 flex items-center gap-1 tracking-wider border border-black/5">
-                <Package size={10} /> {booking.total_price > 0 ? (booking.total_price / BAG_RATES.regular > 1 ? t('bags.multiple') : t('bags.single')) : t('bags.none')}
+                <Package size={10} /> {booking.booking_bags.length > 1 ? t('bags.multiple') : booking.booking_bags.length === 1 ? t('bags.single') : t('bags.none')}
               </span>
               <p className={`text-[10px] font-black uppercase tracking-wider ${overdue ? 'text-red-600 animate-pulse bg-red-100/60 px-2 py-0.5 rounded-lg border border-red-200/50' : 'text-ocean-600 bg-ocean-50/50 px-2 py-0.5 rounded-lg border border-ocean-100/50'}`}>
                 {overdue ? t('timeExceeded') : timeLeft}

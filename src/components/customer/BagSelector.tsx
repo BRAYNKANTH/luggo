@@ -2,7 +2,7 @@
 
 import { Minus, Plus, ShoppingBag } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
-import { BAG_LABELS, BAG_RATES } from '@/lib/utils/pricing'
+import { DEFAULT_BAG_RATES, type BagRates, BAG_LABELS } from '@/lib/utils/pricing'
 import { type BagType } from '@/types/database'
 
 export type BagCounts = Record<BagType, number>
@@ -11,6 +11,7 @@ interface BagSelectorProps {
   value: BagCounts
   onChange: (counts: BagCounts) => void
   className?: string
+  rates?: BagRates
 }
 
 const BAG_ICONS: Record<BagType, React.ReactNode> = {
@@ -25,7 +26,7 @@ const BAG_DESCRIPTIONS: Record<BagType, string> = {
   large:   'Oversized storage for check-in suitcases',
 }
 
-export function BagSelector({ value, onChange, className }: BagSelectorProps) {
+export function BagSelector({ value, onChange, className, rates = DEFAULT_BAG_RATES }: BagSelectorProps) {
   const total = Object.values(value).reduce((s, n) => s + n, 0)
 
   function increment(type: BagType) {
@@ -62,7 +63,7 @@ export function BagSelector({ value, onChange, className }: BagSelectorProps) {
           <div className="flex items-center gap-8">
              {/* Rate Information */}
              <div className="hidden sm:block text-right">
-                <p className="text-sm font-black text-ocean-900 italic">LKR {BAG_RATES[type].toLocaleString()}</p>
+                <p className="text-sm font-black text-ocean-900 italic">LKR {rates[type].hourlyRate.toLocaleString()}</p>
                 <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">Per Hour</p>
              </div>
 

@@ -10,7 +10,7 @@ import {
   MapPin, Clock, ChevronLeft,
   ArrowRight, ShieldCheck, Star
 } from 'lucide-react'
-import { BAG_LABELS, BAG_RATES, BAG_DAILY_CAPS } from '@/lib/utils/pricing'
+import { BAG_LABELS, type BagRates } from '@/lib/utils/pricing'
 import { type BagType } from '@/types/database'
 import { getConfig } from '@/lib/utils/ui'
 
@@ -41,6 +41,8 @@ interface HubDetailsUIProps {
   activeCount: number
   categories: string[]
   grouped: Record<string, NearbyPlace[]>
+  isLoggedIn: boolean
+  rates: BagRates
 }
 
 export function HubDetailsUI({
@@ -48,6 +50,8 @@ export function HubDetailsUI({
   activeCount,
   categories,
   grouped,
+  isLoggedIn,
+  rates,
 }: HubDetailsUIProps) {
   const [showAllNearby, setShowAllNearby] = useState(false)
 
@@ -80,7 +84,13 @@ export function HubDetailsUI({
             Back
           </Link>
           <Logo size="sm" />
-          <SignOutButton portal="customer" iconOnly />
+          {isLoggedIn ? (
+            <SignOutButton portal="customer" iconOnly />
+          ) : (
+            <Link href="/login" className="text-sm font-bold text-gray-500 hover:text-brand transition-colors">
+              Sign in
+            </Link>
+          )}
         </div>
       </div>
 
@@ -236,8 +246,8 @@ export function HubDetailsUI({
                       <span className="font-semibold text-gray-800 text-sm">{label}</span>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-black text-gray-900 leading-tight">LKR {BAG_RATES[type].toLocaleString()}/hr</p>
-                      <p className="text-[9px] text-brand font-black uppercase mt-0.5 tracking-wider">Max LKR {BAG_DAILY_CAPS[type].toLocaleString()}/day</p>
+                      <p className="text-sm font-black text-gray-900 leading-tight">LKR {rates[type].hourlyRate.toLocaleString()}/hr</p>
+                      <p className="text-[9px] text-brand font-black uppercase mt-0.5 tracking-wider">Max LKR {rates[type].dailyCap.toLocaleString()}/day</p>
                     </div>
                   </div>
                 ))}
@@ -295,7 +305,7 @@ export function HubDetailsUI({
           <div className="flex-1 min-w-0">
             <p className="text-xs text-gray-500 font-medium">Starting from</p>
             <p className="text-sm font-bold text-gray-900">
-              LKR {Math.min(...Object.values(BAG_RATES)).toLocaleString()}<span className="text-gray-400 font-normal">/hr</span>
+              LKR {Math.min(...Object.values(rates).map(r => r.hourlyRate)).toLocaleString()}<span className="text-gray-400 font-normal">/hr</span>
             </p>
           </div>
           <Link href={bookHref} className="shrink-0">

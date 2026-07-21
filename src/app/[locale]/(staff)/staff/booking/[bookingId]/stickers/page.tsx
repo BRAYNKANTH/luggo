@@ -5,6 +5,9 @@ import { createClient } from '@/lib/supabase/server'
 import { Logo } from '@/components/ui/Logo'
 import { StickersAndSealForm } from '@/components/staff/StickersAndSealForm'
 import { type BagType } from '@/types/database'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Stickers — Staff' }
 
 type Bag = { id: string; bag_type: BagType; sticker_number: string | null }
 

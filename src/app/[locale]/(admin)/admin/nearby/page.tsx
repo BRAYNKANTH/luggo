@@ -5,6 +5,9 @@ import { NearbyPlaceForm } from '@/components/admin/NearbyPlaceForm'
 import { DeleteNearbyPlace } from '@/components/admin/DeleteNearbyPlace'
 import { MapPinned } from 'lucide-react'
 import { type UserRole } from '@/types/database'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Nearby Places — Admin' }
 
 type Place = {
   id: string

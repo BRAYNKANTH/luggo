@@ -4,7 +4,7 @@ import { ChevronLeft } from 'lucide-react'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | Luggo',
+  title: 'Terms of Service',
   description: 'Luggo Terms of Service — governed by the laws of Sri Lanka.',
 }
 

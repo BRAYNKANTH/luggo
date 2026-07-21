@@ -4,6 +4,9 @@ import { AdminShell } from '@/components/admin/AdminShell'
 import { UserRoleSelector } from '@/components/admin/UserRoleSelector'
 import { type UserRole } from '@/types/database'
 import { format } from 'date-fns'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Users — Admin' }
 
 export default async function AdminUsersPage({
   searchParams,

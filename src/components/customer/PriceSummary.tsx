@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils/cn'
-import { BAG_LABELS, calculateBagPriceForHours } from '@/lib/utils/pricing'
+import { BAG_LABELS, DEFAULT_BAG_RATES, type BagRates, calculateBagPriceForHours } from '@/lib/utils/pricing'
 import { type BagType } from '@/types/database'
 import { type BagCounts } from './BagSelector'
 import { Clock, Tag, CreditCard, ShieldCheck } from 'lucide-react'
@@ -12,9 +12,10 @@ interface PriceSummaryProps {
   endTime: Date | null
   className?: string
   lateFee?: number
+  rates?: BagRates
 }
 
-export function PriceSummary({ bags, startTime, endTime, className, lateFee = 0 }: PriceSummaryProps) {
+export function PriceSummary({ bags, startTime, endTime, className, lateFee = 0, rates = DEFAULT_BAG_RATES }: PriceSummaryProps) {
   const hours =
     startTime && endTime
       ? Math.ceil((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60))
@@ -22,7 +23,7 @@ export function PriceSummary({ bags, startTime, endTime, className, lateFee = 0 
 
   const bagLines = (Object.entries(bags) as [BagType, number][]).filter(([, qty]) => qty > 0)
   const storageTotal = bagLines.reduce(
-    (sum, [type, qty]) => sum + calculateBagPriceForHours(type, hours) * qty,
+    (sum, [type, qty]) => sum + calculateBagPriceForHours(type, hours, rates) * qty,
     0
   )
   const grandTotal = storageTotal + lateFee
@@ -62,7 +63,7 @@ export function PriceSummary({ bags, startTime, endTime, className, lateFee = 0 
                  {qty}× {BAG_LABELS[type]}
                </span>
             </div>
-            <span className="font-black text-sm text-white tracking-tight italic">LKR {(calculateBagPriceForHours(type, hours) * qty).toLocaleString()}</span>
+            <span className="font-black text-sm text-white tracking-tight italic">LKR {(calculateBagPriceForHours(type, hours, rates) * qty).toLocaleString()}</span>
           </div>
         ))}
 

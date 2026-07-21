@@ -4,6 +4,9 @@ import { createClient } from '@/lib/supabase/server'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { type UserRole } from '@/types/database'
 import { format } from 'date-fns'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Payments — Admin' }
 
 const PAGE_SIZE = 40
 

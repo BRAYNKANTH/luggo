@@ -7,6 +7,7 @@ import { type PostgrestError, type SupabaseClient } from '@supabase/supabase-js'
 import { uuidSchema } from '@/lib/validators/common'
 import { type BagType } from '@/types/database'
 import { calculateLateFee, calculateEarlyCheckinDecision, calculateBookingPrice } from '@/lib/utils/pricing'
+import { getHubBagRates } from '@/lib/utils/hubPricing'
 
 
 // ─────────────────────────────────────────────
@@ -45,15 +46,16 @@ async function requireStaff() {
 export async function resolveQRCode(
   qrCode: string
 ): Promise<{ bookingId?: string; error?: string }> {
-  if (!qrCode.trim()) return { error: 'Empty QR code' }
+  const cleanCode = qrCode.trim()
+  if (!cleanCode) return { error: 'Empty QR code' }
   const { supabase, hubId } = await requireStaff()
 
   // 1. Try to find by booking qr_code
   const { data: booking } = await supabase
     .from('bookings')
     .select('id, status, hub_id')
-    .eq('qr_code', qrCode.trim())
-    .single() as { data: { id: string; status: string; hub_id: string } | null; error: unknown }
+    .eq('qr_code', cleanCode)
+    .maybeSingle() as { data: { id: string; status: string; hub_id: string } | null; error: unknown }
 
   if (booking) {
     if (booking.hub_id !== hubId) {
@@ -64,6 +66,45 @@ export async function resolveQRCode(
       return { error: `This booking is already ${booking.status}. Nothing to do.` }
     }
     return { bookingId: booking.id }
+  }
+
+  // 1b. Check if searching by walk-in booking reference prefix (e.g., WI-A1B2C3D4)
+  if (cleanCode.toUpperCase().startsWith('WI-') && cleanCode.length === 11) {
+    const shortId = cleanCode.slice(3).toLowerCase()
+    const { data: walkinBooking } = await supabase
+      .from('bookings')
+      .select('id, status, hub_id')
+      .eq('hub_id', hubId)
+      .ilike('id', `${shortId}%`)
+      .limit(1)
+      .maybeSingle() as { data: { id: string; status: string; hub_id: string } | null }
+
+    if (walkinBooking) {
+      const terminal = ['cancelled', 'expired', 'completed']
+      if (terminal.includes(walkinBooking.status)) {
+        return { error: `This booking is already ${walkinBooking.status}. Nothing to do.` }
+      }
+      return { bookingId: walkinBooking.id }
+    }
+  }
+
+  // 1c. Check if searching by partial/full UUID prefix
+  if (cleanCode.length >= 8 && /^[0-9a-fA-F-]+$/.test(cleanCode)) {
+    const { data: uuidBooking } = await supabase
+      .from('bookings')
+      .select('id, status, hub_id')
+      .eq('hub_id', hubId)
+      .ilike('id', `${cleanCode.toLowerCase()}%`)
+      .limit(1)
+      .maybeSingle() as { data: { id: string; status: string; hub_id: string } | null }
+
+    if (uuidBooking) {
+      const terminal = ['cancelled', 'expired', 'completed']
+      if (terminal.includes(uuidBooking.status)) {
+        return { error: `This booking is already ${uuidBooking.status}. Nothing to do.` }
+      }
+      return { bookingId: uuidBooking.id }
+    }
   }
 
   // 2. Try to find by bag tag code
@@ -523,7 +564,8 @@ export async function completePickup(
   const start = new Date(booking.start_time)
   const end = new Date(booking.end_time)
   const now = new Date()
-  const lateFeeAmount = calculateLateFee(booking.booking_bags, start, end, now)
+  const rates = await getHubBagRates(svc, hubId)
+  const lateFeeAmount = calculateLateFee(booking.booking_bags, start, end, now, rates)
 
   if (lateFeeAmount > 0) {
     // Check if they paid it or if it is waived
@@ -543,14 +585,21 @@ export async function completePickup(
     }
   }
 
-  // 1. Release all bag tags and update bag statuses
+  // 1. Release all bag tags and update bag statuses.
+  // Bail out before marking the booking complete if a release fails, so a
+  // bag tag doesn't end up silently stranded as still-assigned on a
+  // booking that's now marked completed.
   for (const bag of booking.booking_bags) {
     if (bag.bag_tag_id) {
-      await svc
+      const { error: tagError } = await svc
         .from('bag_tags' as never)
         .update({ status: 'available', current_booking_id: null })
         .eq('id', bag.bag_tag_id)
-      
+
+      if (tagError) {
+        return { error: `Failed to release bag tag for bag ${bag.id}: ${tagError.message}` }
+      }
+
       // Audit bag tag released
       await svc.rpc('write_audit_log', {
         p_actor_id: userId,
@@ -562,14 +611,20 @@ export async function completePickup(
       })
     }
 
-    await svc
+    const { error: bagError } = await svc
       .from('booking_bags' as never)
       .update({ status: 'released', bag_tag_id: null })
       .eq('id', bag.id)
+
+    if (bagError) {
+      return { error: `Failed to release bag ${bag.id}: ${bagError.message}` }
+    }
   }
 
   // 2. Complete the booking and clear OTP states
-  await svc.from('bookings' as never).update({
+  // Re-check status in the WHERE clause so a concurrent/duplicate submission
+  // (e.g. double-clicked handover button) can't process the same pickup twice.
+  const { data: completedRow } = await svc.from('bookings' as never).update({
     status: 'completed',
     pickup_otp: null,
     pickup_otp_expires_at: null,
@@ -577,7 +632,15 @@ export async function completePickup(
     pickup_override_supervisor_id: null,
     pickup_override_reason: null,
     pickup_override_at: null
-  }).eq('id', bookingId)
+  })
+    .eq('id', bookingId)
+    .in('status', allowedStatuses)
+    .select('id')
+    .maybeSingle()
+
+  if (!completedRow) {
+    return { error: 'This pickup was already completed (possibly by another device).' }
+  }
 
   // 3. Audit pickup completed
   await svc.rpc('write_audit_log', {
@@ -652,10 +715,10 @@ export async function createWalkInBooking(input: {
     return { error: `This hub does not have enough space for walk-in booking. Current load: ${curBags}/${hub.capacity} bags.` }
   }
 
+  const { calculateBagPriceForHours } = await import('@/lib/utils/pricing')
   const hours = Math.max(1, Math.ceil((expected.getTime() - now.getTime()) / (1000 * 60 * 60)))
-  const rates = { small: 200, regular: 300, large: 400 }
-  const bagPrice = input.bagTypes.reduce((sum, type) => sum + (rates[type as keyof typeof rates] || 300), 0)
-  const totalPrice = bagPrice * hours
+  const walkInRates = await getHubBagRates(svc, input.hubId)
+  const totalPrice = input.bagTypes.reduce((sum, type) => sum + calculateBagPriceForHours(type, hours, walkInRates), 0)
 
   const qrCode = `WI-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
 
@@ -750,10 +813,14 @@ export async function createWalkInBooking(input: {
 // ─────────────────────────────────────────────
 // ALLOCATE STORAGE SLOT FOR BOOKING (Timezone-safe)
 // ─────────────────────────────────────────────
+// A unique DB index (hub_id, slot_number) guards against two concurrent
+// registrations at the same hub computing and claiming the same slot. On a
+// conflict we just recompute against the now-current occupancy and retry.
 export async function allocateSlotForBooking(
   supabase: SupabaseClient,
   hubId: string,
-  bookingId: string
+  bookingId: string,
+  attemptsLeft = 3
 ): Promise<number> {
   // 1. Fetch occupied slot numbers
   const { data: bookings, error } = await supabase
@@ -813,6 +880,11 @@ export async function allocateSlotForBooking(
     .eq('id', bookingId)
 
   if (updateError) {
+    // Unique violation (Postgres code 23505) means another concurrent
+    // registration just took this slot — recompute occupancy and retry.
+    if (updateError.code === '23505' && attemptsLeft > 0) {
+      return allocateSlotForBooking(supabase, hubId, bookingId, attemptsLeft - 1)
+    }
     throw new Error(`Failed to save slot allocation: ${updateError.message}`)
   }
 
@@ -1309,8 +1381,12 @@ export async function bypassSealConfirmation(
 // COMPLETE PICKUP WITH CASH PAYMENT (LATE FEES)
 // ─────────────────────────────────────────────
 export async function completePickupWithCashAction(bookingId: string): Promise<void> {
-  await completePickupWithCash(bookingId)
-  redirect(`/staff/booking/${bookingId}`)
+  const res = await completePickupWithCash(bookingId)
+  if (res.error) {
+    redirect(`/staff/pickup/${bookingId}?error=${encodeURIComponent(res.error)}`)
+  } else {
+    redirect(`/staff/booking/${bookingId}`)
+  }
 }
 
 export async function completePickupWithCash(
@@ -1324,7 +1400,7 @@ export async function completePickupWithCash(
   // Fetch booking with bags
   const { data: booking } = await svc
     .from('bookings' as never)
-    .select('id, status, start_time, end_time, user_id, hubs(name), users(name, phone, email), booking_bags(id, bag_type, bag_tag_id)')
+    .select('id, status, start_time, end_time, user_id, hubs(name), users(name, phone, email), booking_bags(id, bag_type, bag_tag_id), pickup_otp_verified_at, pickup_override_supervisor_id')
     .eq('id', bookingId)
     .eq('hub_id', hubId)
     .single() as {
@@ -1337,10 +1413,17 @@ export async function completePickupWithCash(
         hubs: { name: string } | null
         users: { name: string; phone: string | null; email: string } | null
         booking_bags: { id: string; bag_type: BagType; bag_tag_id: string | null }[]
+        pickup_otp_verified_at: string | null
+        pickup_override_supervisor_id: string | null
       } | null
     }
 
   if (!booking) return { error: 'Booking not found.' }
+
+  if (!booking.pickup_otp_verified_at && !booking.pickup_override_supervisor_id) {
+    return { error: 'OTP verification or Supervisor Override is required before releasing bags.' }
+  }
+
   const allowed = ['active_storage', 'overstayed', 'pickup_requested', 'late_fee_pending']
   if (!allowed.includes(booking.status)) {
     return { error: `Cash payment bypass is not valid for bookings in status: ${booking.status}` }
@@ -1350,7 +1433,8 @@ export async function completePickupWithCash(
   const start = new Date(booking.start_time)
   const end = new Date(booking.end_time)
   const now = new Date()
-  const lateFeeAmount = calculateLateFee(booking.booking_bags, start, end, now)
+  const cashRates = await getHubBagRates(svc, hubId)
+  const lateFeeAmount = calculateLateFee(booking.booking_bags, start, end, now, cashRates)
 
   if (lateFeeAmount > 0) {
     // 1. Create a paid payment record for cash
@@ -1373,14 +1457,21 @@ export async function completePickupWithCash(
       .eq('status', 'pending')
   }
 
-  // 3. Release all bag tags and update bag statuses
+  // 3. Release all bag tags and update bag statuses.
+  // Bail out before marking the booking complete if a release fails, so a
+  // bag tag doesn't end up silently stranded as still-assigned on a
+  // booking that's now marked completed.
   for (const bag of booking.booking_bags) {
     if (bag.bag_tag_id) {
-      await svc
+      const { error: tagError } = await svc
         .from('bag_tags' as never)
         .update({ status: 'available', current_booking_id: null })
         .eq('id', bag.bag_tag_id)
-      
+
+      if (tagError) {
+        return { error: `Failed to release bag tag for bag ${bag.id}: ${tagError.message}` }
+      }
+
       // Audit bag tag released
       await svc.rpc('write_audit_log', {
         p_actor_id: userId,
@@ -1392,14 +1483,20 @@ export async function completePickupWithCash(
       })
     }
 
-    await svc
+    const { error: bagError } = await svc
       .from('booking_bags' as never)
       .update({ status: 'released', bag_tag_id: null })
       .eq('id', bag.id)
+
+    if (bagError) {
+      return { error: `Failed to release bag ${bag.id}: ${bagError.message}` }
+    }
   }
 
   // 4. Complete the booking and clear OTP states
-  await svc.from('bookings' as never).update({
+  // Re-check status in the WHERE clause so a concurrent/duplicate submission
+  // (e.g. double-clicked handover button) can't process the same pickup twice.
+  const { data: completedRow } = await svc.from('bookings' as never).update({
     status: 'completed',
     pickup_otp: null,
     pickup_otp_expires_at: null,
@@ -1407,7 +1504,15 @@ export async function completePickupWithCash(
     pickup_override_supervisor_id: null,
     pickup_override_reason: null,
     pickup_override_at: null
-  }).eq('id', bookingId)
+  })
+    .eq('id', bookingId)
+    .in('status', allowed)
+    .select('id')
+    .maybeSingle()
+
+  if (!completedRow) {
+    return { error: 'This pickup was already completed (possibly by another device).' }
+  }
 
   // Audit log
   await svc.rpc('write_audit_log', {
@@ -1476,12 +1581,14 @@ export async function processStandardCheckInAction(
   const bookedStartTime = new Date(booking.start_time)
   const bookedEndTime = new Date(booking.end_time)
 
+  const earlyCheckinRates = await getHubBagRates(svc, hubId)
   const decision = calculateEarlyCheckinDecision({
     bookedStartTime,
     bookedEndTime,
     actualCheckInTime: bagCollectedAt,
     bags: booking.booking_bags,
-    earlyBufferMinutes: 15
+    earlyBufferMinutes: 15,
+    rates: earlyCheckinRates
   })
 
   // Prevent bypass of payment if they are more than 15 minutes early
@@ -1563,12 +1670,14 @@ export async function processCashEarlyCheckInAction(
   const bookedStartTime = new Date(booking.start_time)
   const bookedEndTime = new Date(booking.end_time)
 
+  const earlyCheckinRates = await getHubBagRates(svc, hubId)
   const decision = calculateEarlyCheckinDecision({
     bookedStartTime,
     bookedEndTime,
     actualCheckInTime: bagCollectedAt,
     bags: booking.booking_bags,
-    earlyBufferMinutes: 15
+    earlyBufferMinutes: 15,
+    rates: earlyCheckinRates
   })
 
   if (!decision.requiresAction || decision.earlyCheckinFee <= 0) {
@@ -1688,12 +1797,14 @@ export async function processOnlineEarlyCheckInAction(
   const bookedStartTime = new Date(booking.start_time)
   const bookedEndTime = new Date(booking.end_time)
 
+  const earlyCheckinRates = await getHubBagRates(svc, hubId)
   const decision = calculateEarlyCheckinDecision({
     bookedStartTime,
     bookedEndTime,
     actualCheckInTime: bagCollectedAt,
     bags: booking.booking_bags,
-    earlyBufferMinutes: 15
+    earlyBufferMinutes: 15,
+    rates: earlyCheckinRates
   })
 
   if (!decision.requiresAction || decision.earlyCheckinFee <= 0) {
@@ -1823,12 +1934,14 @@ export async function processShiftBookingCheckInAction(
   const bookedStartTime = new Date(booking.start_time)
   const bookedEndTime = new Date(booking.end_time)
 
+  const earlyCheckinRates = await getHubBagRates(svc, hubId)
   const decision = calculateEarlyCheckinDecision({
     bookedStartTime,
     bookedEndTime,
     actualCheckInTime: bagCollectedAt,
     bags: booking.booking_bags,
-    earlyBufferMinutes: 15
+    earlyBufferMinutes: 15,
+    rates: earlyCheckinRates
   })
 
   if (!decision.isEarly) {
@@ -1909,16 +2022,14 @@ export async function processSupervisorOverrideCheckInAction(
 
   const { svc, hubId, userId } = await requireStaff()
 
-  // 1. Verify supervisor role
-  const { data: supervisor } = await svc
-    .from('users' as never)
-    .select('role')
-    .eq('id', supervisorId)
-    .single() as { data: { role: string } | null }
-
-  if (!supervisor || !['support_admin', 'ops_admin', 'master_admin'].includes(supervisor.role)) {
-    return { error: 'Invalid Supervisor ID or unauthorized role.' }
+  // 1. The account performing this override must itself be a supervisor —
+  // a regular staff member cannot authorize on a supervisor's behalf just by
+  // knowing/selecting their name (see checkIsSupervisor usage elsewhere).
+  const isSupervisor = await checkIsSupervisor(userId, svc)
+  if (!isSupervisor) {
+    return { error: 'Unauthorized. A supervisor must log in and perform this override themselves.' }
   }
+  supervisorId = userId
 
   // 2. Fetch booking details to calculate override details on the server
   const { data: booking } = await svc
@@ -1938,12 +2049,14 @@ export async function processSupervisorOverrideCheckInAction(
   const bookedStartTime = new Date(booking.start_time)
   const bookedEndTime = new Date(booking.end_time)
 
+  const earlyCheckinRates = await getHubBagRates(svc, hubId)
   const decision = calculateEarlyCheckinDecision({
     bookedStartTime,
     bookedEndTime,
     actualCheckInTime: bagCollectedAt,
     bags: booking.booking_bags,
-    earlyBufferMinutes: 15
+    earlyBufferMinutes: 15,
+    rates: earlyCheckinRates
   })
 
   // 3. Update booking with override details
@@ -2094,16 +2207,14 @@ export async function processSupervisorIdOverrideAction(
 
   const { svc, hubId, userId } = await requireStaff()
 
-  // Verify supervisor exists and is a supervisor/admin
-  const { data: supervisor } = await svc
-    .from('users' as never)
-    .select('role')
-    .eq('id', supervisorId)
-    .single() as { data: { role: string } | null }
-
-  if (!supervisor || !['support_admin', 'ops_admin', 'master_admin'].includes(supervisor.role)) {
-    return { error: 'Invalid supervisor credentials.' }
+  // The account performing this override must itself be a supervisor — a
+  // regular staff member cannot authorize on a supervisor's behalf just by
+  // knowing/selecting their name.
+  const isSupervisor = await checkIsSupervisor(userId, svc)
+  if (!isSupervisor) {
+    return { error: 'Unauthorized. A supervisor must log in and perform this override themselves.' }
   }
+  supervisorId = userId
 
   // Update id_verified
   const { error } = await svc
@@ -2140,16 +2251,14 @@ export async function processPhoneDeadPickupOverrideAction(
 
   const { svc, hubId, userId } = await requireStaff()
 
-  // Verify supervisor exists and is a supervisor/admin
-  const { data: supervisor } = await svc
-    .from('users' as never)
-    .select('role')
-    .eq('id', supervisorId)
-    .single() as { data: { role: string } | null }
-
-  if (!supervisor || !['support_admin', 'ops_admin', 'master_admin'].includes(supervisor.role)) {
-    return { error: 'Invalid supervisor credentials.' }
+  // The account performing this override must itself be a supervisor — a
+  // regular staff member cannot authorize on a supervisor's behalf just by
+  // knowing/selecting their name.
+  const isSupervisor = await checkIsSupervisor(userId, svc)
+  if (!isSupervisor) {
+    return { error: 'Unauthorized. A supervisor must log in and perform this override themselves.' }
   }
+  supervisorId = userId
 
   // Check if booking is in release-eligible state
   const { data: booking } = await svc
@@ -2314,7 +2423,10 @@ export async function completePartialPickupAction(
   const isFullyCompleted = remainingBags.length === 0
 
   // 3. Update booking status and clear OTP/override
-  const { error: bError } = await svc
+  // Re-check status in the WHERE clause so a concurrent/duplicate submission
+  // can't process the same partial pickup twice.
+  const releasableStatuses = ['active_storage', 'overstayed', 'pickup_requested', 'late_fee_pending', 'ready_for_release']
+  const { data: updatedRow, error: bError } = await svc
     .from('bookings' as never)
     .update({
       status: isFullyCompleted ? 'completed' : 'active_storage',
@@ -2327,8 +2439,14 @@ export async function completePartialPickupAction(
     })
     .eq('id', bookingId)
     .eq('hub_id', hubId)
+    .in('status', releasableStatuses)
+    .select('id')
+    .maybeSingle()
 
   if (bError) return { error: bError.message }
+  if (!updatedRow) {
+    return { error: 'This pickup was already processed (possibly by another device).' }
+  }
 
   // Audit log
   await svc.rpc('write_audit_log', {
@@ -2460,16 +2578,17 @@ export async function updateBookingBagsAction(
   // 1. Fetch booking details to calculate new price
   const { data: booking } = await svc
     .from('bookings' as never)
-    .select('start_time, end_time, total_price')
+    .select('hub_id, start_time, end_time, total_price')
     .eq('id', bookingId)
-    .single() as { data: { start_time: string; end_time: string; total_price: number } | null }
+    .single() as { data: { hub_id: string; start_time: string; end_time: string; total_price: number } | null }
 
   if (!booking) return { error: 'Booking not found.' }
 
   // Recalculate price of updated bags
   const start = new Date(booking.start_time)
   const end = new Date(booking.end_time)
-  const newPrice = calculateBookingPrice(updatedBags, start, end)
+  const updateBagsRates = await getHubBagRates(svc, booking.hub_id)
+  const newPrice = calculateBookingPrice(updatedBags, start, end, updateBagsRates)
   const priceDifference = newPrice - booking.total_price
 
   // 2. Fetch existing bags

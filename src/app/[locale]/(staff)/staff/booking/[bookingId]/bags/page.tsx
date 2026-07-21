@@ -6,8 +6,12 @@ import { Logo } from '@/components/ui/Logo'
 import { BagRegistrationForm } from '@/components/staff/BagRegistrationForm'
 import { type BagType } from '@/types/database'
 import { allocateSlotForBooking } from '@/lib/staff/actions'
+import { getHubBagRates } from '@/lib/utils/hubPricing'
+import type { Metadata } from 'next'
 
-type Bag = { 
+export const metadata: Metadata = { title: 'Register Bags — Staff' }
+
+type Bag = {
   id: string
   bag_type: BagType
   seal_number: string | null
@@ -85,6 +89,7 @@ export default async function BagRegistrationPage({
   }
 
   const customerName = booking.walk_in_name || booking.users?.name || 'Walk-In Guest'
+  const rates = await getHubBagRates(supabase, staffRow.hub_id)
 
   return (
     <div className="min-h-screen bg-ocean-900 text-white pb-32">
@@ -106,7 +111,7 @@ export default async function BagRegistrationPage({
           <span className="text-[10px] font-black uppercase tracking-widest text-brand-light">Step 2 of 2</span>
           <h1 className="text-2xl font-extrabold mb-1 tracking-tight">Register Bag Seals</h1>
           <p className="text-white/50 text-xs">
-            Verify and enter/scan physical zip-lock seals for customer **{customerName}**.
+            Verify and enter/scan physical zip-lock seals for customer <strong className="text-white/80 font-bold">{customerName}</strong>.
           </p>
         </div>
 
@@ -114,6 +119,7 @@ export default async function BagRegistrationPage({
           bookingId={booking.id}
           initialBags={booking.booking_bags}
           slotNumber={slotNumber}
+          rates={rates}
         />
       </div>
     </div>

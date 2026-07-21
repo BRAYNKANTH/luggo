@@ -15,7 +15,8 @@ import {
 import { BookingProgressTracker } from '@/components/customer/BookingProgressTracker'
 import { formatDateSLT, formatDateTimeSLT } from '@/lib/utils/timezone'
 import { type BookingStatus, type BagType } from '@/types/database'
-import { BAG_LABELS, BAG_RATES, calculateLateFee } from '@/lib/utils/pricing'
+import { BAG_LABELS, calculateLateFee } from '@/lib/utils/pricing'
+import { getHubBagRates } from '@/lib/utils/hubPricing'
 import { EarlyCheckinPayButton } from '@/components/customer/EarlyCheckinPayButton'
 import { BookingPaymentRetryButton } from '@/components/customer/BookingPaymentRetryButton'
 
@@ -31,7 +32,7 @@ type BookingDetail = {
   hub_id: string
   hubs: { name: string; alias: string; address: string } | null
   booking_bags: { id: string; bag_type: BagType; sticker_number: string | null; seal_number: string | null }[]
-  payments: { status: string; gateway_ref: string | null; type: string }[]
+  payments: { status: string; gateway_ref: string | null; type: string; amount: number }[]
   early_checkin_minutes: number | null
   early_checkin_type: string
   early_checkin_extra_hours: number | null
@@ -60,7 +61,7 @@ export default async function BookingDetailPage({
       early_checkin_minutes, early_checkin_type, early_checkin_extra_hours, early_checkin_fee, early_checkin_payment_status,
       hubs ( name, alias, address ),
       booking_bags ( id, bag_type, sticker_number, seal_number ),
-      payments ( status, gateway_ref, type )
+      payments ( status, gateway_ref, type, amount )
     `)
     .eq('id', params.bookingId)
     .eq('user_id', user.id)
@@ -92,18 +93,26 @@ export default async function BookingDetailPage({
   const showPickupCTA   = ['active_storage', 'overstayed', 'late_fee_pending'].includes(booking.status)
   const isPickupPending = booking.status === 'pickup_requested'
   const showExtendCTA   = EXTEND_ELIGIBLE.includes(booking.status)
-  const hourlyRate      = booking.booking_bags.reduce((t, b) => t + (BAG_RATES[b.bag_type] || 0), 0)
+  const hubRates        = await getHubBagRates(supabase, booking.hub_id)
+  const hourlyRate      = booking.booking_bags.reduce((t, b) => t + (hubRates[b.bag_type]?.hourlyRate || 0), 0)
   const bookingPayment  = booking.payments?.find(p => p.type === 'booking')
   const isCashPaymentPending = !bookingPayment || (bookingPayment.status === 'pending' && bookingPayment.gateway_ref === 'PAY_AT_HUB')
 
   // Calculate late fee if overstayed or late fee is pending or time passed (grace period of 15 min)
   const now = new Date()
-  const isOverdue = ['overstayed', 'late_fee_pending'].includes(booking.status) || now.getTime() > end.getTime() + 15 * 60 * 1000
+  const isOverdue = (['overstayed', 'late_fee_pending'].includes(booking.status) || now.getTime() > end.getTime() + 15 * 60 * 1000) && booking.status !== 'pickup_requested'
   let lateFeeAmount = 0
   let overdueHours = 0
   let overdueHalfHours = 0
   if (isOverdue) {
-    lateFeeAmount = calculateLateFee(booking.booking_bags, start, end, now)
+    lateFeeAmount = calculateLateFee(booking.booking_bags, start, end, now, hubRates)
+    
+    // Deduct already paid late fees
+    const totalPaidLateFee = booking.payments
+      ?.filter(p => p.type === 'late_fee' && p.status === 'paid')
+      .reduce((sum, p) => sum + p.amount, 0) ?? 0
+    lateFeeAmount = Math.max(0, lateFeeAmount - totalPaidLateFee)
+
     if (lateFeeAmount > 0) {
       const overdueMs = now.getTime() - end.getTime()
       const overdueMinutes = Math.ceil(overdueMs / (60 * 1000))

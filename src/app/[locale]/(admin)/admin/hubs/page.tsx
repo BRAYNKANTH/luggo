@@ -4,6 +4,9 @@ import { AdminShell } from '@/components/admin/AdminShell'
 import { HubCard } from '@/components/admin/HubCard'
 import { HubForm } from '@/components/admin/HubForm'
 import { type UserRole } from '@/types/database'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Hubs — Admin' }
 
 export default async function AdminHubsPage() {
   const supabase = await createClient()

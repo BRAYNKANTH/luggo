@@ -118,6 +118,40 @@ create table public.hubs (
 comment on column public.hubs.alias is 'Short uppercase code used as sticker prefix (e.g. AUC)';
 
 -- =============================================================
+-- HUB BAG RATES
+-- Per-hub, per-bag-type pricing. Every hub should have exactly 3 rows
+-- (one per bag_type). Managed from /admin/pricing. Mirrors the shape of
+-- BagRates in src/lib/utils/pricing.ts.
+-- =============================================================
+
+create table public.hub_bag_rates (
+  hub_id      uuid not null references public.hubs(id) on delete cascade,
+  bag_type    bag_type not null,
+  hourly_rate numeric not null,
+  daily_cap   numeric not null,
+  updated_at  timestamptz not null default now(),
+
+  primary key (hub_id, bag_type),
+  constraint hourly_rate_positive check (hourly_rate > 0),
+  constraint daily_cap_positive check (daily_cap > 0)
+);
+
+create or replace function public.touch_hub_bag_rates_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create trigger trg_hub_bag_rates_updated_at
+  before update on public.hub_bag_rates
+  for each row
+  execute function public.touch_hub_bag_rates_updated_at();
+
+-- =============================================================
 -- HUB STAFF
 -- =============================================================
 
@@ -247,6 +281,22 @@ create table public.payments (
 create index idx_payments_booking_id  on public.payments(booking_id);
 create index idx_payments_gateway_ref on public.payments(gateway_ref);
 
+-- Prevent two concurrently-registered bags at the same hub from being
+-- assigned the same physical storage slot (see allocateSlotForBooking).
+create unique index idx_bookings_slot_unique on public.bookings(hub_id, slot_number)
+  where slot_number is not null and status in (
+    'arrived', 'identity_verified', 'sealing_in_progress',
+    'sealed_waiting_user_confirmation', 'active_storage',
+    'pickup_requested', 'overstayed', 'late_fee_pending'
+  );
+
+-- Real PayHere transaction refs are numeric — enforce uniqueness on those only,
+-- so a retried/duplicated IPN can't double-record the same gateway transaction.
+-- (Sentinel refs like 'PAY_AT_HUB' / 'CASH_PAYMENT_BYPASS' are intentionally
+-- reused across many rows and stay unconstrained.)
+create unique index idx_payments_gateway_ref_unique on public.payments(gateway_ref)
+  where gateway_ref ~ '^[0-9]+$';
+
 -- =============================================================
 -- REFUNDS
 -- =============================================================
@@ -371,43 +421,123 @@ $$;
 -- Returns LKR amount owed (0 if not late)
 -- =============================================================
 
-create or replace function public.calculate_late_fee(p_booking_id uuid)
-returns integer
+-- Mirrors src/lib/utils/pricing.ts calculateBagPriceForHours — keep in sync.
+-- p_hub_id selects that hub's row in hub_bag_rates; if null or the hub has no
+-- row for this bag_type, falls back to the global defaults below (must match
+-- DEFAULT_BAG_RATES in pricing.ts).
+create or replace function public.calculate_bag_price_for_hours(p_bag_type public.bag_type, p_hours numeric, p_hub_id uuid default null)
+returns numeric
 language plpgsql
 stable
 as $$
 declare
-  v_end_time    timestamptz;
-  v_now         timestamptz := now();
-  v_hours_late  integer;
-  v_fee         integer := 0;
-  v_bag         record;
-  v_rate        integer;
+  v_days            integer;
+  v_remaining_hours numeric;
+  v_hourly_rate     numeric;
+  v_daily_cap       numeric;
+  v_remaining_cost  numeric;
 begin
-  select end_time into v_end_time
-  from public.bookings
-  where id = p_booking_id;
-
-  if v_now <= v_end_time then
+  if p_hours <= 0 then
     return 0;
   end if;
 
-  v_hours_late := ceil(extract(epoch from (v_now - v_end_time)) / 3600);
+  v_days := floor(p_hours / 24);
+  v_remaining_hours := p_hours - (v_days * 24);
+
+  if p_hub_id is not null then
+    select hourly_rate, daily_cap into v_hourly_rate, v_daily_cap
+    from public.hub_bag_rates
+    where hub_id = p_hub_id and bag_type = p_bag_type;
+  end if;
+
+  if v_hourly_rate is null then
+    v_hourly_rate := case p_bag_type
+      when 'small'   then 80
+      when 'regular' then 120
+      when 'large'   then 150
+      else 80
+    end;
+  end if;
+
+  if v_daily_cap is null then
+    v_daily_cap := case p_bag_type
+      when 'small'   then 600
+      when 'regular' then 700
+      when 'large'   then 800
+      else 600
+    end;
+  end if;
+
+  v_remaining_cost := least(v_remaining_hours * v_hourly_rate, v_daily_cap);
+  return (v_days * v_daily_cap) + v_remaining_cost;
+end;
+$$;
+
+-- Mirrors src/lib/utils/pricing.ts calculateLateFee — keep in sync.
+create or replace function public.calculate_late_fee(p_booking_id uuid)
+returns numeric
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_start_time      timestamptz;
+  v_end_time        timestamptz;
+  v_hub_id          uuid;
+  v_now             timestamptz := now();
+  v_orig_hours      numeric;
+  v_actual_hours    numeric;
+  v_orig_price      numeric := 0;
+  v_actual_price    numeric := 0;
+  v_bag             record;
+  v_paid            numeric := 0;
+begin
+  -- If waived by supervisor or settled in cash, no online fee is owed.
+  if exists (
+    select 1 from public.payments
+    where booking_id = p_booking_id
+      and type = 'late_fee'
+      and status = 'paid'
+      and (gateway_ref like 'WAIVED_BY_SUPERVISOR_%' or gateway_ref = 'CASH_PAYMENT_BYPASS')
+  ) then
+    return 0;
+  end if;
+
+  select start_time, end_time, hub_id into v_start_time, v_end_time, v_hub_id
+  from public.bookings
+  where id = p_booking_id;
+
+  if v_start_time is null or v_end_time is null then
+    return 0;
+  end if;
+
+  -- 15-minute grace period
+  if v_now <= v_end_time + interval '15 minutes' then
+    return 0;
+  end if;
+
+  v_orig_hours := ceil(extract(epoch from (v_end_time - v_start_time)) / 3600);
+  v_actual_hours := v_orig_hours + (ceil(extract(epoch from (v_now - v_end_time)) / 1800) * 0.5);
 
   for v_bag in
     select bag_type from public.booking_bags where booking_id = p_booking_id
   loop
-    v_rate := case v_bag.bag_type
-      when 'small'   then 200
-      when 'regular' then 300
-      when 'large'   then 400
-    end;
-    v_fee := v_fee + (v_rate * v_hours_late);
+    v_orig_price := v_orig_price + public.calculate_bag_price_for_hours(v_bag.bag_type, v_orig_hours, v_hub_id);
+    v_actual_price := v_actual_price + public.calculate_bag_price_for_hours(v_bag.bag_type, v_actual_hours, v_hub_id);
   end loop;
 
-  return v_fee;
+  -- Subtract already-paid late fees
+  select coalesce(sum(amount), 0) into v_paid
+  from public.payments
+  where booking_id = p_booking_id
+    and type = 'late_fee'
+    and status = 'paid';
+
+  return greatest(0, v_actual_price - v_orig_price - v_paid);
 end;
 $$;
+
+grant execute on function public.calculate_bag_price_for_hours(public.bag_type, numeric, uuid) to authenticated, service_role;
+grant execute on function public.calculate_late_fee(uuid) to authenticated, service_role;
 
 -- =============================================================
 -- ROW LEVEL SECURITY
@@ -415,6 +545,7 @@ $$;
 
 alter table public.users            enable row level security;
 alter table public.hubs             enable row level security;
+alter table public.hub_bag_rates    enable row level security;
 alter table public.hub_staff        enable row level security;
 alter table public.bookings         enable row level security;
 alter table public.booking_bags     enable row level security;
@@ -467,8 +598,17 @@ $$;
 -- ----------------------------
 -- users RLS
 -- ----------------------------
-create policy "users: own row" on public.users
-  for all using (id = auth.uid());
+-- Split (rather than "for all") so a compromised/forged client request can only
+-- ever read or update its own row — never another user's, and via the column
+-- grant below, never the `role` column (prevents client-side privilege escalation).
+create policy "users: select own row" on public.users
+  for select using (id = auth.uid());
+
+create policy "users: update own row" on public.users
+  for update using (id = auth.uid()) with check (id = auth.uid());
+
+revoke update on public.users from authenticated;
+grant update (name, phone, nic_passport) on public.users to authenticated;
 
 create policy "users: admins see all" on public.users
   for select using (public.is_admin());
@@ -491,6 +631,19 @@ create policy "hubs: admins full access" on public.hubs
   for all using (public.is_admin());
 
 -- ----------------------------
+-- hub_bag_rates RLS
+-- Rates must be publicly readable (shown while browsing hubs before login);
+-- only admins can change them.
+-- ----------------------------
+create policy "hub_bag_rates: public read" on public.hub_bag_rates
+  for select using (
+    exists (select 1 from public.hubs h where h.id = hub_id and h.active = true)
+  );
+
+create policy "hub_bag_rates: admins full access" on public.hub_bag_rates
+  for all using (public.is_admin()) with check (public.is_admin());
+
+-- ----------------------------
 -- hub_staff RLS
 -- ----------------------------
 create policy "hub_staff: own record" on public.hub_staff
@@ -502,8 +655,24 @@ create policy "hub_staff: admins full access" on public.hub_staff
 -- ----------------------------
 -- bookings RLS
 -- ----------------------------
-create policy "bookings: own bookings" on public.bookings
-  for all using (user_id = auth.uid());
+-- Split (rather than "for all") plus a column grant below: customers may only
+-- read/create their own bookings and flip `status` to a self-service value —
+-- never rewrite total_price, end_time, hub_id, qr_code, etc. directly.
+create policy "bookings: select own bookings" on public.bookings
+  for select using (user_id = auth.uid());
+
+create policy "bookings: insert own bookings" on public.bookings
+  for insert with check (user_id = auth.uid());
+
+create policy "bookings: update own bookings" on public.bookings
+  for update using (user_id = auth.uid())
+  with check (
+    user_id = auth.uid()
+    and status in ('cancelled', 'active_storage', 'disputed', 'pickup_requested')
+  );
+
+revoke update on public.bookings from authenticated;
+grant update (status) on public.bookings to authenticated;
 
 create policy "bookings: staff see hub bookings" on public.bookings
   for select using (public.is_staff_at_hub(hub_id));
@@ -552,7 +721,14 @@ create policy "sticker_batches: ops admin full" on public.sticker_batches
 -- sticker_assignments RLS
 -- ----------------------------
 create policy "sticker_assignments: staff insert" on public.sticker_assignments
-  for insert with check (assigned_by_staff_id = auth.uid());
+  for insert with check (
+    assigned_by_staff_id = auth.uid()
+    and exists (
+      select 1 from public.booking_bags bb
+      join public.bookings b on b.id = bb.booking_id
+      where bb.id = booking_bag_id and public.is_staff_at_hub(b.hub_id)
+    )
+  );
 
 create policy "sticker_assignments: staff & user select" on public.sticker_assignments
   for select using (
@@ -569,7 +745,13 @@ create policy "sticker_assignments: staff & user select" on public.sticker_assig
 -- seal_proofs RLS
 -- ----------------------------
 create policy "seal_proofs: staff insert" on public.seal_proofs
-  for insert with check (uploaded_by_staff_id = auth.uid());
+  for insert with check (
+    uploaded_by_staff_id = auth.uid()
+    and exists (
+      select 1 from public.bookings b
+      where b.id = booking_id and public.is_staff_at_hub(b.hub_id)
+    )
+  );
 
 create policy "seal_proofs: owner or staff select" on public.seal_proofs
   for select using (
@@ -627,8 +809,13 @@ create policy "notifications: own" on public.notifications
 -- ----------------------------
 -- complaints RLS
 -- ----------------------------
-create policy "complaints: own" on public.complaints
-  for all using (user_id = auth.uid());
+-- Customers can file and view their own complaints, but only staff/admins may
+-- change status (e.g. resolving/closing) — see "complaints: admins full" below.
+create policy "complaints: select own" on public.complaints
+  for select using (user_id = auth.uid());
+
+create policy "complaints: insert own" on public.complaints
+  for insert with check (user_id = auth.uid());
 
 create policy "complaints: admins full" on public.complaints
   for all using (public.is_admin());
@@ -726,3 +913,15 @@ values
   ('Luggo BIA Airport',      'BIA', 'Katunayake', 'Arrivals Hall, Bandaranaike International Airport', 80, '00:00', '23:59', true, '/images/hubs/bia.png', 7.1804, 79.8837),
   ('Luggo Negombo Beach',    'NGO', 'Negombo',    '5 Lewis Place, Negombo 11500',                      25, '07:00', '20:00', true, '/images/hubs/ngo.png', 7.2211, 79.8407)
 on conflict (alias) do nothing;
+
+-- Seed every hub with the default bag rates so hub_bag_rates is never empty
+-- for an existing hub (admin/pricing edits these afterwards).
+insert into public.hub_bag_rates (hub_id, bag_type, hourly_rate, daily_cap)
+select h.id, r.bag_type, r.hourly_rate, r.daily_cap
+from public.hubs h
+cross join (
+  values ('small'::public.bag_type, 80, 600),
+         ('regular'::public.bag_type, 120, 700),
+         ('large'::public.bag_type, 150, 800)
+) as r(bag_type, hourly_rate, daily_cap)
+on conflict (hub_id, bag_type) do nothing;

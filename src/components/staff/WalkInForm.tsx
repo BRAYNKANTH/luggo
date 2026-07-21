@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import { createWalkInBooking } from '@/lib/staff/actions'
 import { type BagType } from '@/types/database'
+import { calculateBagPriceForHours, DEFAULT_BAG_RATES, type BagRates } from '@/lib/utils/pricing'
 
 interface WalkInFormProps {
   hubId: string
+  rates?: BagRates
 }
 
 interface BagItem {
@@ -17,7 +19,7 @@ interface BagItem {
   type: BagType
 }
 
-export function WalkInForm({ hubId }: WalkInFormProps) {
+export function WalkInForm({ hubId, rates = DEFAULT_BAG_RATES }: WalkInFormProps) {
   const router = useRouter()
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -51,11 +53,10 @@ export function WalkInForm({ hubId }: WalkInFormProps) {
     }
 
     const hours = Math.max(1, Math.ceil((pickup.getTime() - now.getTime()) / (1000 * 60 * 60)))
-    const rates = { small: 200, regular: 300, large: 400 }
-    const totalBagPrice = bags.reduce((sum, b) => sum + (rates[b.type] || 300), 0)
+    const totalBagPrice = bags.reduce((sum, b) => sum + calculateBagPriceForHours(b.type, hours, rates), 0)
     
     setEstimatedHours(hours)
-    setEstimatedPrice(totalBagPrice * hours)
+    setEstimatedPrice(totalBagPrice)
   }, [expectedPickup, bags])
 
   function addBag() {
@@ -205,9 +206,9 @@ export function WalkInForm({ hubId }: WalkInFormProps) {
                 onChange={(e) => updateBagType(bag.id, e.target.value as BagType)}
                 className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/10 text-white text-xs focus:outline-none"
               >
-                <option value="small" className="bg-ocean-900">Laptop / Handbag (LKR 200/h)</option>
-                <option value="regular" className="bg-ocean-900">Backpack / regular Suitcase (LKR 300/h)</option>
-                <option value="large" className="bg-ocean-900">Large Suitcase / Duffel (LKR 400/h)</option>
+                <option value="small" className="bg-ocean-900">Laptop / Handbag (LKR {rates.small.hourlyRate}/h)</option>
+                <option value="regular" className="bg-ocean-900">Backpack / regular Suitcase (LKR {rates.regular.hourlyRate}/h)</option>
+                <option value="large" className="bg-ocean-900">Large Suitcase / Duffel (LKR {rates.large.hourlyRate}/h)</option>
               </select>
               {bags.length > 1 && (
                 <button

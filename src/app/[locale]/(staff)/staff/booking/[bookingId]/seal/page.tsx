@@ -5,6 +5,9 @@ import { createClient } from '@/lib/supabase/server'
 import { Logo } from '@/components/ui/Logo'
 import { SealPhotoUpload } from '@/components/staff/SealPhotoUpload'
 import { type BagType } from '@/types/database'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Seal Bags — Staff' }
 
 export default async function StaffSealPage({
   params,

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { HubDetailsUI } from '@/components/hubs/HubDetailsUI'
 import { siteUrl } from '@/lib/site-url'
+import { getHubBagRates } from '@/lib/utils/hubPricing'
 
 type Hub = {
   id: string
@@ -46,7 +47,7 @@ export async function generateMetadata({
   const canonicalPath = params.locale === 'en' ? path : `/${params.locale}${path}`
 
   return {
-    title: `Luggage Storage at ${hub.name}, ${hub.location} | Luggo`,
+    title: `Luggage Storage at ${hub.name}, ${hub.location}`,
     description: `Store your bags securely at ${hub.name} in ${hub.location} (${hub.address}). Fully verified, secure, and insured luggage storage network in Sri Lanka.`,
     alternates: {
       canonical: canonicalPath,
@@ -66,7 +67,7 @@ export default async function HubDetailPage({
 }) {
   const supabase = await createClient()
 
-  const [, hubResult] = await Promise.all([
+  const [userResult, hubResult] = await Promise.all([
     supabase.auth.getUser(),
     supabase
       .from('hubs')
@@ -100,6 +101,9 @@ export default async function HubDetailPage({
     grouped[p.category].push(p)
   })
   const categories = Object.keys(grouped).sort()
+  const rates = await getHubBagRates(supabase, hub.id)
+  const rateValues = Object.values(rates).map(r => r.hourlyRate)
+  const priceRange = `LKR ${Math.min(...rateValues)} - LKR ${Math.max(...rateValues)}`
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -109,7 +113,7 @@ export default async function HubDetailPage({
     image: hub.image_url || `${siteUrl}/images/hubs/bia.png`,
     url: `${siteUrl}/hubs/${hub.id}`,
     telephone: '+94770000000',
-    priceRange: 'LKR 200 - LKR 400',
+    priceRange,
     address: {
       '@type': 'PostalAddress',
       streetAddress: hub.address,
@@ -152,6 +156,8 @@ export default async function HubDetailPage({
         activeCount={activeCount ?? 0}
         categories={categories}
         grouped={grouped}
+        isLoggedIn={!!userResult.data.user}
+        rates={rates}
       />
     </>
   )

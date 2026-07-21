@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { createBookingSchema } from '@/lib/validators/booking'
 import { calculateBookingPrice } from '@/lib/utils/pricing'
+import { getHubBagRates } from '@/lib/utils/hubPricing'
 import { generatePayhereHash, PAYHERE_ENDPOINT, type PayhereFormData } from '@/lib/utils/payhere'
 
 export async function POST(req: NextRequest) {
@@ -80,7 +81,8 @@ export async function POST(req: NextRequest) {
       }
 
     // Calculate price
-    const basePrice = calculateBookingPrice(bags, new Date(start_time), new Date(end_time))
+    const rates = await getHubBagRates(supabase, hub_id)
+    const basePrice = calculateBookingPrice(bags, new Date(start_time), new Date(end_time), rates)
     const insurancePrice = has_insurance ? (bags.length * 150) : 0
     const totalPrice = basePrice + insurancePrice
     const uuid = crypto.randomUUID().replace(/-/g, '')

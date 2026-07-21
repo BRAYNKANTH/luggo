@@ -7,6 +7,9 @@ import { ChevronLeft, Calendar, Package, ArrowDown, ArrowUp, Clock, User, Tag, C
 import { format, startOfDay, endOfDay, addDays } from 'date-fns'
 import { BAG_LABELS } from '@/lib/utils/pricing'
 import { type BagType, type BookingStatus } from '@/types/database'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Schedule — Staff' }
 
 type ScheduledBooking = {
   id: string

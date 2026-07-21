@@ -5,6 +5,9 @@ import { AdminShell } from '@/components/admin/AdminShell'
 import { ComplaintActions } from '@/components/admin/ComplaintActions'
 import { type UserRole, type ComplaintStatus } from '@/types/database'
 import { format } from 'date-fns'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Complaints — Admin' }
 
 const STATUS_FILTERS: { value: string; label: string }[] = [
   { value: '',          label: 'All' },

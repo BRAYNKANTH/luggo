@@ -8,6 +8,7 @@ import { sendSMS } from '@/lib/utils/sms'
 import { sendPickupRequestedEmail } from '@/lib/utils/email'
 import { uuidSchema } from '@/lib/validators/common'
 import { calculateLateFee } from '@/lib/utils/pricing'
+import { getHubBagRates } from '@/lib/utils/hubPricing'
 import { type BagType } from '@/types/database'
 
 // ---------------------------------------------------------------------------
@@ -55,9 +56,23 @@ export async function requestPickup(bookingId: string): Promise<{ error?: string
   const start = new Date(booking.start_time)
   const end = new Date(booking.end_time)
   const now = new Date()
-  const lateFeeAmount = calculateLateFee(booking.booking_bags, start, end, now)
+  const pickupRates = await getHubBagRates(supabase, booking.hub_id)
+  const lateFeeAmount = calculateLateFee(booking.booking_bags, start, end, now, pickupRates)
+  
   if (lateFeeAmount > 0) {
-    return { error: 'A late fee is required. Please pay the late fee online or at the hub counter first.' }
+    const { data: paidLateFees } = await supabase
+      .from('payments')
+      .select('amount')
+      .eq('booking_id', bookingId)
+      .eq('type', 'late_fee')
+      .eq('status', 'paid') as { data: { amount: number }[] | null }
+
+    const totalPaid = paidLateFees?.reduce((sum, p) => sum + p.amount, 0) ?? 0
+    const finalLateFee = Math.max(0, lateFeeAmount - totalPaid)
+
+    if (finalLateFee > 0) {
+      return { error: 'A late fee is required. Please pay the late fee online or at the hub counter first.' }
+    }
   }
 
   // Advance status
@@ -176,21 +191,47 @@ export async function createLateFeePayment(
     return { error: 'No late fee to pay' }
   }
 
-  // Create pending late_fee payment record
+  // Reuse an existing pending late_fee payment if one already exists, rather
+  // than inserting a new row on every call (rapid re-clicks / retries would
+  // otherwise accumulate multiple stale pending payments for the same fee).
   const serviceClient = createServiceClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: payment, error: paymentError } = await (serviceClient as any)
+  const { data: existingPayment } = await (serviceClient as any)
     .from('payments')
-    .insert({
-      booking_id: bookingId,
-      amount: lateFee,
-      status: 'pending',
-      type: 'late_fee',
-    })
-    .select('id')
-    .single() as { data: { id: string } | null; error: unknown }
+    .select('id, amount')
+    .eq('booking_id', bookingId)
+    .eq('type', 'late_fee')
+    .eq('status', 'pending')
+    .maybeSingle() as { data: { id: string; amount: number } | null }
 
-  if (paymentError || !payment) return { error: 'Failed to create payment record' }
+  let payment: { id: string } | null = existingPayment ? { id: existingPayment.id } : null
+
+  if (existingPayment) {
+    if (Number(existingPayment.amount) !== Number(lateFee)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (serviceClient as any)
+        .from('payments')
+        .update({ amount: lateFee })
+        .eq('id', existingPayment.id)
+    }
+  } else {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: newPayment, error: paymentError } = await (serviceClient as any)
+      .from('payments')
+      .insert({
+        booking_id: bookingId,
+        amount: lateFee,
+        status: 'pending',
+        type: 'late_fee',
+      })
+      .select('id')
+      .single() as { data: { id: string } | null; error: unknown }
+
+    if (paymentError || !newPayment) return { error: 'Failed to create payment record' }
+    payment = newPayment
+  }
+
+  if (!payment) return { error: 'Failed to create payment record' }
 
   const merchantId = process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID!
   const merchantSecret = process.env.PAYHERE_MERCHANT_SECRET!

@@ -14,7 +14,7 @@
     }
   },
   "Common": {
-    "protection": "LKR 150,000 Protection",
+    "protection": "LKR 40,000 Protection",
     "vettedHub": "Vetted Hub",
     "seals": "Tamper-proof seals",
     "support": "24/7 Support",
@@ -107,7 +107,7 @@
       "feature1": "Vetted Locations",
       "feature1Desc": "Every hub is manually verified for security and service quality.",
       "feature2": "Insured & Secured",
-      "feature2Desc": "Your bags are protected by LKR 150,000 insurance and unique seals.",
+      "feature2Desc": "Your bags are protected by LKR 40,000 insurance and unique seals.",
       "feature3": "No App Required",
       "feature3Desc": "Book directly from your browser. No downloads or accounts needed.",
       "feature4": "Flexible Booking",

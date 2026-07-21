@@ -329,7 +329,7 @@ export async function extendBooking(
   const { data: booking } = await supabase
     .from('bookings')
     .select(`
-      id, start_time, end_time, user_id, status,
+      id, start_time, end_time, user_id, status, hub_id,
       hubs ( name, alias ),
       booking_bags ( bag_type )
     `)
@@ -347,16 +347,23 @@ export async function extendBooking(
 
   // Calculate price for extension
   const { calculateBagPriceForHours } = await import('@/lib/utils/pricing')
+  const { getHubBagRates } = await import('@/lib/utils/hubPricing')
+  const extendRates = await getHubBagRates(supabase, booking.hub_id)
   const start = new Date(booking.start_time)
   const end = new Date(booking.end_time)
+  const now = new Date()
+
+  const baseTime = Math.max(end.getTime(), now.getTime())
+  const newEnd = new Date(baseTime + additionalHours * 60 * 60 * 1000)
+
   const originalHours = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60))
-  const newHours = originalHours + additionalHours
+  const newHours = Math.ceil((newEnd.getTime() - start.getTime()) / (1000 * 60 * 60))
 
   const extensionPrice = booking.booking_bags.reduce(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (total: number, bag: any) => {
-      const originalPrice = calculateBagPriceForHours(bag.bag_type, originalHours)
-      const newPrice = calculateBagPriceForHours(bag.bag_type, newHours)
+      const originalPrice = calculateBagPriceForHours(bag.bag_type, originalHours, extendRates)
+      const newPrice = calculateBagPriceForHours(bag.bag_type, newHours, extendRates)
       return total + (newPrice - originalPrice)
     },
     0
@@ -399,7 +406,7 @@ export async function extendBooking(
   const firstName = nameParts[0]
   const lastName = nameParts.slice(1).join(' ') || 'N/A'
   
-  const orderId = `ext-${payment.id}`
+  const orderId = `ext_${payment.id}_${additionalHours}`
 
   const payhereData = {
     merchant_id: merchantId,

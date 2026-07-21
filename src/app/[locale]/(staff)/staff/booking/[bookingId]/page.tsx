@@ -8,14 +8,18 @@ import { BookingStatusBadge } from '@/components/customer/BookingStatusBadge'
 import { RealtimeRefresher } from '@/components/shared/RealtimeRefresher'
 import { ChevronLeft, User, Clock, Package, Tag, ShieldAlert, MapPin } from 'lucide-react'
 import { formatInSLT } from '@/lib/utils/timezone'
-import { bypassSealConfirmationAction, completePickupWithCashAction } from '@/lib/staff/actions'
+import { bypassSealConfirmationAction } from '@/lib/staff/actions'
 import { StaffVerificationForm } from '@/components/staff/StaffVerificationForm'
 import { StaffCheckInWizard } from '@/components/staff/StaffCheckInWizard'
 import { CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react'
 import { type BookingStatus, type BagType } from '@/types/database'
 import { BAG_LABELS, calculateLateFee } from '@/lib/utils/pricing'
+import { getHubBagRates } from '@/lib/utils/hubPricing'
 import { LiveStorageCountdown } from '@/components/staff/LiveStorageCountdown'
 import { ControlledAccessButton } from '@/components/staff/ControlledAccessButton'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Booking Detail — Staff' }
 
 type BookingFull = {
   id: string
@@ -94,7 +98,8 @@ export default async function StaffBookingPage({
   const hasInsurance = booking.qr_code.endsWith('_ins')
   const now = new Date()
   const isOverdue = now.getTime() > end.getTime() + 15 * 60 * 1000
-  const lateFeeAmount = isOverdue && ['active_storage', 'overstayed', 'late_fee_pending', 'pickup_requested'].includes(booking.status) ? calculateLateFee(booking.booking_bags, start, end, now) : 0
+  const staffBookingRates = await getHubBagRates(supabase, staffRow.hub_id)
+  const lateFeeAmount = isOverdue && ['active_storage', 'overstayed', 'late_fee_pending', 'pickup_requested'].includes(booking.status) ? calculateLateFee(booking.booking_bags, start, end, now, staffBookingRates) : 0
 
   // Determine next action
   const nextAction = (() => {
@@ -263,6 +268,7 @@ export default async function StaffBookingPage({
           <StaffCheckInWizard
             booking={booking as never}
             isCashPaymentPending={isCashPaymentPending}
+            rates={staffBookingRates}
           />
         )}
 
@@ -297,11 +303,11 @@ export default async function StaffBookingPage({
               </div>
               <p className="text-xl font-bold text-red-300">LKR {lateFeeAmount.toLocaleString()}</p>
             </div>
-            <form action={completePickupWithCashAction.bind(null, booking.id)}>
-              <Button type="submit" fullWidth size="sm" className="bg-brand-accent text-brand-dark hover:bg-brand-accent/90">
-                💵 Collect LKR {lateFeeAmount.toLocaleString()} Cash & Complete Handover
+            <Link href={`/staff/pickup/${booking.id}`} className="w-full">
+              <Button fullWidth size="sm" className="bg-brand-accent text-brand-dark hover:bg-brand-accent/90">
+                💵 Process Late Fee Cash & Handover
               </Button>
-            </form>
+            </Link>
           </div>
         )}
 

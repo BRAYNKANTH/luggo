@@ -3,6 +3,7 @@ import { ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { BookingForm } from './BookingForm'
+import { getHubBagRates } from '@/lib/utils/hubPricing'
 
 type Hub = {
   id: string
@@ -36,6 +37,8 @@ export default async function BookPage({ params }: { params: { hubId: string } }
 
   if (!hub || !hub.active) notFound()
 
+  const rates = await getHubBagRates(supabase, hub.id)
+
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6">
       <PageHeader
@@ -50,7 +53,7 @@ export default async function BookPage({ params }: { params: { hubId: string } }
       />
 
       <div className="py-4">
-        <BookingForm hub={hub} initialProfile={profile} />
+        <BookingForm hub={hub} initialProfile={profile} rates={rates} />
       </div>
     </div>
   )

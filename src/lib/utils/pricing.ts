@@ -1,5 +1,8 @@
 import { type BagType } from '@/types/database'
 
+// Fallback rates — used for any hub that has no row in hub_bag_rates yet.
+// Per-hub rates (the ones actually charged) live in the hub_bag_rates table
+// and are managed from /admin/pricing; see lib/utils/hubPricing.ts.
 export const BAG_RATES: Record<BagType, number> = {
   small: 80,     // LKR per hour
   regular: 120,
@@ -18,14 +21,21 @@ export const BAG_LABELS: Record<BagType, string> = {
   large: 'Large (Check-in Bag)',
 }
 
-export function calculateBagPriceForHours(bagType: BagType, hours: number): number {
+export type BagRates = Record<BagType, { hourlyRate: number; dailyCap: number }>
+
+export const DEFAULT_BAG_RATES: BagRates = {
+  small:   { hourlyRate: BAG_RATES.small,   dailyCap: BAG_DAILY_CAPS.small },
+  regular: { hourlyRate: BAG_RATES.regular, dailyCap: BAG_DAILY_CAPS.regular },
+  large:   { hourlyRate: BAG_RATES.large,   dailyCap: BAG_DAILY_CAPS.large },
+}
+
+export function calculateBagPriceForHours(bagType: BagType, hours: number, rates: BagRates = DEFAULT_BAG_RATES): number {
   if (hours <= 0) return 0
   const days = Math.floor(hours / 24)
   const remainingHours = hours % 24
-  
-  const hourlyRate = BAG_RATES[bagType]
-  const dailyCap = BAG_DAILY_CAPS[bagType]
-  
+
+  const { hourlyRate, dailyCap } = rates[bagType]
+
   const remainingCost = Math.min(remainingHours * hourlyRate, dailyCap)
   return (days * dailyCap) + remainingCost
 }
@@ -33,17 +43,19 @@ export function calculateBagPriceForHours(bagType: BagType, hours: number): numb
 export function calculateBookingPrice(
   bags: { bag_type: BagType }[],
   startTime: Date,
-  endTime: Date
+  endTime: Date,
+  rates: BagRates = DEFAULT_BAG_RATES
 ): number {
   const hours = Math.ceil((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60))
-  return bags.reduce((total, bag) => total + calculateBagPriceForHours(bag.bag_type, hours), 0)
+  return bags.reduce((total, bag) => total + calculateBagPriceForHours(bag.bag_type, hours, rates), 0)
 }
 
 export function calculateLateFee(
   bags: { bag_type: BagType }[],
   startTime: Date,
   endTime: Date,
-  now: Date = new Date()
+  now: Date = new Date(),
+  rates: BagRates = DEFAULT_BAG_RATES
 ): number {
   const GRACE_PERIOD_MS = 15 * 60 * 1000 // 15 minutes grace period
   if (now.getTime() <= endTime.getTime() + GRACE_PERIOD_MS) return 0
@@ -56,8 +68,8 @@ export function calculateLateFee(
   const originalHours = Math.ceil((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60))
   const actualHours = originalHours + overdueHours
 
-  const originalPrice = bags.reduce((total, bag) => total + calculateBagPriceForHours(bag.bag_type, originalHours), 0)
-  const actualPrice = bags.reduce((total, bag) => total + calculateBagPriceForHours(bag.bag_type, actualHours), 0)
+  const originalPrice = bags.reduce((total, bag) => total + calculateBagPriceForHours(bag.bag_type, originalHours, rates), 0)
+  const actualPrice = bags.reduce((total, bag) => total + calculateBagPriceForHours(bag.bag_type, actualHours, rates), 0)
 
   return Math.max(0, actualPrice - originalPrice)
 }
@@ -79,13 +91,15 @@ export function calculateEarlyCheckinDecision(params: {
   actualCheckInTime: Date
   bags: { bag_type: BagType }[]
   earlyBufferMinutes?: number
+  rates?: BagRates
 }): EarlyCheckinDecision {
   const {
     bookedStartTime,
     bookedEndTime,
     actualCheckInTime,
     bags,
-    earlyBufferMinutes = 15
+    earlyBufferMinutes = 15,
+    rates = DEFAULT_BAG_RATES
   } = params
 
   const earlyMs = bookedStartTime.getTime() - actualCheckInTime.getTime()
@@ -111,7 +125,7 @@ export function calculateEarlyCheckinDecision(params: {
   const extraHalfHours = requiresAction ? Math.ceil(earlyMinutes / 30) : 0
   const extraHours = extraHalfHours * 0.5
   
-  const earlyCheckinFee = bags.reduce((total, bag) => total + calculateBagPriceForHours(bag.bag_type, extraHours), 0)
+  const earlyCheckinFee = bags.reduce((total, bag) => total + calculateBagPriceForHours(bag.bag_type, extraHours, rates), 0)
   const extraHoursInt = Math.ceil(earlyMinutes / 60) // Keep integer for DB compatibility
 
   const originalDurationMs = bookedEndTime.getTime() - bookedStartTime.getTime()

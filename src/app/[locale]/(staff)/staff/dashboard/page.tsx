@@ -13,6 +13,9 @@ import {
 import { isPast, formatDistanceToNow } from 'date-fns'
 import { formatInSLT } from '@/lib/utils/timezone'
 import { type BookingStatus, type BagType } from '@/types/database'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Dashboard — Staff' }
 
 type ActiveBooking = {
   id: string
@@ -163,9 +166,9 @@ export default async function StaffDashboardPage({
     }
   })()
 
-  const bagsInStorage = (bookings || [])
-    .filter(b => ['active_storage', 'overstayed', 'pickup_requested', 'ready_for_release'].includes(b.status))
-    .reduce((s, b) => s + b.booking_bags.length, 0)
+  // Derived from inStorageList (not re-filtered independently) so this tile
+  // can never disagree with the "Stored" tab count above it.
+  const bagsInStorage = inStorageList.reduce((s, b) => s + b.booking_bags.length, 0)
 
   const hub = staffRow.hubs
 

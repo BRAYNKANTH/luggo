@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { DashboardClient, type HubCard, type ActiveBooking } from './DashboardClient'
+import { BAG_RATES } from '@/lib/utils/pricing'
 
 type RawHub = {
   id: string
@@ -43,7 +44,7 @@ export default async function DashboardPage() {
     // Active bookings banner
     const { data: bookings } = await supabase
       .from('bookings')
-      .select('id, status, start_time, end_time, total_price, hubs(name, alias, image_url)')
+      .select('id, status, start_time, end_time, total_price, hubs(name, alias, image_url), booking_bags(id)')
       .eq('user_id', user.id)
       .not('status', 'in', '("completed","cancelled","expired")')
       .order('created_at', { ascending: false })
@@ -81,9 +82,23 @@ export default async function DashboardPage() {
     countMap[hubId] = (countMap[hubId] ?? 0) + 1
   }
 
+  // Batch-fetch every hub's rates in one query so each card can show its own
+  // "from LKR X/hr" instead of a single site-wide rate.
+  const { data: rateRows } = await supabase
+    .from('hub_bag_rates' as never)
+    .select('hub_id, hourly_rate')
+    .in('hub_id', (rawHubs ?? []).map(h => h.id)) as { data: { hub_id: string; hourly_rate: number }[] | null }
+
+  const minRateMap: Record<string, number> = {}
+  for (const row of rateRows ?? []) {
+    const current = minRateMap[row.hub_id]
+    minRateMap[row.hub_id] = current === undefined ? Number(row.hourly_rate) : Math.min(current, Number(row.hourly_rate))
+  }
+
   const hubs: HubCard[] = (rawHubs ?? []).map((h) => ({
     ...h,
     activeCount: countMap[h.id] ?? 0,
+    minRate: minRateMap[h.id] ?? BAG_RATES.small,
   }))
 
   return (

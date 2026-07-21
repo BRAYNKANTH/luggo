@@ -13,6 +13,9 @@ import {
   ShoppingBag,
 } from 'lucide-react'
 import { type UserRole } from '@/types/database'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Dashboard — Admin' }
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient()

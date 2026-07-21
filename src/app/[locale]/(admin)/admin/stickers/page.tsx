@@ -5,6 +5,9 @@ import { StickerBatchForm } from '@/components/admin/StickerBatchForm'
 import { Tag } from 'lucide-react'
 import { type UserRole } from '@/types/database'
 import { format } from 'date-fns'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Stickers — Admin' }
 
 export default async function AdminStickersPage() {
   const supabase = await createClient()
