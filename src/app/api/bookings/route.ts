@@ -144,6 +144,8 @@ export async function POST(req: NextRequest) {
     }
 
     if (payment_method === 'pay_at_hub') {
+      const { sendBookingConfirmedNotification } = await import('@/lib/utils/notifications')
+      await sendBookingConfirmedNotification(supabase, booking.id).catch(console.error)
       return NextResponse.json({ bookingId: booking.id })
     }
 
