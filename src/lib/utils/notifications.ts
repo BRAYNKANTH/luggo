@@ -1,5 +1,6 @@
 import { sendBookingConfirmedEmail } from '@/lib/utils/email'
 import { sendSMS } from '@/lib/utils/sms'
+import { formatInSLT } from '@/lib/utils/timezone'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function sendBookingConfirmedNotification(supabase: any, bookingId: string) {
@@ -37,11 +38,10 @@ export async function sendBookingConfirmedNotification(supabase: any, bookingId:
 
   // SMS
   if (userPhone) {
-    const start = new Date(booking.start_time)
-    const dateStr = start.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })
+    const dateStr = formatInSLT(booking.start_time, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })
     await sendSMS(
       userPhone,
-      `Luggo: Booking confirmed at ${hubName}! Drop-off: ${dateStr}. Total: LKR ${Number(booking.total_price).toLocaleString()}. View QR: ${appUrl}/booking/${bookingId}`
+      `Luggo: Booking confirmed at ${hubName}! Drop-off: ${dateStr}. Total: LKR ${Number(booking.total_price).toLocaleString()}. Ref: ${bookingId.slice(0, 8).toUpperCase()}`
     ).catch(console.error)
   }
 }

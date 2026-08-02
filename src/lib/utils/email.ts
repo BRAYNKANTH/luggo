@@ -130,8 +130,9 @@ export async function sendBookingConfirmedEmail(
   details?: { startTime?: string; endTime?: string; totalPrice?: number; address?: string },
   qrCodeToken?: string
 ) {
+  const { formatInSLT } = await import('@/lib/utils/timezone')
   const fmt = (iso?: string) => iso
-    ? new Date(iso).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    ? formatInSLT(iso, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
     : ''
 
   const detailsHtml = details ? `
