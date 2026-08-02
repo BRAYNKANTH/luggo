@@ -25,7 +25,9 @@ create type booking_status as enum (
   'draft',
   'pending_payment',
   'confirmed',
+  'early_checkin_pending_payment',
   'arrived',
+  'identity_verified',
   'sealing_in_progress',
   'sealed_waiting_user_confirmation',
   'active_storage',
@@ -34,12 +36,15 @@ create type booking_status as enum (
   'cancelled',
   'expired',
   'overstayed',
-  'disputed'
+  'late_fee_pending',
+  'ready_for_release',
+  'disputed',
+  'exception_hold'
 );
 
 create type payment_status as enum ('pending', 'paid', 'failed', 'refunded');
 
-create type payment_type as enum ('booking', 'late_fee');
+create type payment_type as enum ('booking', 'late_fee', 'extension', 'early_checkin');
 
 create type refund_status as enum ('pending', 'approved', 'rejected', 'processed');
 
@@ -178,6 +183,7 @@ create table public.bookings (
   end_time    timestamptz not null,
   total_price integer not null default 0,      -- LKR in whole rupees
   qr_code     text not null unique default encode(gen_random_bytes(16), 'hex'),
+  slot_number integer,
   created_at  timestamptz not null default now(),
 
   constraint end_after_start check (end_time > start_time),

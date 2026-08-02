@@ -32,9 +32,6 @@ export const createBookingSchema = z.object({
   if (hours < 1) {
     ctx.addIssue({ code: 'custom', path: ['end_time'], message: 'Minimum booking duration is 1 hour' })
   }
-  if (hours > 72) {
-    ctx.addIssue({ code: 'custom', path: ['end_time'], message: 'Maximum booking duration is 72 hours' })
-  }
 })
 
 export type CreateBookingInput = z.infer<typeof createBookingSchema>

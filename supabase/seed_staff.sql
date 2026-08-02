@@ -4,14 +4,14 @@
 -- Creates 2 test staff accounts (one per hub) with known passwords.
 -- ============================================================
 
--- Ensure unique constraint exists on hub_staff(user_id, hub_id)
+-- Ensure unique constraint exists on public.hub_staff(user_id, hub_id)
 DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_constraint
     WHERE conname = 'hub_staff_user_hub_unique'
   ) THEN
-    ALTER TABLE hub_staff ADD CONSTRAINT hub_staff_user_hub_unique UNIQUE (user_id, hub_id);
+    ALTER TABLE public.hub_staff ADD CONSTRAINT hub_staff_user_hub_unique UNIQUE (user_id, hub_id);
   END IF;
 END $$;
 
@@ -24,15 +24,15 @@ DECLARE
 BEGIN
 
   -- ── Get hub IDs ───────────────────────────────────────────
-  SELECT id INTO v_hub1_id FROM hubs WHERE alias = 'FORT' LIMIT 1;
-  SELECT id INTO v_hub2_id FROM hubs WHERE alias = 'BIA'  LIMIT 1;
+  SELECT id INTO v_hub1_id FROM public.hubs WHERE alias = 'FORT' LIMIT 1;
+  SELECT id INTO v_hub2_id FROM public.hubs WHERE alias = 'BIA'  LIMIT 1;
 
   -- Fall back to first two active hubs if aliases differ
   IF v_hub1_id IS NULL THEN
-    SELECT id INTO v_hub1_id FROM hubs WHERE active = true ORDER BY name LIMIT 1;
+    SELECT id INTO v_hub1_id FROM public.hubs WHERE active = true ORDER BY name LIMIT 1;
   END IF;
   IF v_hub2_id IS NULL THEN
-    SELECT id INTO v_hub2_id FROM hubs WHERE active = true ORDER BY name LIMIT 1 OFFSET 1;
+    SELECT id INTO v_hub2_id FROM public.hubs WHERE active = true ORDER BY name LIMIT 1 OFFSET 1;
   END IF;
 
   -- ── Staff 1: staff@luggo.lk / Staff1234! ─────────────────
@@ -62,12 +62,12 @@ BEGIN
   END IF;
 
   -- Upsert public.users row
-  INSERT INTO users (id, name, email, phone, role)
+  INSERT INTO public.users (id, name, email, phone, role)
   VALUES (v_user1_id, 'Kamal Perera', 'staff@luggo.lk', '+94771000001', 'hub_staff')
   ON CONFLICT (id) DO UPDATE SET role = 'hub_staff', name = 'Kamal Perera';
 
-  -- Upsert hub_staff row
-  INSERT INTO hub_staff (user_id, hub_id, active)
+  -- Upsert public.hub_staff row
+  INSERT INTO public.hub_staff (user_id, hub_id, active)
   VALUES (v_user1_id, v_hub1_id, true)
   ON CONFLICT (user_id, hub_id) DO UPDATE SET active = true;
 
@@ -96,11 +96,11 @@ BEGIN
     );
   END IF;
 
-  INSERT INTO users (id, name, email, phone, role)
+  INSERT INTO public.users (id, name, email, phone, role)
   VALUES (v_user2_id, 'Nimal Fernando', 'staff2@luggo.lk', '+94771000002', 'hub_staff')
   ON CONFLICT (id) DO UPDATE SET role = 'hub_staff', name = 'Nimal Fernando';
 
-  INSERT INTO hub_staff (user_id, hub_id, active)
+  INSERT INTO public.hub_staff (user_id, hub_id, active)
   VALUES (v_user2_id, v_hub2_id, true)
   ON CONFLICT (user_id, hub_id) DO UPDATE SET active = true;
 
