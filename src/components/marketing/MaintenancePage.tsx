@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Logo } from '@/components/ui/Logo'
-import { Wrench, ShieldAlert, Mail, AlertTriangle } from 'lucide-react'
+import { Wrench, ShieldAlert, Mail, AlertTriangle, Phone } from 'lucide-react'
 import { Link } from '@/navigation'
 
 export default function MaintenancePage() {
@@ -111,13 +111,22 @@ export default function MaintenancePage() {
                 Need to retrieve your luggage at a hub? Staff remain active on-site to handle your bag check-outs.
               </p>
             </div>
-            <a 
-              href="mailto:support@luggo.lk"
-              className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white font-semibold text-xs md:text-sm px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/20 transition-all duration-200"
-            >
-              <Mail className="w-4 h-4 text-brand" />
-              support@luggo.lk
-            </a>
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0">
+              <a 
+                href="mailto:luggo.lk@gmail.com"
+                className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white font-semibold text-xs md:text-sm px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/20 transition-all duration-200"
+              >
+                <Mail className="w-4 h-4 text-brand" />
+                luggo.lk@gmail.com
+              </a>
+              <a 
+                href="tel:+94766026106"
+                className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white font-semibold text-xs md:text-sm px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/20 transition-all duration-200"
+              >
+                <Phone className="w-4 h-4 text-brand-accent" />
+                +94 76 602 6106
+              </a>
+            </div>
           </div>
         </motion.div>
       </main>
