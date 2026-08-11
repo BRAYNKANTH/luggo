@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Logo } from '@/components/ui/Logo'
-import { Wrench, ShieldAlert, Mail, AlertTriangle, ArrowRight } from 'lucide-react'
+import { Wrench, ShieldAlert, Mail, AlertTriangle } from 'lucide-react'
 import { Link } from '@/navigation'
 
 export default function MaintenancePage() {
