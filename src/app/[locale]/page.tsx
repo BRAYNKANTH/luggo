@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import LandingPage from '@/components/marketing/LandingPage'
+import MaintenancePage from '@/components/marketing/MaintenancePage'
+// import LandingPage from '@/components/marketing/LandingPage'
 import { type UserRole, type BagType } from '@/types/database'
 import { siteUrl } from '@/lib/site-url'
 import { DEFAULT_BAG_RATES, type BagRates } from '@/lib/utils/pricing'
@@ -85,7 +86,7 @@ export default async function RootPage({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }}
         />
-        <LandingPage rates={fromRates} />
+        <MaintenancePage />
       </>
     )
   }
