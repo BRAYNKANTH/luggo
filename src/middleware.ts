@@ -19,14 +19,12 @@ function isCustomerRoute(pathname: string): boolean {
     cleanPath = '/' + parts.slice(2).join('/')
   }
 
-  // Bypass API, staff, admin, auth, login, and forgot-password pages
+  // Bypass API, staff, admin, auth, and maintenance pages
   if (
     cleanPath.startsWith('/api/') ||
     cleanPath.startsWith('/staff') ||
     cleanPath.startsWith('/admin') ||
     cleanPath.startsWith('/auth') ||
-    cleanPath === '/login' ||
-    cleanPath === '/forgot-password' ||
     cleanPath === '/maintenance' ||
     cleanPath.includes('.')
   ) {

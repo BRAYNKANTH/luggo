@@ -140,14 +140,14 @@ export default function MaintenancePage() {
         {/* Access portals */}
         <div className="flex items-center gap-4">
           <Link 
-            href="/login" 
+            href="/staff/login" 
             className="hover:text-white transition-colors py-1 px-2 rounded hover:bg-white/5 border border-transparent hover:border-white/10"
           >
             Staff Portal
           </Link>
           <span className="text-white/10">•</span>
           <Link 
-            href="/login" 
+            href="/admin/login" 
             className="hover:text-white transition-colors py-1 px-2 rounded hover:bg-white/5 border border-transparent hover:border-white/10"
           >
             Admin Access
