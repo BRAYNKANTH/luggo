@@ -10,6 +10,32 @@ const intlMiddleware = createMiddleware({
   localePrefix: 'as-needed'
 })
 
+function isCustomerRoute(pathname: string): boolean {
+  let cleanPath = pathname
+  const parts = pathname.split('/')
+  
+  // Strip locale prefix if present
+  if (parts.length > 1 && ['en', 'si', 'ta'].includes(parts[1])) {
+    cleanPath = '/' + parts.slice(2).join('/')
+  }
+
+  // Bypass API, staff, admin, auth, login, and forgot-password pages
+  if (
+    cleanPath.startsWith('/api/') ||
+    cleanPath.startsWith('/staff') ||
+    cleanPath.startsWith('/admin') ||
+    cleanPath.startsWith('/auth') ||
+    cleanPath === '/login' ||
+    cleanPath === '/forgot-password' ||
+    cleanPath === '/maintenance' ||
+    cleanPath.includes('.')
+  ) {
+    return false
+  }
+
+  return true
+}
+
 export async function middleware(request: NextRequest) {
   const url = request.nextUrl
   const hostname = request.headers.get('host') || ''
@@ -18,6 +44,16 @@ export async function middleware(request: NextRequest) {
     const redirectUrl = url.clone()
     redirectUrl.host = canonicalHost
     return NextResponse.redirect(redirectUrl, 308)
+  }
+
+  // Check if it is a customer route to display the maintenance page
+  if (!hostname.startsWith('staff.') && isCustomerRoute(url.pathname)) {
+    let localePrefix = ''
+    const parts = url.pathname.split('/')
+    if (parts.length > 1 && ['en', 'si', 'ta'].includes(parts[1])) {
+      localePrefix = `/${parts[1]}`
+    }
+    url.pathname = `${localePrefix}/maintenance`
   }
 
   // 1. Bypass i18n for API routes
