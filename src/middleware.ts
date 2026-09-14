@@ -44,8 +44,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl, 308)
   }
 
-  // Check if it is a customer route to display the maintenance page
-  if (!hostname.startsWith('staff.') && isCustomerRoute(url.pathname)) {
+  // Maintenance / Service Stopped Page Switch (Set NEXT_PUBLIC_MAINTENANCE_MODE=true in env to enable)
+  const isMaintenanceMode = process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true'
+  if (isMaintenanceMode && !hostname.startsWith('staff.') && isCustomerRoute(url.pathname)) {
     let localePrefix = ''
     const parts = url.pathname.split('/')
     if (parts.length > 1 && ['en', 'si', 'ta'].includes(parts[1])) {
