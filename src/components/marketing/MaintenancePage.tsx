@@ -113,11 +113,11 @@ export default function MaintenancePage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0">
               <a 
-                href="mailto:luggo.lk@gmail.com"
+                href="mailto:info@luggo.lk"
                 className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white font-semibold text-xs md:text-sm px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/20 transition-all duration-200"
               >
                 <Mail className="w-4 h-4 text-brand" />
-                luggo.lk@gmail.com
+                info@luggo.lk
               </a>
               <a 
                 href="tel:+94766026106"

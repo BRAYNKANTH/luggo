@@ -97,3 +97,25 @@
     @apply absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent content-[''] animate-shimmer;
   }
 }
+
+/* Visible focus for controls that do not use the shared components. */
+@layer base {
+  :where(a, button, input, select, textarea, summary):focus-visible {
+    outline: 3px solid #026191;
+    outline-offset: 3px;
+  }
+  @media (max-width: 767px) {
+    input:not([type='checkbox']):not([type='radio']):not([type='hidden']), select, textarea {
+      font-size: max(1rem, 1em);
+    }
+  }
+}
+.app-dialog::backdrop { background: rgb(1 26 46 / 65%); backdrop-filter: blur(4px); }
+.skip-link { position: fixed; top: 1rem; left: 1rem; z-index: 300; padding: .75rem 1rem; background: white; color: #01304a; border-radius: .75rem; transform: translateY(-200%); }
+.skip-link:focus { transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  html, :where(*) { scroll-behavior: auto !important; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+label:has(input.sr-only:focus-visible) { outline: 3px solid #026191; outline-offset: 4px; border-radius: .75rem; }

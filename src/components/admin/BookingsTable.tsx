@@ -1,7 +1,7 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { format } from 'date-fns'
+import { Link } from '@/navigation'
+import { formatDateTimeSLT } from '@/lib/utils/timezone'
 
 const STATUS_COLOUR: Record<string, string> = {
   pending_payment:                  'bg-amber-100 text-amber-700',
@@ -35,31 +35,29 @@ interface BookingsTableProps {
 }
 
 export function BookingsTable({ bookings }: BookingsTableProps) {
-  const router = useRouter()
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+    <div role="region" aria-label="Bookings table" tabIndex={0} className="overflow-x-auto">
+      <table className="w-full min-w-[800px] text-sm">
         <thead>
           <tr className="border-b border-gray-50 bg-gray-50/50">
-            <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Ref</th>
-            <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Customer</th>
-            <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Hub</th>
-            <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Status</th>
-            <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Bags</th>
-            <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Period</th>
-            <th className="text-right px-5 py-3 text-xs font-semibold text-gray-400">Amount</th>
+            <th scope="col" className="text-left px-5 py-3 text-xs font-semibold text-gray-600">Ref</th>
+            <th scope="col" className="text-left px-5 py-3 text-xs font-semibold text-gray-600">Customer</th>
+            <th scope="col" className="text-left px-5 py-3 text-xs font-semibold text-gray-600">Hub</th>
+            <th scope="col" className="text-left px-5 py-3 text-xs font-semibold text-gray-600">Status</th>
+            <th scope="col" className="text-left px-5 py-3 text-xs font-semibold text-gray-600">Bags</th>
+            <th scope="col" className="text-left px-5 py-3 text-xs font-semibold text-gray-600">Period</th>
+            <th scope="col" className="text-right px-5 py-3 text-xs font-semibold text-gray-600">Amount</th>
           </tr>
         </thead>
         <tbody>
           {bookings?.map((b) => (
             <tr
               key={b.id}
-              className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 cursor-pointer"
-              onClick={() => { router.push(`/admin/bookings/${b.id}`) }}
+              className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50"
             >
               <td className="px-5 py-3 font-mono text-xs text-gray-400">
-                #{b.id.slice(0, 8).toUpperCase()}
+                <Link href={`/admin/bookings/${b.id}`} aria-label={`View booking ${b.id.slice(0, 8).toUpperCase()}`} className="inline-flex min-h-11 items-center text-ocean-600 underline underline-offset-4">#{b.id.slice(0, 8).toUpperCase()}</Link>
               </td>
               <td className="px-5 py-3">
                 <p className="font-medium text-ocean-900">{b.users?.name ?? '—'}</p>
@@ -75,8 +73,8 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
                 {b.booking_bags?.length ?? 0}
               </td>
               <td className="px-5 py-3 text-xs text-gray-500">
-                <p>{format(new Date(b.start_time), 'dd MMM, h:mm a')}</p>
-                <p className="text-gray-400">→ {format(new Date(b.end_time), 'dd MMM, h:mm a')}</p>
+                <p>{formatDateTimeSLT(b.start_time)}</p>
+                <p className="text-gray-400">→ {formatDateTimeSLT(b.end_time)}</p>
               </td>
               <td className="px-5 py-3 text-right font-semibold text-ocean-900">
                 LKR {b.total_price.toLocaleString()}

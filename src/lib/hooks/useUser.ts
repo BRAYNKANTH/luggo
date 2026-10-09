@@ -18,6 +18,9 @@ export function useUser() {
         const data = await res.json()
         setUser(data.user ?? null)
         setProfile(data.profile ?? null)
+      } catch {
+        setUser(null)
+        setProfile(null)
       } finally {
         setLoading(false)
       }

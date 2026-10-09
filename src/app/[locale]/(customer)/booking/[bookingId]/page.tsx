@@ -1,3 +1,5 @@
+import { GUARANTEE_LIMIT_LABEL } from '@/lib/utils/guarantee'
+import Image from 'next/image'
 import { notFound, redirect } from 'next/navigation'
 import { Link } from '@/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -373,7 +375,7 @@ export default async function BookingDetailPage({
                 🛡️ Luggage Protection Active
               </p>
               <p className="text-xs text-emerald-700 font-semibold mt-0.5 leading-relaxed">
-                Your bags are protected by Luggo Guarantee with comprehensive coverage up to <span className="font-extrabold text-emerald-800">LKR 40,000</span> against loss, damage, or theft.
+                Your bags are protected by Luggo Guarantee with comprehensive coverage up to <span className="font-extrabold text-emerald-800">{GUARANTEE_LIMIT_LABEL}</span> against loss, damage, or theft.
               </p>
             </div>
           </div>
@@ -406,7 +408,10 @@ export default async function BookingDetailPage({
               </span>
             </div>
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-gray-150 bg-gray-50 flex items-center justify-center shadow-inner group">
-              <img
+              <Image
+                fill
+                unoptimized
+                sizes="(max-width: 768px) 100vw, 768px"
                 src={signedSealPhotoUrl}
                 alt="Luggage storage seal proof"
                 className="object-cover w-full h-full group-hover:scale-[1.02] transition-transform duration-500"

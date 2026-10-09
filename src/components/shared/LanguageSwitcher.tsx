@@ -1,65 +1,20 @@
-'use client'
+"use client"
 
 import { useLocale } from 'next-intl'
 import { useRouter, usePathname } from '@/navigation'
 import { locales, type Locale } from '@/i18n-config'
-import { Globe, ChevronDown } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useState } from 'react'
+import { Globe } from 'lucide-react'
 
-const LANG_NAMES = {
-  en: 'EN',
-  si: 'සිං',
-  ta: 'தமிழ்'
-}
-
+const LANG_NAMES = { en: 'English', si: '?????', ta: '?????' }
 export function LanguageSwitcher() {
   const locale = useLocale()
   const router = useRouter()
   const pathname = usePathname()
-  const [open, setOpen] = useState(false)
-
-  function switchLocale(nextLocale: Locale) {
-    setOpen(false)
-    router.replace(pathname, { locale: nextLocale })
-  }
-
-  return (
-    <div className="relative group">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-black/5 transition-colors text-ocean-900/60 hover:text-brand"
-      >
-        <Globe size={14} />
-        <span className="text-xs font-bold">{LANG_NAMES[locale as keyof typeof LANG_NAMES]}</span>
-        <ChevronDown size={10} className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="absolute right-0 mt-2 w-28 bg-white border border-gray-100 rounded-xl shadow-xl z-50 overflow-hidden"
-            >
-              {locales.map((l) => (
-                <button
-                  key={l}
-                  onClick={() => switchLocale(l)}
-                  className={`w-full text-left px-4 py-2.5 text-xs font-bold hover:bg-gray-50 transition-colors ${
-                    locale === l ? 'text-brand bg-brand/5' : 'text-ocean-900/70'
-                  }`}
-                >
-                  {LANG_NAMES[l as keyof typeof LANG_NAMES]}
-                </button>
-              ))}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
-  )
+  return <div className="relative inline-flex items-center text-ocean-900">
+    <Globe size={16} aria-hidden="true" className="absolute left-3 pointer-events-none" />
+    <select aria-label="Language" value={locale} onChange={event => router.replace(`${pathname}${window.location.search}`, { locale: event.target.value as Locale })}
+      className="min-h-11 max-w-[160px] rounded-xl border border-gray-200 bg-white pl-9 pr-3 text-sm font-semibold">
+      {locales.map(language => <option key={language} value={language}>{LANG_NAMES[language]}</option>)}
+    </select>
+  </div>
 }

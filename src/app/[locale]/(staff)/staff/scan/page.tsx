@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/navigation'
 import dynamic from 'next/dynamic'
 import { Logo } from '@/components/ui/Logo'
 import { SignOutButton } from '@/components/shared/SignOutButton'

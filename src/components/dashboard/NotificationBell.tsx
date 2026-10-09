@@ -1,182 +1,92 @@
-'use client'
+"use client"
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useId } from 'react'
 import { Bell, Check, Trash2, X } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import Link from 'next/link'
+import { createPortal } from 'react-dom'
+import { Link } from '@/navigation'
 import { formatDistanceToNow } from 'date-fns'
 
-type Notification = {
-  id: string
-  message: string
-  type: string
-  read: boolean
-  created_at: string
-}
-
-interface NotificationBellProps {
-  initialNotifications: Notification[]
-}
-
-export function NotificationBell({ initialNotifications }: NotificationBellProps) {
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications)
+type Notification = { id: string; message: string; type: string; read: boolean; created_at: string }
+export function NotificationBell({ initialNotifications }: { initialNotifications: Notification[] }) {
+  const [notifications, setNotifications] = useState(initialNotifications)
   const [isOpen, setIsOpen] = useState(false)
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
-
+  const panelRef = useRef<HTMLElement>(null)
+  const [position, setPosition] = useState({ left: 16, top: 80, width: 288, maxHeight: 400 })
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const closeRef = useRef<HTMLButtonElement>(null)
+  const panelId = useId()
   const unreadCount = notifications.filter(n => !n.read).length
-
-  // Close dropdown when clicking outside
+  useEffect(() => setNotifications(initialNotifications), [initialNotifications])
+  function close() { setIsOpen(false); triggerRef.current?.focus() }
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-      }
+    if (!isOpen) return
+    const reposition = () => {
+      const bounds = triggerRef.current?.getBoundingClientRect()
+      if (!bounds) return
+      const width = Math.min(384, window.innerWidth - 32)
+      const top = Math.min(bounds.bottom + 8, Math.max(16, window.innerHeight - 250))
+      setPosition({ left: Math.max(16, Math.min(bounds.right - width, window.innerWidth - width - 16)), top, width, maxHeight: Math.max(48, window.innerHeight - top - 80) })
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  const markAsRead = async (id: string) => {
-    const res = await fetch('/api/notifications', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    })
-
-    if (res.ok) {
-      setNotifications(prev => 
-        prev.map(n => n.id === id ? { ...n, read: true } : n)
-      )
+    reposition()
+    window.addEventListener('resize', reposition)
+    window.addEventListener('scroll', reposition, true)
+    closeRef.current?.focus()
+    const outside = (event: PointerEvent) => {
+      if (!dropdownRef.current?.contains(event.target as Node) && !panelRef.current?.contains(event.target as Node)) setIsOpen(false)
     }
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { setIsOpen(false); triggerRef.current?.focus() }
+    }
+    document.addEventListener('pointerdown', outside)
+    document.addEventListener('keydown', escape)
+    return () => { window.removeEventListener('resize', reposition); window.removeEventListener('scroll', reposition, true); document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape) }
+  }, [isOpen])
+  async function update(action: 'read' | 'all' | 'delete', id?: string) {
+    if (pending) return
+    setPending(true); setError(null)
+    try {
+      const res = await fetch('/api/notifications', {
+        method: action === 'delete' ? 'DELETE' : 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(action === 'all' ? { action: 'mark_all_read' } : { id }),
+      })
+      if (!res.ok) throw new Error('Update failed')
+      setNotifications(current => action === 'delete' ? current.filter(n => n.id !== id) : current.map(n => action === 'all' || n.id === id ? { ...n, read: true } : n))
+    } catch { setError('Unable to update notifications. Please try again.') }
+    finally { setPending(false) }
   }
-
-  const markAllAsRead = async () => {
-    const res = await fetch('/api/notifications', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'mark_all_read' }),
-    })
-
-    if (res.ok) {
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })))
-    }
-  }
-
-  const deleteNotification = async (id: string) => {
-    const res = await fetch('/api/notifications', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    })
-
-    if (res.ok) {
-      setNotifications(prev => prev.filter(n => n.id !== id))
-    }
-  }
-
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-white/70 hover:text-white transition-colors outline-none"
-      >
-        <Bell size={20} />
-        {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 w-4 h-4 bg-brand text-[10px] flex items-center justify-center rounded-full text-white font-bold border-2 border-ocean-900">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
-      </button>
-
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="absolute right-0 mt-3 w-80 md:w-96 bg-white rounded-3xl shadow-2xl border border-gray-100 z-50 overflow-hidden"
-          >
-            <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-              <h3 className="font-bold text-ocean-900">Notifications</h3>
-              <div className="flex items-center gap-2">
-                {unreadCount > 0 && (
-                  <button 
-                    onClick={markAllAsRead}
-                    className="text-[10px] font-black uppercase tracking-widest text-brand hover:opacity-70 transition-opacity"
-                  >
-                    Mark all read
-                  </button>
-                )}
-                <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-ocean-900">
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
-
-            <div className="max-h-[400px] overflow-y-auto scrollbar-hide">
-              {notifications.length > 0 ? (
-                <div className="divide-y divide-gray-50">
-                  {notifications.map((n) => (
-                    <div 
-                      key={n.id} 
-                      className={`p-4 hover:bg-gray-50 transition-colors group flex gap-3 ${!n.read ? 'bg-brand/5' : ''}`}
-                    >
-                      <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${!n.read ? 'bg-brand' : 'bg-transparent'}`} />
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm leading-relaxed ${!n.read ? 'text-ocean-900 font-bold' : 'text-gray-500'}`}>
-                          {n.message}
-                        </p>
-                        <p className="text-[10px] text-gray-400 mt-1 font-medium">
-                          {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                        </p>
-                      </div>
-                      <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {!n.read && (
-                          <button 
-                            onClick={() => markAsRead(n.id)}
-                            className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-lg text-brand hover:bg-brand hover:text-white transition-all"
-                            title="Mark as read"
-                          >
-                            <Check size={12} />
-                          </button>
-                        )}
-                        <button 
-                          onClick={() => deleteNotification(n.id)}
-                          className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-lg text-red-500 hover:bg-red-500 hover:text-white transition-all"
-                          title="Delete"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-12 flex flex-col items-center justify-center text-center px-6">
-                  <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center mb-3 text-gray-200">
-                    <Bell size={24} />
-                  </div>
-                  <p className="font-bold text-ocean-900 text-sm">All caught up!</p>
-                  <p className="text-xs text-gray-400 mt-1">No new notifications at the moment.</p>
-                </div>
-              )}
-            </div>
-
-            {notifications.length > 0 && (
-              <div className="p-4 bg-gray-50/50 text-center">
-                <Link 
-                  href="/notifications" 
-                  onClick={() => setIsOpen(false)}
-                  className="text-xs font-bold text-gray-500 hover:text-brand transition-colors"
-                >
-                  See all notifications
-                </Link>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
+  return <div className="relative" ref={dropdownRef}>
+    <button ref={triggerRef} type="button" onClick={() => setIsOpen(open => !open)}
+      aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ''}`} aria-expanded={isOpen} aria-controls={panelId}
+      className="relative min-h-11 min-w-11 flex items-center justify-center rounded-xl text-gray-600 hover:text-ocean-900">
+      <Bell size={22} />
+      {unreadCount > 0 && <span aria-hidden="true" className="absolute top-1 right-1 w-5 h-5 bg-ocean-600 text-xs flex items-center justify-center rounded-full text-white font-bold">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+    </button>
+    {isOpen && createPortal(<section ref={panelRef} style={position} id={panelId} aria-label="Notifications" aria-busy={pending}
+      className="fixed bg-white text-ocean-900 rounded-3xl shadow-2xl border border-gray-200 z-[150] overflow-y-auto overscroll-contain">
+      <div className="sticky top-0 z-10 p-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 bg-white">
+        <h2 className="font-bold">Notifications</h2>
+        <div className="flex items-center gap-1">
+          {unreadCount > 0 && <button type="button" disabled={pending} onClick={() => update('all')} className="min-h-11 px-2 text-xs font-bold text-ocean-600 disabled:opacity-50">Mark all read</button>}
+          <button ref={closeRef} type="button" aria-label="Close notifications" onClick={close} className="min-h-11 min-w-11 flex items-center justify-center rounded-xl text-gray-600 hover:bg-gray-100"><X size={20} /></button>
+        </div>
+      </div>
+      {error && <p role="alert" className="p-4 text-sm text-red-700 bg-red-50">{error}</p>}
+      {notifications.length ? <div className="divide-y divide-gray-100">
+        {notifications.map(n => <div key={n.id} className={`p-4 flex gap-3 ${!n.read ? 'bg-ocean-50' : ''}`}>
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm leading-relaxed break-words ${!n.read ? 'text-ocean-900 font-semibold' : 'text-gray-600'}`}>{n.message}</p>
+            <p className="text-xs text-gray-600 mt-1">{formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}</p>
+          </div>
+          <div className="flex flex-col gap-1 shrink-0">
+            {!n.read && <button type="button" disabled={pending} aria-label="Mark notification as read" onClick={() => update('read', n.id)} className="min-h-11 min-w-11 flex items-center justify-center bg-white border border-gray-200 rounded-xl text-ocean-600 disabled:opacity-50"><Check size={18} /></button>}
+            <button type="button" disabled={pending} aria-label="Delete notification" onClick={() => update('delete', n.id)} className="min-h-11 min-w-11 flex items-center justify-center bg-white border border-gray-200 rounded-xl text-red-700 disabled:opacity-50"><Trash2 size={18} /></button>
+          </div>
+        </div>)}
+      </div> : <div className="py-10 px-6 text-center"><p className="font-bold">All caught up!</p><p className="text-sm text-gray-600 mt-1">No notifications at the moment.</p></div>}
+      {!!notifications.length && <div className="p-4 text-center border-t border-gray-100"><Link href="/notifications" onClick={() => setIsOpen(false)} className="inline-flex min-h-11 items-center text-sm font-semibold text-ocean-600">See all notifications</Link></div>}
+    </section>, document.body)}
+  </div>
 }

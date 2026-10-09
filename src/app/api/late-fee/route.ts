@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { uuidSchema } from '@/lib/validators/common'
 
 /**
  * GET /api/late-fee?bookingId=xxx
@@ -12,7 +13,10 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const bookingId = req.nextUrl.searchParams.get('bookingId')
-  if (!bookingId) return NextResponse.json({ error: 'bookingId required' }, { status: 400 })
+  if (!uuidSchema.safeParse(bookingId).success) return NextResponse.json({ error: 'Valid bookingId required' }, { status: 400 })
+  const { data: booking, error: bookingError } = await supabase.from('bookings').select('id').eq('id', bookingId!).eq('user_id', user.id).maybeSingle()
+  if (bookingError) return NextResponse.json({ error: 'Unable to retrieve booking' }, { status: 500 })
+  if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
 
   // Call the Postgres function we defined in schema.sql
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

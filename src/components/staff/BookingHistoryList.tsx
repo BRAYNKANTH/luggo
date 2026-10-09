@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/navigation'
 import { Search, User, Calendar, Tag } from 'lucide-react'
 import { format } from 'date-fns'
 

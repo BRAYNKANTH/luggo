@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/navigation'
 import { updateHubBagRates } from '@/lib/admin/actions'
 import { BAG_LABELS, type BagRates } from '@/lib/utils/pricing'
 import { type BagType } from '@/types/database'
@@ -84,25 +84,27 @@ export function HubPricingCard({ hubId, hubName, hubAlias, hubActive, rates }: H
           <div key={type} className="bg-gray-50/70 rounded-2xl p-4 border border-gray-100">
             <p className="font-bold text-ocean-900 text-sm mb-3">{BAG_LABELS[type]}</p>
 
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+            <label htmlFor={`${hubId}-${type}-hourlyRate`} className="block text-xs font-bold text-gray-600 mb-1">
               Hourly Rate (LKR)
             </label>
             <input
               type="number"
               min={1}
               step={1}
+              id={`${hubId}-${type}-hourlyRate`}
               value={form[type].hourlyRate}
               onChange={(e) => updateField(type, 'hourlyRate', e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm font-bold text-ocean-900 focus:outline-none focus:ring-2 focus:ring-brand/30 mb-3"
             />
 
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+            <label htmlFor={`${hubId}-${type}-dailyCap`} className="block text-xs font-bold text-gray-600 mb-1">
               Daily Cap (LKR)
             </label>
             <input
               type="number"
               min={1}
               step={1}
+              id={`${hubId}-${type}-dailyCap`}
               value={form[type].dailyCap}
               onChange={(e) => updateField(type, 'dailyCap', e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm font-bold text-ocean-900 focus:outline-none focus:ring-2 focus:ring-brand/30"
@@ -112,7 +114,7 @@ export function HubPricingCard({ hubId, hubName, hubAlias, hubActive, rates }: H
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 mt-4 text-red-600 text-xs font-semibold">
+        <div role="alert" className="flex items-center gap-2 mt-4 text-red-600 text-xs font-semibold">
           <AlertCircle size={14} />
           {error}
         </div>
@@ -128,7 +130,7 @@ export function HubPricingCard({ hubId, hubName, hubAlias, hubActive, rates }: H
           {loading ? 'Saving…' : 'Save Pricing'}
         </button>
         {saved && !isDirty && (
-          <span className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold">
+          <span role="status" className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold">
             <CheckCircle2 size={14} /> Saved
           </span>
         )}

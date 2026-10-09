@@ -20,7 +20,7 @@ export function StaffBottomNav() {
   if (!showNav) return null
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[60] bg-[#0f1923]/90 backdrop-blur-xl border-t border-white/5 pb-safe">
+    <nav aria-label="Staff navigation" className="fixed bottom-0 left-0 right-0 z-[60] bg-[#0f1923]/90 backdrop-blur-xl border-t border-white/5 pb-safe">
       <div className="max-w-md mx-auto grid grid-cols-5 h-16">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon
@@ -30,12 +30,13 @@ export function StaffBottomNav() {
             <Link 
               key={item.href} 
               href={item.href}
+              aria-current={isActive ? 'page' : undefined}
               className={`flex flex-col items-center justify-center gap-1 transition-all active:scale-90 ${
-                isActive ? 'text-brand-light font-black' : 'text-white/30 font-medium'
+                isActive ? 'text-brand-light font-black' : 'text-slate-300 font-medium'
               }`}
             >
               <Icon size={isActive ? 22 : 18} />
-              <span className={`text-[9px] uppercase tracking-wider ${isActive ? 'opacity-100' : 'opacity-60'}`}>
+              <span className={`text-[11px] ${isActive ? 'opacity-100' : 'opacity-100'}`}>
                 {item.label}
               </span>
               {isActive && (

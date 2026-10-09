@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import '../globals.css'
+import { MotionConfig } from '@/components/shared/MotionProvider'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { siteUrl } from '@/lib/site-url'
@@ -58,8 +59,6 @@ export const viewport: Viewport = {
   ],
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: 'cover',
 }
 
@@ -82,7 +81,7 @@ export default async function RootLayout({
 
       <body suppressHydrationWarning>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          {children}
+          <MotionConfig>{children}</MotionConfig>
         </NextIntlClientProvider>
       </body>
     </html>

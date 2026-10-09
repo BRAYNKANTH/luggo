@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from '@/navigation'
 import { Clock, Plus, ArrowRight, Shield, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { extendBooking } from '@/lib/auth/actions'
-import { motion, AnimatePresence } from 'framer-motion'
+import { Dialog } from '@/components/ui/Dialog'
 import { type BagType } from '@/types/database'
 
 interface ExtendBookingCTAProps {
@@ -22,6 +23,7 @@ const EXTENSION_OPTIONS = [
 ]
 
 export function ExtendBookingCTA({ bookingId, bags, hourlyRate, minimal = false }: ExtendBookingCTAProps) {
+  const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [selectedHours, setSelectedHours] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
@@ -45,6 +47,10 @@ export function ExtendBookingCTA({ bookingId, bags, hourlyRate, minimal = false 
       if (result.error) {
         setError(result.error)
         setLoading(false)
+      } else if (result.success) {
+        setIsOpen(false)
+        setLoading(false)
+        router.refresh()
       } else if (result.payhere) {
         setPayhereData(result.payhere)
       }
@@ -91,22 +97,7 @@ export function ExtendBookingCTA({ bookingId, bags, hourlyRate, minimal = false 
         </div>
       )}
 
-      <AnimatePresence>
-        {isOpen && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => !loading && setIsOpen(false)}
-              className="absolute inset-0 bg-ocean-900/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              className="relative w-full max-w-sm bg-white rounded-[2.5rem] p-6 shadow-2xl overflow-hidden"
-            >
+      <Dialog open={isOpen} onClose={() => setIsOpen(false)} title="Extend booking" dismissible={!loading} className="max-w-sm">
               {payhereData ? (
                 <div className="text-center py-8 space-y-4">
                   <div className="w-16 h-16 bg-brand/10 rounded-2xl flex items-center justify-center mx-auto animate-pulse">
@@ -117,20 +108,13 @@ export function ExtendBookingCTA({ bookingId, bags, hourlyRate, minimal = false 
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-ocean-900">Extend Booking</h3>
-                    <button 
-                      onClick={() => setIsOpen(false)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <Plus size={24} className="rotate-45" />
-                    </button>
-                  </div>
-
                   <div className="grid grid-cols-2 gap-3 mb-6">
                     {EXTENSION_OPTIONS.map((opt) => (
                       <button
                         key={opt.hours}
+                        type="button"
+                        disabled={loading}
+                        aria-pressed={selectedHours === opt.hours}
                         onClick={() => setSelectedHours(opt.hours)}
                         className={`p-4 rounded-2xl border-2 transition-all text-center ${
                           selectedHours === opt.hours
@@ -147,17 +131,17 @@ export function ExtendBookingCTA({ bookingId, bags, hourlyRate, minimal = false 
                   {selectedHours && (
                     <div className="bg-gray-50 rounded-2xl p-4 mb-6">
                       <div className="flex justify-between items-center text-sm mb-1">
-                        <span className="text-gray-500">Extension Fee</span>
+                        <span className="text-gray-500">Estimated Extension Fee</span>
                         <span className="font-bold text-ocean-900">LKR {extensionPrice.toLocaleString()}</span>
                       </div>
-                      <p className="text-[10px] text-gray-400">
-                        Based on {bags.length} bag(s) @ LKR {hourlyRate}/hr
+                      <p className="text-xs text-gray-600">
+                        Estimate for {bags.length} bag(s). Daily caps and overdue time affect the final fee shown at checkout.
                       </p>
                     </div>
                   )}
 
                   {error && (
-                    <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-100 flex items-start gap-2 text-xs text-brand-danger font-medium">
+                    <div role="alert" className="mb-4 p-3 rounded-xl bg-red-50 border border-red-100 flex items-start gap-2 text-xs text-brand-danger font-medium">
                       <AlertCircle size={14} className="shrink-0 mt-0.5" />
                       {error}
                     </div>
@@ -170,19 +154,16 @@ export function ExtendBookingCTA({ bookingId, bags, hourlyRate, minimal = false 
                     loading={loading}
                     onClick={handleExtend}
                   >
-                    Confirm & Pay LKR {extensionPrice.toLocaleString()}
+                    Continue to payment
                   </Button>
 
-                  <p className="text-[10px] text-gray-400 mt-4 text-center flex items-center justify-center gap-1.5 font-bold uppercase tracking-wider">
+                  <p className="text-xs text-gray-600 mt-4 text-center flex items-center justify-center gap-1.5 font-bold uppercase tracking-wider">
                     <Shield size={12} className="text-brand/50" />
                     Secure payment via PayHere
                   </p>
                 </>
               )}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      </Dialog>
 
       <form
         ref={payhereFormRef}

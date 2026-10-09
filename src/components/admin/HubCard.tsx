@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/navigation'
 import { HubForm } from './HubForm'
 import { HubToggle } from './HubToggle'
 import { HubImageUpload } from './HubImageUpload'

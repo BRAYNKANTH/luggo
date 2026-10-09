@@ -1,12 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/navigation'
+import { useLocale } from 'next-intl'
 import { Logo } from '@/components/ui/Logo'
 import { ChevronLeft, Mail, CheckCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function ForgotPasswordPage() {
+  const locale = useLocale()
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -17,17 +19,17 @@ export default function ForgotPasswordPage() {
     setError(null)
     setLoading(true)
 
-    const supabase = createClient()
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/profile`,
-    })
-
-    setLoading(false)
-    if (err) {
-      setError(err.message)
-    } else {
-      setSent(true)
-    }
+    try {
+      const supabase = createClient()
+      const next = `/${locale}/reset-password`
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/${locale}/auth/callback?next=${encodeURIComponent(next)}`,
+      })
+      if (err) setError(err.message)
+      else setSent(true)
+    } catch {
+      setError('Unable to send the reset link. Please try again.')
+    } finally { setLoading(false) }
   }
 
   return (

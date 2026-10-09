@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useId } from 'react'
 import { Camera, CameraOff, KeyboardIcon } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
@@ -20,10 +20,13 @@ export function QRScanner({ onScan, disabled }: QRScannerProps) {
   const [showManual, setShowManual] = useState(false)
   const scannerRef = useRef<{ stop: () => Promise<void>; isScanning?: boolean } | null>(null)
   const scannedRef = useRef(false)
-  const ELEMENT_ID = 'luggo-qr-scanner'
+  const elementId = `luggo-qr-${useId().replace(/:/g, '')}`
+  const onScanRef = useRef(onScan)
+  onScanRef.current = onScan
 
   useEffect(() => {
-    if (disabled) return
+    if (disabled || showManual) return
+    scannedRef.current = false
     let mounted = true
 
     async function start() {
@@ -32,7 +35,7 @@ export function QRScanner({ onScan, disabled }: QRScannerProps) {
         const { Html5Qrcode } = await import('html5-qrcode')
         if (!mounted) return
 
-        const scanner = new Html5Qrcode(ELEMENT_ID)
+        const scanner = new Html5Qrcode(elementId)
         scannerRef.current = scanner
 
         await scanner.start(
@@ -43,12 +46,13 @@ export function QRScanner({ onScan, disabled }: QRScannerProps) {
             scannedRef.current = true
             // Vibrate on mobile for tactile feedback
             if (navigator.vibrate) navigator.vibrate(100)
-            onScan(text)
+            onScanRef.current(text)
           },
           () => { /* ignore frame decode errors */ }
         )
 
         if (mounted) setState('scanning')
+        else if (scanner.isScanning) await scanner.stop().catch(() => {})
       } catch (err) {
         if (!mounted) return
         const msg = err instanceof Error ? err.message : 'Camera error'
@@ -70,13 +74,14 @@ export function QRScanner({ onScan, disabled }: QRScannerProps) {
         scannerRef.current.stop().catch(() => {})
       }
     }
-  }, [disabled, onScan])
+  }, [disabled, showManual, elementId])
 
   function handleManualSubmit(e: React.FormEvent) {
     e.preventDefault()
     const trimmed = manualCode.trim()
     if (trimmed.length < 8) return
-    onScan(trimmed)
+    if (disabled) return
+    onScanRef.current(trimmed)
   }
 
   return (
@@ -87,7 +92,7 @@ export function QRScanner({ onScan, disabled }: QRScannerProps) {
           {/* Scanning frame overlay */}
           <div className="relative">
             <div
-              id={ELEMENT_ID}
+              id={elementId}
               className={cn(
                 'w-full rounded-2xl overflow-hidden bg-black',
                 state !== 'scanning' && 'min-h-[280px] flex items-center justify-center'
@@ -151,7 +156,7 @@ export function QRScanner({ onScan, disabled }: QRScannerProps) {
             <input
               type="text"
               value={manualCode}
-              onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+              onChange={(e) => setManualCode(e.target.value)}
               placeholder="Paste or type the QR code…"
               autoFocus
               className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20
@@ -159,7 +164,7 @@ export function QRScanner({ onScan, disabled }: QRScannerProps) {
                          focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
             />
           </div>
-          <Button type="submit" fullWidth disabled={manualCode.trim().length < 8}>
+          <Button type="submit" fullWidth disabled={disabled || manualCode.trim().length < 8}>
             Look up booking
           </Button>
           {!cameraError && (

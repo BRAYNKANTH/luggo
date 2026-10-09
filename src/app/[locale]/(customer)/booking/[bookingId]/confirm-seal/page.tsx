@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
-import Link from 'next/link'
+import { Link } from '@/navigation'
 import Image from 'next/image'
 import { ChevronLeft, Shield, Tag } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'

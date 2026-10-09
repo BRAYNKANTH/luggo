@@ -7,7 +7,8 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type')
-  const next = searchParams.get('next') ?? '/'
+  const requestedNext = searchParams.get('next') ?? (type === 'recovery' ? '/reset-password' : '/')
+  const next = requestedNext.startsWith('/') && !requestedNext.startsWith('//') && !requestedNext.includes('\\') ? requestedNext : '/'
 
   const supabase = await createClient()
 
@@ -33,8 +34,8 @@ export async function GET(request: NextRequest) {
     }
   } else {
     // If no code/token, check if we already have a session (magic link might have already set it)
-    const { data: { session } } = await supabase.auth.getSession()
-    if (session) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
       console.log('[Auth Callback] Existing session found, redirecting to', next)
       return NextResponse.redirect(`${origin}${next}`)
     }

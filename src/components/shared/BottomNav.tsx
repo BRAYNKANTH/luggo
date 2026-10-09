@@ -20,17 +20,18 @@ export function BottomNav({ activeCount = 0, isLoggedIn = false }: { activeCount
       ]
 
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white border-t border-gray-100 pb-safe">
+    <nav aria-label="Customer navigation" className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white border-t border-gray-100 pb-safe">
       <div className="flex items-stretch h-[60px]">
         {nav.map(({ label, href, icon: Icon, badge }) => {
-          const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
+          const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(`${href}/`))
           const showBadge = badge && activeCount > 0
           return (
             <Link
               key={href}
               href={href}
+              aria-current={active ? 'page' : undefined}
               className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
-                active ? 'text-brand' : 'text-gray-400 hover:text-gray-600'
+                active ? 'text-brand' : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               <div className="relative">
@@ -41,7 +42,7 @@ export function BottomNav({ activeCount = 0, isLoggedIn = false }: { activeCount
                   </span>
                 )}
               </div>
-              <span className={`text-[10px] font-bold ${active ? 'opacity-100' : 'opacity-70'}`}>
+              <span className={`text-xs font-semibold ${active ? 'opacity-100' : 'opacity-100'}`}>
                 {label}
               </span>
             </Link>

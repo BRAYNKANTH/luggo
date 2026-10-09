@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
+import { Link } from '@/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { type UserRole } from '@/types/database'

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import LandingPage from '@/components/marketing/LandingPage'
 // import MaintenancePage from '@/components/marketing/MaintenancePage' // Available for service stopped / maintenance mode
 import { type UserRole, type BagType } from '@/types/database'
+import { CONTACT_EMAIL, SOCIAL_LINKS } from '@/lib/public-company'
 import { siteUrl } from '@/lib/site-url'
 import { DEFAULT_BAG_RATES, type BagRates } from '@/lib/utils/pricing'
 
@@ -70,10 +71,8 @@ export default async function RootPage({
       name: 'Luggo',
       url: siteUrl,
       logo: `${siteUrl}/images/logo.png`,
-      sameAs: [
-        'https://www.facebook.com/luggo.lk',
-        'https://www.instagram.com/luggo.lk',
-      ],
+      email: CONTACT_EMAIL,
+      sameAs: SOCIAL_LINKS.map(({ href }) => href),
     }
 
     return (

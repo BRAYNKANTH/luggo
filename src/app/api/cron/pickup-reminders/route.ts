@@ -3,7 +3,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { verifyCron } from '@/lib/utils/cron'
 import { sendSMS } from '@/lib/utils/sms'
 import { sendPickupReminderEmail } from '@/lib/utils/email'
-import { format } from 'date-fns'
+import { formatInSLT } from '@/lib/utils/timezone'
 
 /**
  * Cron: pickup-reminders
@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
       hubs ( name )
     `)
     .eq('status', 'active_storage')
+    .gt('end_time', new Date(now).toISOString())
     .lte('end_time', windowEnd)
     .is('reminder_sent_at', null) as {
       data: {
@@ -66,13 +67,16 @@ export async function GET(req: NextRequest) {
     const userName = booking.users?.name ?? 'Customer'
     const endTime  = new Date(booking.end_time)
     const minutesLeft = Math.round((endTime.getTime() - now) / 60000)
-    const endFormatted = format(endTime, 'h:mm a')
+    const endFormatted = formatInSLT(endTime, { hour: 'numeric', minute: '2-digit', hour12: true })
 
     // Mark as sent immediately to avoid race conditions or duplicate sends
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('bookings') as any)
+    const { data: claimed, error: claimError } = await (supabase.from('bookings') as any)
       .update({ reminder_sent_at: new Date().toISOString() })
-      .eq('id', booking.id)
+      .eq('id', booking.id).eq('status', 'active_storage').eq('end_time', booking.end_time)
+      .is('reminder_sent_at', null).select('id').maybeSingle()
+    if (claimError) return NextResponse.json({ error: 'Failed to claim reminder' }, { status: 500 })
+    if (!claimed) continue
 
     // In-app notification
     if (userId) {
@@ -87,7 +91,7 @@ export async function GET(req: NextRequest) {
 
     // SMS
     if (booking.users?.phone) {
-      sendSMS(
+      await sendSMS(
         booking.users.phone,
         `Luggo: Your storage at ${hubName} ends at ${endFormatted} (~${minutesLeft} min). Collect your bags on time to avoid late fees.`
       ).catch(console.error)
@@ -95,7 +99,7 @@ export async function GET(req: NextRequest) {
 
     // Email
     if (booking.users?.email) {
-      sendPickupReminderEmail(booking.users.email, userName, hubName, booking.id, endFormatted, minutesLeft).catch(console.error)
+      await sendPickupReminderEmail(booking.users.email, userName, hubName, booking.id, endFormatted, minutesLeft).catch(console.error)
     }
 
     sent++

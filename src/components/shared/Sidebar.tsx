@@ -1,12 +1,13 @@
 'use client'
 
 import { Link, usePathname } from '@/navigation'
-import { LayoutDashboard, BookOpen, User, LogOut, LogIn } from 'lucide-react'
+import { MapPin, LayoutDashboard, BookOpen, User, LogOut, LogIn } from 'lucide-react'
 import { Logo } from '@/components/ui/Logo'
 import { signOut } from '@/lib/auth/actions'
 
 const NAV_ALL = [
   { label: 'Dashboard',   href: '/dashboard', icon: LayoutDashboard, guestOk: true  },
+  { label: 'Hubs', href: '/hubs', icon: MapPin, guestOk: true },
   { label: 'My Bookings', href: '/bookings',  icon: BookOpen,        guestOk: false },
   { label: 'Profile',     href: '/profile',   icon: User,            guestOk: false },
 ]
@@ -25,13 +26,14 @@ export function Sidebar({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
+      <nav aria-label="Customer navigation" className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
         {nav.map(({ label, href, icon: Icon }) => {
-          const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
+          const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(`${href}/`))
           return (
             <Link
               key={href}
               href={href}
+              aria-current={active ? 'page' : undefined}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${
                 active
                   ? 'bg-brand/10 text-brand'

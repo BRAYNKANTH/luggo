@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { type PostgrestError, type SupabaseClient } from '@supabase/supabase-js'
 import { uuidSchema } from '@/lib/validators/common'
+import { bookingReferenceRange } from '@/lib/utils/bookingReference'
 import { type BagType } from '@/types/database'
 import { calculateLateFee, calculateEarlyCheckinDecision, calculateBookingPrice } from '@/lib/utils/pricing'
 import { getHubBagRates } from '@/lib/utils/hubPricing'
@@ -68,42 +69,24 @@ export async function resolveQRCode(
     return { bookingId: booking.id }
   }
 
-  // 1b. Check if searching by walk-in booking reference prefix (e.g., WI-A1B2C3D4)
-  if (cleanCode.toUpperCase().startsWith('WI-') && cleanCode.length === 11) {
-    const shortId = cleanCode.slice(3).toLowerCase()
-    const { data: walkinBooking } = await supabase
+  // UUID columns support range comparison, not ILIKE. Reject ambiguous prefixes.
+  const range = bookingReferenceRange(cleanCode)
+  if (range) {
+    const { data: matches, error } = await supabase
       .from('bookings')
       .select('id, status, hub_id')
       .eq('hub_id', hubId)
-      .ilike('id', `${shortId}%`)
-      .limit(1)
-      .maybeSingle() as { data: { id: string; status: string; hub_id: string } | null }
-
-    if (walkinBooking) {
-      const terminal = ['cancelled', 'expired', 'completed']
-      if (terminal.includes(walkinBooking.status)) {
-        return { error: `This booking is already ${walkinBooking.status}. Nothing to do.` }
+      .gte('id', range.lower)
+      .lte('id', range.upper)
+      .limit(2) as { data: { id: string; status: string; hub_id: string }[] | null; error: unknown }
+    if (error) return { error: 'Unable to look up booking. Please try again.' }
+    if (matches && matches.length > 1) return { error: 'Reference is ambiguous. Enter the full booking ID.' }
+    const match = matches?.[0]
+    if (match) {
+      if (['cancelled', 'expired', 'completed'].includes(match.status)) {
+        return { error: `This booking is already ${match.status}. Nothing to do.` }
       }
-      return { bookingId: walkinBooking.id }
-    }
-  }
-
-  // 1c. Check if searching by partial/full UUID prefix
-  if (cleanCode.length >= 8 && /^[0-9a-fA-F-]+$/.test(cleanCode)) {
-    const { data: uuidBooking } = await supabase
-      .from('bookings')
-      .select('id, status, hub_id')
-      .eq('hub_id', hubId)
-      .ilike('id', `${cleanCode.toLowerCase()}%`)
-      .limit(1)
-      .maybeSingle() as { data: { id: string; status: string; hub_id: string } | null }
-
-    if (uuidBooking) {
-      const terminal = ['cancelled', 'expired', 'completed']
-      if (terminal.includes(uuidBooking.status)) {
-        return { error: `This booking is already ${uuidBooking.status}. Nothing to do.` }
-      }
-      return { bookingId: uuidBooking.id }
+      return { bookingId: match.id }
     }
   }
 

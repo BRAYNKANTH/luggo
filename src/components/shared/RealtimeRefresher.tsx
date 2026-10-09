@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/navigation'
 
 interface RealtimeRefresherProps {
   /** The booking ID to watch */

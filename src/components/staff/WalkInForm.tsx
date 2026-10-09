@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/navigation'
 import { Plus, Trash2, ArrowRight, BadgeAlert } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
@@ -57,7 +57,7 @@ export function WalkInForm({ hubId, rates = DEFAULT_BAG_RATES }: WalkInFormProps
     
     setEstimatedHours(hours)
     setEstimatedPrice(totalBagPrice)
-  }, [expectedPickup, bags])
+  }, [expectedPickup, bags, rates])
 
   function addBag() {
     setBags([...bags, { id: Date.now().toString(), type: 'regular' }])

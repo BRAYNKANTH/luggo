@@ -1,3 +1,4 @@
+import { GUARANTEE_LIMIT_LABEL } from '@/lib/utils/guarantee'
 import { notFound, redirect } from 'next/navigation'
 import { Link } from '@/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -190,7 +191,7 @@ export default async function StaffBookingPage({
             </div>
             <div>
               <p className="font-bold text-emerald-400 text-xs uppercase tracking-wider">🛡️ Luggage Protection Covered</p>
-              <p className="text-white/60 text-xs mt-0.5">Protected up to LKR 40,000 against theft, loss, or damage.</p>
+              <p className="text-white/60 text-xs mt-0.5">Protected up to {GUARANTEE_LIMIT_LABEL} against theft, loss, or damage.</p>
             </div>
           </div>
         )}

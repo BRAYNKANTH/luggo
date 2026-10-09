@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
-import Link from 'next/link'
+import { Link, useRouter } from '@/navigation'
 import Image from 'next/image'
 import { Clock, Navigation, Map, List, ChevronRight } from 'lucide-react'
 
@@ -36,10 +36,12 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
 }
 
 export function HubList({ hubs, isLoggedIn = false }: { hubs: Hub[]; isLoggedIn?: boolean }) {
+  const router = useRouter()
   void isLoggedIn
   const [view, setView] = useState<'list' | 'map'>('list')
   const [userPos, setUserPos] = useState<{ lat: number; lon: number } | null>(null)
   const [locating, setLocating] = useState(false)
+  const [locationError, setLocationError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!navigator.geolocation) return
@@ -53,7 +55,7 @@ export function HubList({ hubs, isLoggedIn = false }: { hubs: Hub[]; isLoggedIn?
   const sorted: HubWithDistance[] = hubs
     .map((h) => ({
       ...h,
-      distanceKm: userPos && h.latitude && h.longitude
+      distanceKm: userPos && h.latitude !== null && h.longitude !== null
         ? haversineKm(userPos.lat, userPos.lon, h.latitude, h.longitude)
         : null,
     }))
@@ -75,19 +77,19 @@ export function HubList({ hubs, isLoggedIn = false }: { hubs: Hub[]; isLoggedIn?
   return (
     <div className="px-4 md:px-6 py-4">
       {/* Controls */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div className="flex items-center bg-gray-100 rounded-xl p-1 gap-0.5">
           <button
-            onClick={() => setView('list')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}
+            className={`flex items-center gap-1.5 min-h-11 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               view === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
             }`}
           >
             <List size={13} /> List
           </button>
           <button
-            onClick={() => setView('map')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            type="button" aria-pressed={view === 'map'} onClick={() => setView('map')}
+            className={`flex items-center gap-1.5 min-h-11 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               view === 'map' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
             }`}
           >
@@ -97,14 +99,17 @@ export function HubList({ hubs, isLoggedIn = false }: { hubs: Hub[]; isLoggedIn?
 
         <button
           onClick={() => {
+            setLocationError(null)
+            if (!navigator.geolocation) { setLocationError('Location is unavailable in this browser. Browse the hub list instead.'); return }
             setLocating(true)
             navigator.geolocation?.getCurrentPosition(
               (pos) => { setUserPos({ lat: pos.coords.latitude, lon: pos.coords.longitude }); setLocating(false) },
-              () => setLocating(false),
+              () => { setLocating(false); setLocationError('Unable to access your location. You can still browse all hubs.') },
               { timeout: 6000 }
             )
           }}
-          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all ${
+          type="button" disabled={locating} aria-busy={locating}
+          className={`flex min-h-11 items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all ${
             userPos
               ? 'bg-brand/5 border-brand/20 text-brand'
               : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
@@ -115,10 +120,11 @@ export function HubList({ hubs, isLoggedIn = false }: { hubs: Hub[]; isLoggedIn?
         </button>
       </div>
 
+      {locationError && <p role="status" className="mb-4 text-sm text-gray-600">{locationError}</p>}
       {/* Map */}
       {view === 'map' && (
         <div className="h-[60vh] mb-4 rounded-2xl overflow-hidden">
-          <HubMap hubs={hubs} onHubClick={(id) => window.location.assign(`/hubs/${id}`)} />
+          <HubMap hubs={hubs} onHubClick={(id) => router.push(`/hubs/${id}`)} />
         </div>
       )}
 

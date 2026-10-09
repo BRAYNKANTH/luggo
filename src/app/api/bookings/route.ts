@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate body
-    const body = await req.json()
+    const body = await req.json().catch(() => null)
     const parsed = createBookingSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json(
@@ -38,6 +38,10 @@ export async function POST(req: NextRequest) {
       privacy_version,
     } = parsed.data
 
+    if (payment_method === 'pay_online' && (!process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID || !process.env.PAYHERE_MERCHANT_SECRET || !process.env.NEXT_PUBLIC_APP_URL)) {
+      return NextResponse.json({ error: 'Online payment is temporarily unavailable. Please select payment at the hub.' }, { status: 503 })
+    }
+
     // Fetch hub
     const { data: hub } = await supabase
       .from('hubs')
@@ -50,24 +54,6 @@ export async function POST(req: NextRequest) {
 
     if (!hub || !hub.active) {
       return NextResponse.json({ error: 'Hub not found or inactive' }, { status: 404 })
-    }
-
-    // Capacity check — count active bags overlapping the requested window
-    const { data: overlappingBookings } = await supabase
-      .from('bookings')
-      .select('id, booking_bags(id)')
-      .eq('hub_id', hub_id)
-      .not('status', 'in', '("cancelled","expired","completed")')
-      .lt('start_time', end_time)
-      .gt('end_time', start_time) as { data: { id: string; booking_bags: unknown[] }[] | null }
-
-    const curBags = overlappingBookings?.reduce((acc, b) => acc + (b.booking_bags?.length ?? 0), 0) ?? 0
-
-    if (curBags + bags.length > hub.capacity) {
-      return NextResponse.json(
-        { error: 'This hub does not have enough space for the selected time slot. Please choose another hub or reduce the number of bags.' },
-        { status: 409 }
-      )
     }
 
     // Fetch user profile for PayHere
@@ -88,49 +74,24 @@ export async function POST(req: NextRequest) {
     const uuid = crypto.randomUUID().replace(/-/g, '')
     const qrCode = has_insurance ? `${uuid}_ins` : uuid
 
-    // Create booking
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: booking, error: bookingError } = await (supabase.from('bookings') as any)
-      .insert({
-        user_id: user.id,
-        hub_id,
-        status: payment_method === 'pay_at_hub' ? 'confirmed' : 'pending_payment',
-        start_time,
-        end_time,
-        total_price: totalPrice,
-        qr_code: qrCode,
-        terms_accepted,
-        terms_version: terms_version || 'v1.0',
-        privacy_version: privacy_version || 'v1.0',
-        terms_accepted_at: terms_accepted ? new Date().toISOString() : null,
-      })
-      .select('id, qr_code')
-      .single() as { data: { id: string; qr_code: string } | null; error: unknown }
-
+    // The service-only RPC serializes capacity checks per hub and rolls back
+    // the entire booking if any bag or payment insert fails.
+    const serviceClient = createServiceClient()
+    const { data: booking, error: bookingError } = await serviceClient.rpc('create_booking_with_payment', {
+      p_booking: {
+        user_id: user.id, hub_id, start_time, end_time,
+        total_price: totalPrice, qr_code: qrCode, terms_accepted,
+        terms_version: terms_version || 'v1.0', privacy_version: privacy_version || 'v1.0',
+      },
+      p_bags: bags,
+      p_pay_at_hub: payment_method === 'pay_at_hub',
+    })
     if (bookingError || !booking) {
       console.error('Booking creation failed:', bookingError)
-      return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
+      const status = bookingError?.code === 'P0001' ? 409 : bookingError?.code === 'P0002' ? 404 : 500
+      const error = status === 409 ? 'This hub does not have enough space for the selected time slot.' : status === 404 ? 'Hub not found or inactive' : 'Failed to create booking'
+      return NextResponse.json({ error }, { status })
     }
-
-    // Create booking bags
-    const bagRows = bags.map((bag) => ({
-      booking_id: booking.id,
-      bag_type: bag.bag_type,
-    }))
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('booking_bags') as any).insert(bagRows)
-
-    // Create pending payment record
-    const serviceClient = createServiceClient()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (serviceClient.from('payments') as any).insert({
-      booking_id: booking.id,
-      amount: totalPrice,
-      status: 'pending',
-      type: 'booking',
-      gateway_ref: payment_method === 'pay_at_hub' ? 'PAY_AT_HUB' : null
-    })
 
     if (has_insurance) {
       await serviceClient.rpc('write_audit_log', {
@@ -193,9 +154,10 @@ export async function GET(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { searchParams } = new URL(req.url)
-    const limit = parseInt(searchParams.get('limit') ?? '20', 10)
+    const limit = Number(searchParams.get('limit') ?? '20')
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) return NextResponse.json({ error: 'limit must be an integer from 1 to 100' }, { status: 400 })
 
-    const { data: bookings } = await supabase
+    const { data: bookings, error } = await supabase
       .from('bookings')
       .select(`
         id, status, start_time, end_time, total_price, qr_code, created_at,
@@ -206,6 +168,7 @@ export async function GET(req: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(limit)
 
+    if (error) throw error
     return NextResponse.json({ bookings: bookings ?? [] })
   } catch (err) {
     console.error('GET /api/bookings error:', err)

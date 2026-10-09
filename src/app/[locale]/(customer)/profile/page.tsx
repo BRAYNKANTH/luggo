@@ -107,14 +107,14 @@ export default function ProfilePage({ searchParams }: { searchParams: { welcome?
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5">
+              <label htmlFor="profile-name" className="block text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5">
                 <User size={12} /> Full Name
               </label>
               <Input id="profile-name" type="text" autoComplete="name" error={errors.name?.message} {...register('name')} />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5">
+              <label htmlFor="profile-phone" className="block text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5">
                 <Phone size={12} /> Phone Number
               </label>
               <Input id="profile-phone" type="tel" autoComplete="tel" placeholder="07XXXXXXXX"
@@ -123,7 +123,7 @@ export default function ProfilePage({ searchParams }: { searchParams: { welcome?
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5">
+              <label htmlFor="profile-nic" className="block text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5">
                 <Fingerprint size={12} /> NIC / Passport
               </label>
               <Input id="profile-nic" type="text" placeholder="e.g. 200012345678"
@@ -132,14 +132,14 @@ export default function ProfilePage({ searchParams }: { searchParams: { welcome?
             </div>
 
             {serverError && (
-              <div className="rounded-xl bg-red-50 border border-red-200 p-3 flex items-start gap-2 text-xs text-red-700">
+              <div role="alert" className="rounded-xl bg-red-50 border border-red-200 p-3 flex items-start gap-2 text-xs text-red-700">
                 <AlertTriangle size={14} className="shrink-0 mt-0.5" />
                 {serverError}
               </div>
             )}
 
             {saved && (
-              <div className="rounded-xl bg-green-50 border border-green-200 p-3 flex items-center gap-2 text-xs text-green-700 font-semibold">
+              <div role="status" className="rounded-xl bg-green-50 border border-green-200 p-3 flex items-center gap-2 text-xs text-green-700 font-semibold">
                 <CheckCircle size={14} />
                 Profile saved successfully
               </div>

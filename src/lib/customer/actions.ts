@@ -7,8 +7,6 @@ import { generatePayhereHash, PAYHERE_ENDPOINT, type PayhereFormData } from '@/l
 import { sendSMS } from '@/lib/utils/sms'
 import { sendPickupRequestedEmail } from '@/lib/utils/email'
 import { uuidSchema } from '@/lib/validators/common'
-import { calculateLateFee } from '@/lib/utils/pricing'
-import { getHubBagRates } from '@/lib/utils/hubPricing'
 import { type BagType } from '@/types/database'
 
 // ---------------------------------------------------------------------------
@@ -52,36 +50,20 @@ export async function requestPickup(bookingId: string): Promise<{ error?: string
     return { error: 'Booking is not eligible for pickup' }
   }
 
-  // Calculate late fee dynamically to block pickup request if unpaid
-  const start = new Date(booking.start_time)
-  const end = new Date(booking.end_time)
-  const now = new Date()
-  const pickupRates = await getHubBagRates(supabase, booking.hub_id)
-  const lateFeeAmount = calculateLateFee(booking.booking_bags, start, end, now, pickupRates)
-  
-  if (lateFeeAmount > 0) {
-    const { data: paidLateFees } = await supabase
-      .from('payments')
-      .select('amount')
-      .eq('booking_id', bookingId)
-      .eq('type', 'late_fee')
-      .eq('status', 'paid') as { data: { amount: number }[] | null }
-
-    const totalPaid = paidLateFees?.reduce((sum, p) => sum + p.amount, 0) ?? 0
-    const finalLateFee = Math.max(0, lateFeeAmount - totalPaid)
-
-    if (finalLateFee > 0) {
-      return { error: 'A late fee is required. Please pay the late fee online or at the hub counter first.' }
-    }
-  }
+  // Use the same authoritative calculation as payment creation, including waivers.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: remainingFee, error: feeError } = await (supabase.rpc as any)('calculate_late_fee', { p_booking_id: bookingId })
+  if (feeError) return { error: 'Failed to calculate late fee. Please try again.' }
+  if (Number(remainingFee) > 0) return { error: 'A late fee is required. Please pay online or at the hub counter first.' }
 
   // Advance status
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: updateError } = await (supabase.from('bookings') as any)
+  const { data: updated, error: updateError } = await (supabase.from('bookings') as any)
     .update({ status: 'pickup_requested' })
-    .eq('id', bookingId)
+    .eq('id', bookingId).eq('user_id', user.id).in('status', allowed)
+    .select('id').maybeSingle()
 
-  if (updateError) return { error: 'Failed to request pickup' }
+  if (updateError || !updated) return { error: 'Failed to request pickup' }
 
   // Notify customer (in-app)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -144,6 +126,8 @@ export async function requestPickup(bookingId: string): Promise<{ error?: string
 export async function createLateFeePayment(
   bookingId: string
 ): Promise<{ error?: string; formData?: PayhereFormData }> {
+  if (!process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID || !process.env.PAYHERE_MERCHANT_SECRET || !process.env.NEXT_PUBLIC_APP_URL) return { error: 'Online payment is temporarily unavailable.' }
+
   const validId = uuidSchema.safeParse(bookingId)
   if (!validId.success) return { error: validId.error.issues[0].message }
 
@@ -201,20 +185,14 @@ export async function createLateFeePayment(
     .select('id, amount')
     .eq('booking_id', bookingId)
     .eq('type', 'late_fee')
+    .eq('amount', lateFee)
     .eq('status', 'pending')
+    .order('created_at', { ascending: false }).limit(1)
     .maybeSingle() as { data: { id: string; amount: number } | null }
 
   let payment: { id: string } | null = existingPayment ? { id: existingPayment.id } : null
 
-  if (existingPayment) {
-    if (Number(existingPayment.amount) !== Number(lateFee)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (serviceClient as any)
-        .from('payments')
-        .update({ amount: lateFee })
-        .eq('id', existingPayment.id)
-    }
-  } else {
+  if (!existingPayment) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: newPayment, error: paymentError } = await (serviceClient as any)
       .from('payments')
@@ -289,6 +267,8 @@ export async function requestPickupAction(bookingId: string): Promise<void> {
 export async function createEarlyCheckinPayment(
   bookingId: string
 ): Promise<{ error?: string; formData?: PayhereFormData }> {
+  if (!process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID || !process.env.PAYHERE_MERCHANT_SECRET || !process.env.NEXT_PUBLIC_APP_URL) return { error: 'Online payment is temporarily unavailable.' }
+
   const validId = uuidSchema.safeParse(bookingId)
   if (!validId.success) return { error: validId.error.issues[0].message }
 
@@ -375,6 +355,8 @@ export async function createEarlyCheckinPayment(
 export async function createBookingRetryPayment(
   bookingId: string
 ): Promise<{ error?: string; formData?: PayhereFormData }> {
+  if (!process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID || !process.env.PAYHERE_MERCHANT_SECRET || !process.env.NEXT_PUBLIC_APP_URL) return { error: 'Online payment is temporarily unavailable.' }
+
   const validId = uuidSchema.safeParse(bookingId)
   if (!validId.success) return { error: validId.error.issues[0].message }
 

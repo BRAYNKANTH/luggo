@@ -1,10 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/navigation'
 import Image from 'next/image'
 import { Logo } from '@/components/ui/Logo'
-import { Button } from '@/components/ui/Button'
 import { SignOutButton } from '@/components/shared/SignOutButton'
 import {
   MapPin, Clock, ChevronLeft,
@@ -65,14 +64,10 @@ export function HubDetailsUI({
 
   const bookHref = `/book/${hub.id}`
 
-  const BookCTA = (
-    <Link href={bookHref} className="block">
-      <Button fullWidth size="lg" disabled={availability <= 0}
-        className="rounded-2xl h-14 text-base font-bold shadow-lg shadow-brand/20">
-        {availability > 0 ? 'Reserve Storage' : 'Hub is Full'}
-      </Button>
-    </Link>
-  )
+  const ctaClass = 'flex min-h-14 items-center justify-center text-center rounded-2xl px-5 py-3 text-base font-bold bg-ocean-600 text-white shadow-lg hover:bg-ocean-700'
+  const BookCTA = availability > 0
+    ? <Link href={bookHref} className={ctaClass}>Reserve Storage</Link>
+    : <span aria-disabled="true" className={`${ctaClass} opacity-60`}>Hub is Full</span>
 
   return (
     <div className="min-h-screen bg-gray-50 pb-32 md:pb-12">
@@ -300,7 +295,7 @@ export function HubDetailsUI({
       </main>
 
       {/* ── Mobile sticky booking bar ── */}
-      <div className="md:hidden fixed bottom-[60px] inset-x-0 z-40 bg-white border-t border-gray-100 px-4 py-3 shadow-2xl shadow-gray-300/50">
+      <div className="md:hidden fixed bottom-[calc(60px_+_env(safe-area-inset-bottom))] inset-x-0 z-40 bg-white border-t border-gray-100 px-4 py-3 shadow-2xl shadow-gray-300/50">
         <div className="flex items-center gap-3 max-w-lg mx-auto">
           <div className="flex-1 min-w-0">
             <p className="text-xs text-gray-500 font-medium">Starting from</p>
@@ -308,11 +303,8 @@ export function HubDetailsUI({
               LKR {Math.min(...Object.values(rates).map(r => r.hourlyRate)).toLocaleString()}<span className="text-gray-400 font-normal">/hr</span>
             </p>
           </div>
-          <Link href={bookHref} className="shrink-0">
-            <Button size="sm" disabled={availability <= 0} className="rounded-xl px-6 font-bold">
-              {availability > 0 ? 'Reserve Storage' : 'Hub is Full'}
-            </Button>
-          </Link>
+          {availability > 0 ? <Link href={bookHref} className={`${ctaClass} shrink-0 text-sm`}>Reserve Storage</Link>
+            : <span aria-disabled="true" className={`${ctaClass} shrink-0 text-sm opacity-60`}>Hub is Full</span>}
         </div>
       </div>
 

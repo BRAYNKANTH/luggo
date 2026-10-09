@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
+import { Link } from '@/navigation'
 import { BookingStatusBadge } from '@/components/customer/BookingStatusBadge'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { Clock, ChevronRight, Package, MapPin } from 'lucide-react'

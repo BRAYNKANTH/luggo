@@ -5,8 +5,8 @@ const withNextIntl = createNextIntlPlugin('./src/i18n.ts')
 
 const withPWA = withPWAInit({
   dest: 'public',
-  cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
+  cacheOnFrontEndNav: false,
+  aggressiveFrontEndNavCaching: false,
   reloadOnOnline: true,
   // Enable PWA in production/staging builds
   disable: process.env.NODE_ENV === 'development',

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { CheckCircle, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { confirmSeal, disputeSeal } from '@/lib/auth/actions'
@@ -10,6 +10,7 @@ interface SealConfirmFormProps {
 }
 
 export function SealConfirmForm({ bookingId }: SealConfirmFormProps) {
+  const reasonId = useId()
   const [mode, setMode] = useState<'idle' | 'dispute'>('idle')
   const [reason, setReason] = useState('')
   const [loading, setLoading] = useState(false)
@@ -51,10 +52,10 @@ export function SealConfirmForm({ bookingId }: SealConfirmFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-ocean-800 mb-1.5">
+          <label htmlFor={reasonId} className="block text-sm font-medium text-ocean-800 mb-1.5">
             What&apos;s the problem?
           </label>
-          <textarea
+          <textarea id={reasonId} aria-invalid={!!error}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={4}
@@ -66,7 +67,7 @@ export function SealConfirmForm({ bookingId }: SealConfirmFormProps) {
         </div>
 
         {error && (
-          <p className="text-sm text-brand-danger font-medium">{error}</p>
+          <p role="alert" className="text-sm text-red-700 font-medium">{error}</p>
         )}
 
         <div className="flex gap-3">

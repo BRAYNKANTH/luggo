@@ -1,7 +1,7 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { Link } from '@/navigation'
+import { usePathname } from '@/navigation'
 import { Logo } from '@/components/ui/Logo'
 import { SignOutButton } from '@/components/shared/SignOutButton'
 import {
@@ -14,13 +14,12 @@ import {
   Users,
   MapPinned,
   Menu,
-  X,
   ChevronRight,
   ShieldCheck,
   DollarSign,
 } from 'lucide-react'
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { Dialog } from '@/components/ui/Dialog'
 
 const NAV = [
   { href: '/admin/dashboard',  label: 'Dashboard',       icon: LayoutDashboard },
@@ -50,27 +49,22 @@ export function AdminShell({ children, userName, userRole }: AdminShellProps) {
       {/* Premium Logo Header */}
       <div className="px-8 py-10 border-b border-white/5 flex items-center justify-between">
         <Logo variant="white" size="sm" />
-        <button
-          onClick={() => setMobileOpen(false)}
-          className="lg:hidden text-white/30 hover:text-white transition-colors"
-        >
-          <X size={20} />
-        </button>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto custom-scrollbar">
+      <nav aria-label="Admin navigation" className="flex-1 px-4 py-8 space-y-2 overflow-y-auto custom-scrollbar">
         {NAV.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`)
           return (
             <Link
               key={href}
               href={href}
+              aria-current={active ? 'page' : undefined}
               onClick={() => setMobileOpen(false)}
               className={`group flex items-center justify-between px-4 py-3.5 rounded-[1.2rem] text-sm font-bold transition-all ${
                 active
                   ? 'bg-brand text-white shadow-lg shadow-brand/20'
-                  : 'text-white/40 hover:bg-white/5 hover:text-white'
+                  : 'text-slate-300 hover:bg-white/5 hover:text-white'
               }`}
             >
               <div className="flex items-center gap-3">
@@ -90,45 +84,41 @@ export function AdminShell({ children, userName, userRole }: AdminShellProps) {
               <Users size={18} />
            </div>
            <div className="min-w-0">
-             <p className="text-[10px] text-white/30 font-black uppercase tracking-widest leading-none mb-1">Authenticated as</p>
+             <p className="text-[10px] text-slate-300 font-black uppercase tracking-widest leading-none mb-1">Authenticated as</p>
              <p className="text-sm font-black text-white truncate">{userName}</p>
              <p className="text-[10px] text-brand-light font-bold uppercase tracking-widest mt-0.5">
                {userRole.replace(/_/g, ' ')}
              </p>
            </div>
         </div>
-        <SignOutButton portal="admin" />
+        <SignOutButton portal="admin" className="text-slate-300 hover:text-white min-h-11" />
       </div>
     </aside>
   )
 
   return (
     <div className="min-h-screen bg-gray-50/50 flex overflow-hidden">
+      <a href="#admin-content" className="skip-link">Skip to content</a>
       {/* Desktop sidebar */}
-      <div className="hidden lg:flex lg:shrink-0 lg:sticky lg:top-0 lg:h-screen">
+      <div className="hidden lg:flex lg:shrink-0 lg:sticky lg:top-0 lg:h-[100dvh]">
         {sidebar}
       </div>
 
-      {/* Mobile sidebar overlay */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-[100] flex lg:hidden">
-          <div className="fixed inset-0 bg-ocean-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setMobileOpen(false)} />
-          <motion.div 
-            initial={{ x: -280 }}
-            animate={{ x: 0 }}
-            className="relative z-50 flex h-full w-72"
-          >
-            {sidebar}
-          </motion.div>
-        </div>
-      )}
+      <Dialog open={mobileOpen} onClose={() => setMobileOpen(false)} title="Admin navigation" className="max-w-sm">
+        <nav aria-label="Admin mobile navigation" className="space-y-1">
+          {NAV.map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={() => setMobileOpen(false)}
+            aria-current={pathname === href || pathname.startsWith(`${href}/`) ? 'page' : undefined}
+            className="flex items-center gap-3 min-h-11 rounded-xl px-3 py-3 text-ocean-900 hover:bg-ocean-50 aria-[current=page]:bg-ocean-50 aria-[current=page]:font-bold"><Icon size={20} />{label}</Link>)}
+        </nav>
+        <div className="border-t border-gray-200 mt-4 pt-4"><p className="text-sm font-semibold break-words">{userName}</p><SignOutButton portal="admin" /></div>
+      </Dialog>
 
       {/* Main Content Area */}
-      <div className="flex-1 min-w-0 flex flex-col h-screen overflow-y-auto scroll-smooth">
+      <div className="flex-1 min-w-0 flex flex-col h-[100dvh] overflow-y-auto scroll-smooth">
         {/* Mobile top bar */}
         <div className="lg:hidden flex items-center justify-between bg-ocean-900 px-6 py-5 sticky top-0 z-40 border-b border-white/5 shadow-xl shadow-ocean-900/10">
           <div className="flex items-center gap-4">
-            <button onClick={() => setMobileOpen(true)} className="text-white/50 hover:text-white transition-colors">
+            <button type="button" aria-label="Open admin navigation" aria-expanded={mobileOpen} onClick={() => setMobileOpen(true)} className="min-h-11 min-w-11 flex items-center justify-center rounded-xl text-white/80 hover:text-white transition-colors">
               <Menu size={24} />
             </button>
             <Logo variant="white" size="sm" />
@@ -136,9 +126,9 @@ export function AdminShell({ children, userName, userRole }: AdminShellProps) {
           <div className="h-8 w-8 rounded-full bg-brand/20 border border-brand/30" />
         </div>
         
-        <div className="flex-1 w-full max-w-7xl mx-auto">
+        <main id="admin-content" tabIndex={-1} className="flex-1 w-full max-w-7xl mx-auto">
           {children}
-        </div>
+        </main>
       </div>
     </div>
   )

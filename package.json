@@ -6,7 +6,9 @@
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=4096 next dev --turbo",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node --require ./tests/register.cjs --test --experimental-test-isolation=none tests/*.test.cjs",
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
     "node": "22.x"

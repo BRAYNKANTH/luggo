@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 interface RealtimeDashboardRefresherProps {

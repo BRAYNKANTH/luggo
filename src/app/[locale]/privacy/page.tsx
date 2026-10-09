@@ -1,4 +1,5 @@
-import Link from 'next/link'
+import { Link } from '@/navigation'
+import { CONTACT_EMAIL } from '@/lib/public-company'
 import { Logo } from '@/components/ui/Logo'
 import { ChevronLeft } from 'lucide-react'
 import type { Metadata } from 'next'
@@ -19,7 +20,7 @@ export default function PrivacyPage() {
 
       <div className="max-w-3xl mx-auto px-6 py-12">
         <h1 className="text-3xl font-extrabold text-ocean-900 mb-2">Privacy Policy</h1>
-        <p className="text-gray-400 text-sm mb-10">Last updated: April 2026</p>
+        <p className="text-gray-400 text-sm mb-10">Last updated: October 2026</p>
 
         {[
           {
@@ -48,7 +49,7 @@ export default function PrivacyPage() {
           },
           {
             title: 'Your Rights',
-            body: 'You have the right to access, correct, or delete your personal data. To exercise these rights, email brayn.kanth5@gmail.com.',
+            body: <>You have the right to access, correct, or delete your personal data. To exercise these rights, email <a href={`mailto:${CONTACT_EMAIL}`} className="text-ocean-600 font-semibold underline">{CONTACT_EMAIL}</a>.</>,
           },
           {
             title: 'Cookies',
@@ -56,7 +57,7 @@ export default function PrivacyPage() {
           },
           {
             title: 'Contact',
-            body: 'For privacy-related questions, contact us at brayn.kanth5@gmail.com.',
+            body: <>For privacy-related questions, contact us at <a href={`mailto:${CONTACT_EMAIL}`} className="text-ocean-600 font-semibold underline">{CONTACT_EMAIL}</a>.</>,
           },
         ].map((section) => (
           <div key={section.title} className="mb-8">

@@ -1,4 +1,5 @@
-import Link from 'next/link'
+import { GUARANTEE_LIMIT_LABEL } from '@/lib/utils/guarantee'
+import { Link } from '@/navigation'
 import { Logo } from '@/components/ui/Logo'
 import { ChevronLeft } from 'lucide-react'
 import type { Metadata } from 'next'
@@ -73,7 +74,7 @@ export default function TermsPage() {
       <div className="max-w-3xl mx-auto px-6 py-12">
         {/* Header */}
         <h1 className="text-3xl font-extrabold text-ocean-900 mb-1">Terms of Service</h1>
-        <p className="text-gray-400 text-sm mb-2">Last Updated: April 6, 2026</p>
+        <p className="text-gray-400 text-sm mb-2">Last Updated: October 9, 2026</p>
 
         <div className="bg-brand/5 border border-brand/15 rounded-2xl p-4 mb-8">
           <p className="text-sm text-gray-700 leading-relaxed">
@@ -225,7 +226,7 @@ export default function TermsPage() {
         </Body>
         <Body>
           If eligible, Luggo may compensate the Customer for the depreciated value of lost, stolen, or damaged Customer
-          Property up to <strong>LKR 300,000</strong> (approximately $1,000 USD) per Booking.
+          Property up to <strong>{GUARANTEE_LIMIT_LABEL}</strong> per Booking.
         </Body>
         <Body>The Luggage Protection does NOT apply to:</Body>
         <BulletList items={[

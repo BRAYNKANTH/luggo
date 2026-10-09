@@ -11,6 +11,7 @@ const config: Config = {
       colors: {
         brand: {
           DEFAULT: '#038cc9',
+          light: '#7ec6ea',
           dark: '#011a2e',
           accent: '#f0c040',
           success: '#22c98e',
@@ -29,6 +30,7 @@ const config: Config = {
           900: '#011a2e',
         },
       },
+      spacing: { '4.5': '1.125rem' },
       fontFamily: {
         sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
       },

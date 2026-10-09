@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   if (authError) return authError
 
   const supabase = createServiceClient()
-  const now = new Date().toISOString()
+  const now = new Date(Date.now() - 15 * 60 * 1000).toISOString()
 
   // Find newly overstayed bookings
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,9 +54,12 @@ export async function GET(req: NextRequest) {
 
   // Bulk update status
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: updateError } = await (supabase.from('bookings') as any)
+  const { data: updated, error: updateError } = await (supabase.from('bookings') as any)
     .update({ status: 'overstayed' })
     .in('id', ids)
+    .eq('status', 'active_storage')
+    .lt('end_time', now)
+    .select('id')
 
   if (updateError) {
     console.error('[cron/mark-overstayed] update error:', updateError)
@@ -66,7 +69,8 @@ export async function GET(req: NextRequest) {
   console.log(`[cron/mark-overstayed] marked ${count} bookings as overstayed`)
 
   // Notify each customer (fire-and-forget)
-  for (const booking of overdue!) {
+  const updatedIds = new Set((updated ?? []).map((b: { id: string }) => b.id))
+  for (const booking of overdue!.filter(b => updatedIds.has(b.id))) {
     const userId   = booking.users?.id
     const hubName  = booking.hubs?.name ?? 'the hub'
     const userName = booking.users?.name ?? 'Customer'
@@ -84,7 +88,7 @@ export async function GET(req: NextRequest) {
 
     // SMS
     if (booking.users?.phone) {
-      sendSMS(
+      await sendSMS(
         booking.users.phone,
         `Luggo: Your storage at ${hubName} has ended. Late fees apply until you collect. Visit the app to request pickup.`
       ).catch(console.error)
@@ -92,9 +96,9 @@ export async function GET(req: NextRequest) {
 
     // Email
     if (booking.users?.email) {
-      sendOverstayedAlertEmail(booking.users.email, userName, hubName, booking.id).catch(console.error)
+      await sendOverstayedAlertEmail(booking.users.email, userName, hubName, booking.id).catch(console.error)
     }
   }
 
-  return NextResponse.json({ marked: count, ids })
+  return NextResponse.json({ marked: updatedIds.size, ids: Array.from(updatedIds) })
 }

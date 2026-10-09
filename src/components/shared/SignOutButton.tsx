@@ -22,7 +22,7 @@ export function SignOutButton({
       <button
         type="submit"
         className={cn(
-          'flex items-center gap-1.5 text-sm font-medium transition-colors',
+          'flex min-h-11 items-center gap-1.5 text-sm font-medium transition-colors',
           portal === 'staff'
             ? 'text-white/60 hover:text-white'
             : 'text-gray-500 hover:text-brand-danger',

@@ -1,8 +1,10 @@
 'use client'
 
-import { Suspense, useState, useRef, useEffect } from 'react'
+import { OtpInput } from '@/components/ui/OtpInput'
+
+import { Suspense, useState, useEffect, useId } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Link from 'next/link'
+import { Link } from '@/navigation'
 import { useSearchParams } from 'next/navigation'
 import { Logo } from '@/components/ui/Logo'
 import { createClient } from '@/lib/supabase/client'
@@ -26,84 +28,15 @@ function isEmail(v: string)  { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()
 function isPhone(v: string)  { return v.replace(/\D/g, '').length >= 9 }
 
 // ── OTP boxes ─────────────────────────────────────────────────
-function OtpInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const refs = useRef<(HTMLInputElement | null)[]>([])
-
-  function handleChange(i: number, raw: string) {
-    const digit = raw.replace(/\D/g, '').slice(-1)
-    const chars = value.padEnd(OTP_LENGTH, '').split('')
-    chars[i] = digit
-    const next = chars.join('').trimEnd().slice(0, OTP_LENGTH)
-    onChange(next)
-    if (digit && i < OTP_LENGTH - 1) refs.current[i + 1]?.focus()
-  }
-
-  function handleKeyDown(i: number, e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Backspace') {
-      if (value[i]) {
-        // clear current box
-        const chars = value.padEnd(OTP_LENGTH, '').split('')
-        chars[i] = ''
-        onChange(chars.join('').trimEnd())
-      } else if (i > 0) {
-        refs.current[i - 1]?.focus()
-      }
-    } else if (e.key === 'ArrowLeft' && i > 0) {
-      refs.current[i - 1]?.focus()
-    } else if (e.key === 'ArrowRight' && i < OTP_LENGTH - 1) {
-      refs.current[i + 1]?.focus()
-    }
-  }
-
-  function handlePaste(e: React.ClipboardEvent) {
-    e.preventDefault()
-    const p = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH)
-    onChange(p)
-    const focusIdx = Math.min(p.length, OTP_LENGTH - 1)
-    setTimeout(() => refs.current[focusIdx]?.focus(), 0)
-  }
-
-  function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
-    e.target.select()
-  }
-
-  return (
-    <div className="flex gap-2 justify-center">
-      {Array.from({ length: OTP_LENGTH }).map((_, i) => {
-        const filled = !!value[i]
-        return (
-          <input
-            key={i}
-            ref={el => { refs.current[i] = el }}
-            type="text"
-            inputMode="numeric"
-            autoComplete={i === 0 ? 'one-time-code' : 'off'}
-            maxLength={1}
-            value={value[i] ?? ''}
-            onChange={e => handleChange(i, e.target.value)}
-            onKeyDown={e => handleKeyDown(i, e)}
-            onPaste={handlePaste}
-            onFocus={handleFocus}
-            style={{ WebkitTextFillColor: '#011a2e' }}
-            className={`w-11 h-14 text-center text-xl font-extrabold border-2 rounded-2xl focus:outline-none transition-all duration-150 bg-gray-50
-              ${filled
-                ? 'border-brand bg-brand/5 text-ocean-900'
-                : 'border-gray-200 text-ocean-900 focus:border-brand focus:bg-brand/5'
-              }`}
-          />
-        )
-      })}
-    </div>
-  )
-}
-
-// ── field ─────────────────────────────────────────────────────
-function Field({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+function Field({ label, id, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+  const generatedId = useId()
+  const inputId = id ?? generatedId
   return (
     <div>
-      <label className="block text-xs font-bold text-white/60 mb-1.5 uppercase tracking-wider">{label}</label>
+      <label htmlFor={inputId} className="block text-xs font-bold text-white/60 mb-1.5 uppercase tracking-wider">{label}</label>
       <input
         {...props}
+        id={inputId}
         className="w-full bg-white/10 border border-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3.5 text-sm font-medium focus:outline-none focus:border-brand/60 focus:bg-white/15 transition-all"
       />
     </div>
@@ -139,7 +72,7 @@ function LoginContent() {
         {/* Tab switcher */}
         <div className="flex bg-white/10 rounded-2xl p-1 mb-8">
           {(['signin','signup'] as Tab[]).map(t => (
-            <button key={t} onClick={() => setTab(t)}
+            <button key={t} type="button" aria-pressed={tab === t} onClick={() => setTab(t)}
               className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${
                 tab === t ? 'bg-white text-ocean-900 shadow-sm' : 'text-white/50 hover:text-white/80'
               }`}
@@ -156,7 +89,7 @@ function LoginContent() {
           }
         </AnimatePresence>
 
-        <p className="text-center text-xs text-white/30 mt-8">
+        <p className="text-center text-xs text-white/70 mt-8">
           By continuing you agree to our{' '}
           <Link href="/terms" className="underline hover:text-white/60">Terms</Link>{' '}and{' '}
           <Link href="/privacy" className="underline hover:text-white/60">Privacy Policy</Link>.
@@ -448,7 +381,7 @@ function OtpStep({ method, identifier, otp, setOtp, loading, error, countdown, o
         <p className="text-white font-extrabold text-xl">Enter your code</p>
         <p className="text-white/50 text-sm mt-1">Sent to <span className="text-white font-bold">{identifier}</span></p>
       </div>
-      <OtpInput value={otp} onChange={setOtp} />
+      <OtpInput dark value={otp} onChange={setOtp} />
       {error && <p className="text-red-400 text-sm font-medium">{error}</p>}
       <button onClick={onVerify} disabled={otp.length < OTP_LENGTH || loading}
         className="w-full flex items-center justify-center gap-2 bg-brand text-white font-bold py-4 rounded-2xl hover:bg-brand/90 disabled:opacity-40 transition-all">

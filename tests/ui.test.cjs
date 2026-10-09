@@ -1,0 +1,41 @@
+const test = require('node:test')
+const assert = require('node:assert/strict')
+const React = require('react')
+const { renderToStaticMarkup } = require('react-dom/server')
+const { Input } = require('../src/components/ui/Input.tsx')
+const { OtpInput } = require('../src/components/ui/OtpInput.tsx')
+const { Button } = require('../src/components/ui/Button.tsx')
+
+test('input labels, validation errors, and caller help text stay associated', () => {
+  const html = renderToStaticMarkup(React.createElement(Input, { id: 'email', label: 'Email', error: 'Invalid email', 'aria-describedby': 'extra-help' }))
+  assert.match(html, /for="email"/)
+  assert.match(html, /aria-invalid="true"/)
+  assert.match(html, /aria-describedby="extra-help email-message"/)
+  assert.match(html, /id="email-message" role="alert"/)
+})
+test('inputs without an explicit ID get a matching label and hint target', () => {
+  const html = renderToStaticMarkup(React.createElement(Input, { label: 'Name', hint: 'Your full name' }))
+  const id = html.match(/<input[^>]*id="([^"]+)"/)[1]
+  assert.ok(html.includes(`for="${id}"`))
+  assert.ok(html.includes(`aria-describedby="${id}-message"`))
+  assert.ok(html.includes(`id="${id}-message"`))
+})
+test('password reveal remains keyboard reachable and disabled with its field', () => {
+  const html = renderToStaticMarkup(React.createElement(Input, { type: 'password', disabled: true }))
+  assert.match(html, /aria-label="Show password"/)
+  assert.doesNotMatch(html, /tabindex="-1"/)
+  assert.match(html, /<button[^>]*disabled=""/)
+})
+test('OTP is one labeled field that accepts the whole code and mobile autofill', () => {
+  const html = renderToStaticMarkup(React.createElement(OtpInput, { value: '123456', onChange: () => {} }))
+  assert.equal((html.match(/<input/g) || []).length, 1)
+  assert.match(html, /autoComplete="one-time-code"/i)
+  assert.match(html, /maxLength="6"/i)
+  assert.match(html, /Verification code/)
+  assert.match(html, /value="123456"/)
+})
+test('loading buttons communicate busy state and cannot be submitted twice', () => {
+  const html = renderToStaticMarkup(React.createElement(Button, { loading: true }, 'Save'))
+  assert.match(html, /disabled=""/)
+  assert.match(html, /aria-busy="true"/)
+})

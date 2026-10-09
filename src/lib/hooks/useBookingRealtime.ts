@@ -15,6 +15,7 @@ export function useBookingRealtime(
 
   useEffect(() => {
     let cancelled = false
+    setStatus(initialStatus)
 
     const poll = async () => {
       try {
@@ -36,7 +37,7 @@ export function useBookingRealtime(
       cancelled = true
       window.clearInterval(interval)
     }
-  }, [bookingId])
+  }, [bookingId, initialStatus])
 
   return status
 }

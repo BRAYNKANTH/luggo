@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { OtpInput } from '@/components/ui/OtpInput'
+
+import { useState, useRef, useEffect, useId } from 'react'
+import { useRouter } from '@/navigation'
+import { Link } from '@/navigation'
 import { motion } from 'framer-motion'
 import {
   CalendarDays, Clock, AlertCircle, Shield,
@@ -145,44 +147,18 @@ function isWithinOperatingHours(date: Date | null, openTimeStr: string, closeTim
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-function OtpInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const refs = useRef<(HTMLInputElement | null)[]>([])
-  function handleChange(i: number, v: string) {
-    if (!/^\d*$/.test(v)) return
-    const chars = value.split('')
-    chars[i] = v.slice(-1)
-    const next = chars.join('').slice(0, OTP_LENGTH)
-    onChange(next)
-    if (v && i < OTP_LENGTH - 1) refs.current[i + 1]?.focus()
-  }
-  function handleKeyDown(i: number, e: React.KeyboardEvent) {
-    if (e.key === 'Backspace' && !value[i] && i > 0) refs.current[i - 1]?.focus()
-  }
-  return (
-    <div className="flex gap-2 justify-center my-3">
-      {Array.from({ length: OTP_LENGTH }).map((_, i) => (
-        <input key={i} ref={el => { refs.current[i] = el }}
-          type="text" inputMode="numeric" maxLength={1}
-          value={value[i] ?? ''} onChange={e => handleChange(i, e.target.value)}
-          onKeyDown={e => handleKeyDown(i, e)}
-          className="w-10 h-12 text-center text-lg font-bold text-gray-900 border-2 border-gray-200 rounded-xl focus:border-brand focus:outline-none focus:bg-brand/5 transition-all bg-gray-50"
-        />
-      ))}
-    </div>
-  )
-}
-
-
-
-function FieldInput({ label, icon: Icon, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string; icon?: React.ElementType }) {
+function FieldInput({ label, icon: Icon, id, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string; icon?: React.ElementType }) {
+  const generatedId = useId()
+  const inputId = id ?? generatedId
   return (
     <div className="space-y-1">
-      <label className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+      <label htmlFor={inputId} className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
         {Icon && <Icon size={12} className="text-brand" />}
         {label}
       </label>
       <input
         {...props}
+        id={inputId}
         className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all"
       />
     </div>
@@ -725,7 +701,7 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
   )
 
   return (
-    <div className="pb-32">
+    <div className="pb-48 sm:pb-36">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
         {/* Left Column: Form Content */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-6">
@@ -849,19 +825,19 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                           return (
                             <div
                               key={type}
-                              className={`bg-white rounded-[2rem] border shadow-sm p-4 flex items-center gap-4 transition-all duration-300 ${
+                              className={`bg-white rounded-[2rem] border shadow-sm p-4 flex flex-wrap items-center gap-3 transition-all duration-300 ${
                                 isActive ? 'border-brand/40 bg-brand/[0.04] ring-1 ring-brand/10' : 'border-gray-100'
                               }`}
                             >
                               {/* Icon */}
-                              <div className={`w-14 h-14 md:w-16 md:h-16 rounded-[1.25rem] flex items-center justify-center text-3xl shrink-0 transition-colors ${
+                              <div className={`w-11 h-11 md:w-16 md:h-16 rounded-[1.25rem] flex items-center justify-center text-3xl shrink-0 transition-colors ${
                                 isActive ? 'bg-brand/15' : 'bg-gray-50'
                               }`}>
                                 {BAG_EMOJIS[type]}
                               </div>
 
                               {/* Info */}
-                              <div className="flex-1 min-w-0">
+                              <div className="flex-1 min-w-[120px]">
                                 <p className="font-bold text-gray-900 text-base">{LOCAL_BAG_LABELS[type]}</p>
                                 <p className="text-xs font-bold text-gray-400 mt-0.5 line-clamp-1">{LOCAL_BAG_DESC[type]}</p>
                                 <div className="flex items-center gap-1.5 mt-2">
@@ -873,12 +849,13 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                               </div>
 
                               {/* Counter */}
-                              <div className="flex items-center gap-3 shrink-0 bg-gray-100/50 p-2 rounded-2xl">
+                              <div className="flex items-center gap-2 shrink-0 ml-auto bg-gray-100/50 p-2 rounded-2xl">
                                 <button
                                   type="button"
+                                  aria-label={`Remove ${type} bag`}
                                   onClick={() => bags[type] > 0 && setBags({ ...bags, [type]: bags[type] - 1 })}
                                   disabled={bags[type] === 0}
-                                  className={`w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center transition-all active:scale-90 shadow-sm ${
+                                  className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all active:scale-90 shadow-sm ${
                                     bags[type] > 0 ? 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-50' : 'bg-transparent text-gray-300 cursor-not-allowed'
                                   }`}
                                 >
@@ -889,9 +866,10 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                                 </span>
                                 <button
                                   type="button"
+                                  aria-label={`Add ${type} bag`}
                                   onClick={() => totalBags < 10 && setBags({ ...bags, [type]: bags[type] + 1 })}
                                   disabled={totalBags >= 10}
-                                  className={`w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-lg ${
+                                  className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-lg ${
                                     totalBags < 10 ? 'bg-brand text-white border border-brand hover:scale-105' : 'bg-transparent text-gray-300 cursor-not-allowed'
                                   }`}
                                 >
@@ -1064,7 +1042,7 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                             type="checkbox"
                             checked={noIllegalItems}
                             onChange={e => setNoIllegalItems(e.target.checked)}
-                            className="sr-only"
+                            className="sr-only peer"
                           />
                           <div className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all ${
                             noIllegalItems ? 'bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-200' : 'border-gray-200 bg-white'
@@ -1094,7 +1072,7 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                             type="checkbox"
                             checked={termsAccepted}
                             onChange={e => setTermsAccepted(e.target.checked)}
-                            className="sr-only"
+                            className="sr-only peer"
                           />
                           <div className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all ${
                             termsAccepted ? 'bg-brand border-brand shadow-lg shadow-brand/20' : 'border-gray-200 bg-white'
@@ -1162,7 +1140,7 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
 
       {/* Error display */}
       {error && (
-        <div className="mt-8 flex items-start gap-4 bg-red-50 border border-red-100 rounded-3xl p-5 shadow-sm max-w-2xl mx-auto lg:mx-0">
+        <div role="alert" className="mt-8 flex items-start gap-4 bg-red-50 border border-red-100 rounded-3xl p-5 shadow-sm max-w-2xl mx-auto lg:mx-0">
           <AlertCircle size={20} className="text-red-500 shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="text-sm font-black text-red-900 uppercase tracking-widest mb-1">Attention Required</p>
@@ -1172,12 +1150,12 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
       )}
 
       {/* ── Fixed bottom action bar ── */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-5 pb-safe z-[200] shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
-        <div className="max-w-5xl mx-auto flex items-center gap-4">
+      <div className="fixed bottom-0 left-0 md:left-56 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-5 pb-safe z-[200] shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
 
           {/* Live price pill (Mobile only) */}
           {totalBags > 0 && totalPrice > 0 && (
-            <div className="lg:hidden flex-1 min-w-0 bg-gray-50 rounded-2xl px-5 py-2.5 border border-gray-100 shadow-inner">
+            <div className="lg:hidden sm:flex-1 min-w-0 bg-gray-50 rounded-2xl px-4 py-2 border border-gray-100 shadow-inner">
               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">
                 {totalBags} item{totalBags > 1 ? 's' : ''} · {hours}h
               </p>
@@ -1192,10 +1170,10 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
             <Button
               onClick={handlePayClick}
               loading={loading}
-              className="w-full h-14 rounded-2xl font-black text-base shadow-xl shadow-brand/20 transition-all active:scale-95 tracking-tight"
+              className="w-full min-h-14 py-3 h-auto rounded-2xl font-black text-base shadow-xl shadow-brand/20 transition-all active:scale-95 tracking-tight"
               disabled={!timesValid || totalBags === 0}
             >
-              {paymentMethod === 'pay_at_hub' ? 'Confirm Reservation (Pay Cash at Hub)' : (totalPrice > 0 ? `Pay LKR ${totalPrice.toLocaleString()} Online` : 'Confirm & Proceed')}
+              {paymentMethod === 'pay_at_hub' ? 'Reserve ? Pay at hub' : (totalPrice > 0 ? `Pay LKR ${totalPrice.toLocaleString()} Online` : 'Confirm & Proceed')}
             </Button>
           </div>
         </div>

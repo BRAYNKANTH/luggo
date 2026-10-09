@@ -318,12 +318,12 @@ export async function disputeSeal(
 export async function extendBooking(
   bookingId: string,
   additionalHours: number
-): Promise<{ error?: string; payhere?: Record<string, unknown> }> {
+): Promise<{ error?: string; success?: boolean; payhere?: Record<string, unknown> }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated.' }
 
-  if (additionalHours <= 0) return { error: 'Invalid extension duration.' }
+  if (!Number.isInteger(additionalHours) || additionalHours < 1 || additionalHours > 168) return { error: 'Extension duration must be a whole number from 1 to 168 hours.' }
 
   // Fetch booking and its bags to calculate price
   const { data: booking } = await supabase
@@ -369,7 +369,18 @@ export async function extendBooking(
     0
   )
 
-  if (extensionPrice <= 0) return { error: 'Failed to calculate extension price.' }
+  if (!Number.isFinite(extensionPrice) || extensionPrice < 0) return { error: 'Failed to calculate extension price.' }
+  if (extensionPrice === 0) {
+    const { data: updated, error } = await createServiceClient().from('bookings')
+      .update({ reminder_sent_at: null, end_time: newEnd.toISOString(), status: booking.status === 'overstayed' ? 'active_storage' : booking.status })
+      .eq('id', bookingId).eq('user_id', user.id).eq('status', booking.status).eq('end_time', booking.end_time)
+      .select('id').maybeSingle()
+    if (error || !updated) return { error: 'Booking changed. Please refresh and try again.' }
+    return { success: true }
+  }
+  if (!process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID || !process.env.PAYHERE_MERCHANT_SECRET || !process.env.NEXT_PUBLIC_APP_URL) {
+    return { error: 'Online payment is temporarily unavailable.' }
+  }
 
   // Create pending payment record — use service role to bypass RLS
   const serviceClient = createServiceClient()
@@ -406,7 +417,7 @@ export async function extendBooking(
   const firstName = nameParts[0]
   const lastName = nameParts.slice(1).join(' ') || 'N/A'
   
-  const orderId = `ext_${payment.id}_${additionalHours}`
+  const orderId = `ext_${payment.id}_${additionalHours}_${newEnd.getTime()}`
 
   const payhereData = {
     merchant_id: merchantId,

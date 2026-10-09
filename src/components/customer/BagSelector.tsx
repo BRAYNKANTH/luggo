@@ -45,18 +45,18 @@ export function BagSelector({ value, onChange, className, rates = DEFAULT_BAG_RA
         <div
           key={type}
           className={cn(
-            'group bg-white p-6 rounded-[2.5rem] border border-gray-100 flex items-center justify-between gap-6 transition-all duration-500 hover:shadow-xl hover:border-brand/20',
+            'group bg-white p-4 sm:p-6 rounded-3xl sm:rounded-[2.5rem] border border-gray-100 flex flex-wrap items-center justify-between gap-4 transition-all duration-500 hover:shadow-xl hover:border-brand/20',
             value[type] > 0 && 'border-brand/40 bg-brand/5 shadow-brand/5'
           )}
         >
           {/* Visual ID */}
-          <div className="flex items-center gap-5 flex-1 min-w-0">
-             <div className="w-16 h-16 rounded-3xl bg-gray-50 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-500 group-hover:bg-white shadow-sm">
+          <div className="flex items-center gap-3 flex-1 min-w-[160px]">
+             <div className="w-12 h-12 sm:w-16 sm:h-16 shrink-0 rounded-2xl bg-gray-50 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-500 group-hover:bg-white shadow-sm">
                 {BAG_ICONS[type]}
              </div>
              <div className="min-w-0">
                 <p className="font-black text-ocean-900 tracking-tight leading-none mb-1.5">{BAG_LABELS[type]}</p>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed line-clamp-2 md:line-clamp-none">{BAG_DESCRIPTIONS[type]}</p>
+                <p className="text-xs text-gray-600 font-bold uppercase tracking-widest leading-relaxed line-clamp-2 md:line-clamp-none">{BAG_DESCRIPTIONS[type]}</p>
              </div>
           </div>
 
@@ -68,13 +68,13 @@ export function BagSelector({ value, onChange, className, rates = DEFAULT_BAG_RA
              </div>
 
              {/* Dynamic Counter Controls */}
-             <div className="flex items-center gap-4 bg-white/50 backdrop-blur-sm p-2 rounded-[2rem] border border-gray-100 shadow-inner">
+             <div className="flex items-center gap-2 bg-white/50 backdrop-blur-sm p-2 rounded-[2rem] border border-gray-100 shadow-inner">
                 <button
                   type="button"
                   onClick={() => decrement(type)}
                   disabled={value[type] === 0}
                   className={cn(
-                    'h-10 w-10 rounded-2xl flex items-center justify-center transition-all active:scale-90',
+                    'h-11 w-11 rounded-2xl flex items-center justify-center transition-all active:scale-90',
                     value[type] > 0
                       ? 'bg-ocean-900 text-white shadow-lg shadow-ocean-900/20'
                       : 'bg-gray-100 text-gray-300 cursor-not-allowed'
@@ -93,7 +93,7 @@ export function BagSelector({ value, onChange, className, rates = DEFAULT_BAG_RA
                   onClick={() => increment(type)}
                   disabled={total >= 10}
                   className={cn(
-                    'h-10 w-10 rounded-2xl flex items-center justify-center transition-all active:scale-90',
+                    'h-11 w-11 rounded-2xl flex items-center justify-center transition-all active:scale-90',
                     total < 10
                       ? 'bg-brand text-white shadow-lg shadow-brand/20'
                       : 'bg-gray-100 text-gray-300 cursor-not-allowed'

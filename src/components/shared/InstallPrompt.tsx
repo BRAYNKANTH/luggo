@@ -18,7 +18,7 @@ export function InstallPrompt() {
 
   useEffect(() => {
     // Don't show if already dismissed in this session
-    if (sessionStorage.getItem(DISMISS_KEY)) return
+    try { if (sessionStorage.getItem(DISMISS_KEY)) return } catch { /* Storage can be unavailable in private browsing. */ }
 
     // Already installed as PWA → don't show
     if (window.matchMedia('(display-mode: standalone)').matches) return
@@ -46,17 +46,18 @@ export function InstallPrompt() {
   }, [])
 
   function dismiss() {
-    sessionStorage.setItem(DISMISS_KEY, '1')
+    try { sessionStorage.setItem(DISMISS_KEY, '1') } catch { /* Dismiss for this render. */ }
     setVisible(false)
   }
 
   async function install() {
     if (!installEvent) return
-    await installEvent.prompt()
-    const { outcome } = await installEvent.userChoice
-    if (outcome === 'accepted') {
-      setVisible(false)
-    }
+    try {
+      await installEvent.prompt()
+      await installEvent.userChoice
+      dismiss()
+    } catch { dismiss() }
+    finally { setInstallEvent(null) }
   }
 
   if (!visible) return null
@@ -64,7 +65,7 @@ export function InstallPrompt() {
   // ── iOS hint ────────────────────────────────────────────────────────────────
   if (showIOSHint) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-safe">
+      <div className="fixed bottom-[calc(72px_+_env(safe-area-inset-bottom))] md:bottom-4 left-0 right-0 z-[70] px-4">
         <div className="max-w-lg mx-auto mb-3 bg-ocean-900 text-white rounded-3xl p-4 shadow-2xl border border-white/10">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -73,7 +74,7 @@ export function InstallPrompt() {
               </div>
               <div>
                 <p className="font-bold text-sm">Add Luggo to Home Screen</p>
-                <p className="text-white/50 text-xs mt-0.5 leading-relaxed">
+                <p className="text-slate-300 text-sm mt-0.5 leading-relaxed">
                   Tap <Share size={11} className="inline mx-0.5 text-white/70" /> then
                   &ldquo;Add to Home Screen&rdquo; for the full app experience.
                 </p>
@@ -81,7 +82,8 @@ export function InstallPrompt() {
             </div>
             <button
               onClick={dismiss}
-              className="text-white/30 hover:text-white/70 transition-colors mt-0.5 shrink-0"
+              aria-label="Dismiss install hint"
+              className="min-h-11 min-w-11 flex items-center justify-center rounded-xl text-white/70 hover:text-white shrink-0"
             >
               <X size={18} />
             </button>
@@ -93,7 +95,7 @@ export function InstallPrompt() {
 
   // ── Android / Chrome prompt ─────────────────────────────────────────────────
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-safe">
+    <div className="fixed bottom-[calc(72px_+_env(safe-area-inset-bottom))] md:bottom-4 left-0 right-0 z-[70] px-4">
       <div className="max-w-lg mx-auto mb-3 bg-white rounded-3xl p-4 shadow-2xl border border-gray-100">
         <div className="flex items-center gap-3">
           {/* App icon */}
@@ -114,7 +116,7 @@ export function InstallPrompt() {
           {/* Text */}
           <div className="flex-1 min-w-0">
             <p className="font-bold text-ocean-900 text-sm">Add Luggo to Home Screen</p>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-sm text-gray-600 mt-0.5">
               Get quick access, offline support &amp; a native feel.
             </p>
           </div>
@@ -122,7 +124,8 @@ export function InstallPrompt() {
           {/* Dismiss */}
           <button
             onClick={dismiss}
-            className="text-gray-300 hover:text-gray-500 transition-colors shrink-0"
+            aria-label="Dismiss install prompt"
+            className="min-h-11 min-w-11 flex items-center justify-center rounded-xl text-gray-600 hover:text-gray-900 shrink-0"
           >
             <X size={18} />
           </button>

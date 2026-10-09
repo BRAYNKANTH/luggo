@@ -11,7 +11,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
 
   if (body?.action === 'mark_all_read') {
     const { error } = await ((supabase.from('notifications') as unknown) as {
@@ -61,7 +61,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
   if (!body?.id) {
     return NextResponse.json({ error: 'Notification id required' }, { status: 400 })
   }

@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { SocialLinks } from '@/components/shared/SocialLinks'
+import { GUARANTEE_LIMIT_LKR, GUARANTEE_LIMIT_LABEL } from '@/lib/utils/guarantee'
+import { CONTACT_EMAIL } from '@/lib/public-company'
 import { Logo } from '@/components/ui/Logo'
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher'
 import { SplashScreen } from '@/components/marketing/SplashScreen'
@@ -49,29 +52,6 @@ const FEATURES = [
   { icon: MapPin,     bg: 'bg-cyan-50',   ic: 'text-cyan-600',   border: 'border-cyan-100' },
 ]
 
-const REVIEWS = [
-  {
-    name: 'Sarah Miller',
-    role: 'Travel Blogger',
-    avatar: '👩‍💻',
-    quote: 'Dropped my bags at the Fort hub before an early train to Kandy and picked them up eight hours later without a hitch. The tamper-proof seal photo in the app is a nice touch for peace of mind.',
-  },
-  {
-    name: 'James Wilson',
-    role: 'Solo Traveler',
-    avatar: '👨‍✈️',
-    quote: "Landed at BIA on a red-eye with a 10-hour layover and nowhere to put my pack. Booked a slot from the airport Wi-Fi in under a minute and paid cash at the counter — didn't need to make an account.",
-  },
-  {
-    name: 'Elena Rossi',
-    role: 'Digital Nomad',
-    avatar: '👩‍🌾',
-    quote: "I extend my booking online whenever my work calls run long — it's saved me from rushing back across Galle Fort more than once. Support answered my hours question within minutes.",
-  },
-]
-
-// ── NavBar ────────────────────────────────────────────────────────────────────
-
 function NavBar() {
   const t = useTranslations('Nav')
   const [scrolled, setScrolled] = useState(false)
@@ -91,6 +71,7 @@ function NavBar() {
           <a href="#how-it-works" className="hover:text-brand transition-colors">{t('how')}</a>
           <a href="#locations" className="hover:text-brand transition-colors">{t('locations')}</a>
           <a href="#faq" className="hover:text-brand transition-colors">{t('faq')}</a>
+          <Link href="/about" className="hover:text-brand transition-colors">About</Link>
         </div>
         <div className="hidden md:flex items-center gap-2">
           <LanguageSwitcher />
@@ -117,7 +98,7 @@ function NavBar() {
                 className="block text-base font-bold text-ocean-900 p-3 rounded-2xl hover:bg-gray-50">{t('locations')}</a>
               <a href="#faq" onClick={() => setOpen(false)}
                 className="block text-base font-bold text-ocean-900 p-3 rounded-2xl hover:bg-gray-50">{t('faq')}</a>
-              
+              <Link href="/about" onClick={() => setOpen(false)} className="block text-base font-bold text-ocean-900 p-3 rounded-2xl hover:bg-gray-50">About</Link>
               <div className="pt-4 border-t border-gray-100 flex flex-col gap-3 mt-4">
                 <div className="px-3 py-2 flex items-center justify-between bg-gray-50 rounded-2xl">
                   <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Language</span>
@@ -257,7 +238,7 @@ function HeroSection() {
             </motion.div>
 
             <motion.div variants={fadeUp} className="hidden sm:flex flex-wrap gap-2.5 justify-center lg:justify-start opacity-70">
-              {['No account needed','Tamper-proof seals','LKR 40k Protection'].map(chip => (
+              {['No account needed','Tamper-proof seals',`${GUARANTEE_LIMIT_LABEL} Protection`].map(chip => (
                 <span key={chip} className="flex items-center gap-1.5 bg-white/5 border border-white/10 text-white text-xs font-bold px-4 py-2 rounded-full">
                   <Check size={12} className="text-emerald-400" strokeWidth={3} /> {chip}
                 </span>
@@ -315,10 +296,9 @@ function SocialProofBand() {
       <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-center gap-x-12 gap-y-4">
         {[
           { icon: Shield,      text: t('vettedHub') },
-          { icon: ShieldCheck, text: t('protection') },
+          { icon: ShieldCheck, text: t('protection', { amount: GUARANTEE_LIMIT_LKR.toLocaleString('en-LK') }) },
           { icon: Lock,        text: t('seals') },
           { icon: CreditCard,  text: 'PayHere Secure' },
-          { icon: Star,        text: '5-Star Rated' },
         ].map(({ icon: Icon, text }) => (
           <div key={text} className="flex items-center gap-2.5 text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider">
             <Icon size={14} className="text-brand" />
@@ -436,7 +416,7 @@ function FeaturesSection() {
                 </div>
                 <div>
                   <h3 className="font-bold text-ocean-900 text-base mb-1.5">{t(`feature${i+1}`)}</h3>
-                  <p className="text-gray-500 text-xs leading-relaxed opacity-70">{t(`feature${i+1}Desc`)}</p>
+                  <p className="text-gray-500 text-xs leading-relaxed opacity-70">{t(`feature${i+1}Desc`, { amount: GUARANTEE_LIMIT_LKR.toLocaleString('en-LK') })}</p>
                 </div>
               </motion.div>
             ))}
@@ -448,37 +428,6 @@ function FeaturesSection() {
 }
 
 // ── Reviews ──────────────────────────────────────────────────────────────────
-
-function ReviewsSection() {
-  const t = useTranslations('Sections.reviews')
-  return (
-    <section className="bg-white py-20 px-4">
-      <div className="max-w-4xl mx-auto">
-        <motion.div initial="hidden" whileInView="show" viewport={{ once:true }} variants={stagger} className="text-center mb-12">
-          <motion.span variants={fadeUp} className="text-brand font-bold text-xs uppercase tracking-widest block mb-2">{t('tag')}</motion.span>
-          <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-black text-ocean-900">{t('title')}</motion.h2>
-        </motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {REVIEWS.map((rev, i) => (
-            <motion.div key={i} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} transition={{ delay: i*0.1 }}
-              className="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex flex-col items-center text-center">
-              <span className="text-4xl mb-4">{rev.avatar}</span>
-              <div className="flex gap-1 mb-4">
-                {[1,2,3,4,5].map(s => <Star key={s} size={12} fill="#f59e0b" className="text-amber-500" />)}
-              </div>
-              <p className="text-gray-600 text-sm leading-relaxed mb-6 italic">&ldquo;{rev.quote}&rdquo;</p>
-              <p className="font-bold text-ocean-900 text-sm">{rev.name}</p>
-              <p className="text-xs text-gray-400 font-medium">{rev.role}</p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-// ── Pricing ───────────────────────────────────────────────────────────────────
 
 function PricingSection({ rates }: { rates: BagRates }) {
   const bags = [
@@ -557,7 +506,7 @@ const FAQS = [
   },
   {
     q: "What's covered if something happens to my bags?",
-    a: 'Every hub is vetted and your bags are sealed and photographed at drop-off. You can also opt in to Luggo Guarantee for LKR 150 per bag, which covers up to LKR 40,000 against accidental damage, loss, or theft while stored.',
+    a: `Every hub is vetted and your bags are sealed and photographed at drop-off. You can also opt in to Luggo Guarantee for LKR 150 per bag, with compensation up to ${GUARANTEE_LIMIT_LABEL} per booking for eligible accidental damage, loss, or theft while stored, subject to the Terms of Service.`,
   },
   {
     q: 'Do I need to create an account or pay upfront?',
@@ -616,17 +565,22 @@ function FooterCta() {
 
 function Footer() {
   return (
-    <footer className="bg-ocean-900 text-white/40 py-20 px-4">
+    <footer className="bg-ocean-900 text-white/75 py-20 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row items-center justify-between gap-10">
           <Logo size="md" />
           <div className="flex flex-wrap justify-center gap-8 text-sm font-bold uppercase tracking-widest">
-            <a href="#how" className="hover:text-white">How</a>
+            <a href="#how-it-works" className="hover:text-white">How</a>
+            <Link href="/about" className="hover:text-white">About</Link>
             <a href="#locations" className="hover:text-white">Locations</a>
-            <a href="/terms" className="hover:text-white">Terms</a>
-            <a href="/privacy" className="hover:text-white">Privacy</a>
+            <Link href="/terms" className="hover:text-white">Terms</Link>
+            <Link href="/privacy" className="hover:text-white">Privacy</Link>
           </div>
-          <p className="text-xs font-medium">© 2026 Luggo Sri Lanka. Trusted island-wide.</p>
+          <div className="flex flex-col items-center gap-4 text-sm">
+            <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-white">{CONTACT_EMAIL}</a>
+            <SocialLinks />
+            <p className="text-xs font-medium">&copy; 2026 Luggo Sri Lanka.</p>
+          </div>
         </div>
       </div>
     </footer>
@@ -648,7 +602,6 @@ export default function LandingPage({ rates = DEFAULT_BAG_RATES }: { rates?: Bag
       <SocialProofBand />
       <HowItWorksSection />
       <FeaturesSection />
-      <ReviewsSection />
       <PricingSection rates={rates} />
       <LocationsSection />
       <FaqSection />

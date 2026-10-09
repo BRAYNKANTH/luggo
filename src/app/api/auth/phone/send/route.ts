@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { hitRateLimit } from '@/lib/security/rateLimit'
 import { createServiceClient } from '@/lib/supabase/service'
 import { sendSMS } from '@/lib/utils/sms'
+import { sendPhoneCodeSchema } from '@/lib/validators/phone'
 
 function generateOtp() {
   return randomInt(100000, 1000000).toString()
@@ -17,10 +18,10 @@ function getClientIp(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { phone } = await req.json()
-  if (!phone || typeof phone !== 'string') {
-    return NextResponse.json({ error: 'Phone number required' }, { status: 400 })
-  }
+  const parsed = sendPhoneCodeSchema.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) return NextResponse.json({ error: 'Enter a valid Sri Lankan phone number' }, { status: 400 })
+  const phone = parsed.data.phone!
+  if (!process.env.TEXTLK_API_TOKEN) return NextResponse.json({ error: 'SMS verification is temporarily unavailable.' }, { status: 503 })
 
   const clientIp = getClientIp(req)
   if (!hitRateLimit(`otp-send:ip:${clientIp}`, 10, 10 * 60_000).allowed) {
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
   if (insertError) {
     console.error('phone_otps insert failed:', insertError.message)
     return NextResponse.json(
-      { error: 'Server error storing OTP. Run the phone_otps SQL migration in Supabase.' },
+      { error: 'Verification is temporarily unavailable. Please try again later.' },
       { status: 500 }
     )
   }
@@ -67,6 +68,7 @@ export async function POST(req: NextRequest) {
   try {
     await sendSMS(phone, `Your Luggo verification code is: ${otp}. Valid for 5 minutes.`)
   } catch {
+    await supabase.from('phone_otps').delete().eq('phone', phone).eq('otp', hashOtp(otp)).eq('expires_at', expiresAt)
     return NextResponse.json({ error: 'Failed to send SMS. Please try again.' }, { status: 500 })
   }
 

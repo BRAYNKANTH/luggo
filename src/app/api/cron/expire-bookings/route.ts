@@ -38,9 +38,12 @@ export async function GET(req: NextRequest) {
   const ids = stale!.map((b) => b.id)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: updateError } = await (supabase.from('bookings') as any)
+  const { data: updated, error: updateError } = await (supabase.from('bookings') as any)
     .update({ status: 'expired' })
     .in('id', ids)
+    .eq('status', 'pending_payment')
+    .lt('created_at', cutoff)
+    .select('id')
 
   if (updateError) {
     console.error('[cron/expire-bookings] update error:', updateError)
@@ -48,5 +51,5 @@ export async function GET(req: NextRequest) {
   }
 
   console.log(`[cron/expire-bookings] expired ${count} bookings:`, ids)
-  return NextResponse.json({ expired: count, ids })
+  return NextResponse.json({ expired: updated?.length ?? 0, ids: updated?.map((b: { id: string }) => b.id) ?? [] })
 }

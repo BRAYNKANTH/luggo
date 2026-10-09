@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/navigation'
 import { updateUserRole } from '@/lib/admin/actions'
 import { type UserRole } from '@/types/database'
 import { AlertCircle } from 'lucide-react'
