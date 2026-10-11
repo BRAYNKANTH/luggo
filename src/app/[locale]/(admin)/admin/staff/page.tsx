@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { requireAdmin } from '@/lib/admin/actions'
+import { requireAdmin } from '@/lib/admin/guard'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { StaffForm } from '@/components/admin/StaffForm'
 import { type UserRole } from '@/types/database'

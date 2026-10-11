@@ -53,11 +53,12 @@ function formatDropoff(dt: string) {
   return formatInSLT(d, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })
 }
 
-export default async function StaffDashboardPage({
-  searchParams,
-}: {
-  searchParams?: { search?: string; tab?: string }
-}) {
+export default async function StaffDashboardPage(
+  props: {
+    searchParams?: Promise<{ search?: string; tab?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/staff/login')

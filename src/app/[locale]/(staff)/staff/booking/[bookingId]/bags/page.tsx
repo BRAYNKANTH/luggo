@@ -30,11 +30,12 @@ type BookingDetail = {
   booking_bags: Bag[]
 }
 
-export default async function BagRegistrationPage({
-  params,
-}: {
-  params: { bookingId: string }
-}) {
+export default async function BagRegistrationPage(
+  props: {
+    params: Promise<{ bookingId: string }>
+  }
+) {
+  const params = await props.params;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/staff/login')

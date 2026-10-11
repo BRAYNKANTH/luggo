@@ -8,11 +8,12 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Users — Admin' }
 
-export default async function AdminUsersPage({
-  searchParams,
-}: {
-  searchParams: { role?: string; q?: string }
-}) {
+export default async function AdminUsersPage(
+  props: {
+    searchParams: Promise<{ role?: string; q?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/admin/login')
@@ -137,5 +138,5 @@ export default async function AdminUsersPage({
         </div>
       </div>
     </AdminShell>
-  )
+  );
 }

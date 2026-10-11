@@ -17,11 +17,12 @@ const ALL_STATUSES: BookingStatus[] = [
   'completed', 'cancelled', 'expired', 'overstayed', 'disputed',
 ]
 
-export default async function AdminBookingsPage({
-  searchParams,
-}: {
-  searchParams: { status?: string; hub?: string; page?: string }
-}) {
+export default async function AdminBookingsPage(
+  props: {
+    searchParams: Promise<{ status?: string; hub?: string; page?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/admin/login')
@@ -154,5 +155,5 @@ export default async function AdminBookingsPage({
         </div>
       </div>
     </AdminShell>
-  )
+  );
 }

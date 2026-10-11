@@ -3,11 +3,17 @@ import { createClient } from '@/lib/supabase/server'
 import { HubList } from '@/components/hubs/HubList'
 import { PageHeader } from '@/components/shared/PageHeader'
 
-export async function generateMetadata({
-  params: { locale },
-}: {
-  params: { locale: string }
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ locale: string }>
+  }
+): Promise<Metadata> {
+  const params = await props.params;
+
+  const {
+    locale
+  } = params;
+
   const path = '/hubs'
   const canonicalPath = locale === 'en' ? path : `/${locale}${path}`
 

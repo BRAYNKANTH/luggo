@@ -45,13 +45,14 @@ type BookingDetail = {
 const CANCELLABLE: BookingStatus[] = ['pending_payment', 'confirmed']
 const EXTEND_ELIGIBLE: BookingStatus[] = ['confirmed', 'arrived', 'sealing_in_progress', 'sealed_waiting_user_confirmation', 'active_storage', 'overstayed']
 
-export default async function BookingDetailPage({
-  params,
-  searchParams,
-}: {
-  params: { bookingId: string }
-  searchParams: { payment?: string; sealed?: string; pickup?: string; ext?: string; pickup_error?: string }
-}) {
+export default async function BookingDetailPage(
+  props: {
+    params: Promise<{ bookingId: string }>
+    searchParams: Promise<{ payment?: string; sealed?: string; pickup?: string; ext?: string; pickup_error?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')

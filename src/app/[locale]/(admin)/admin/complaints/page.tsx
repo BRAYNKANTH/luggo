@@ -17,11 +17,12 @@ const STATUS_FILTERS: { value: string; label: string }[] = [
   { value: 'closed',    label: 'Closed' },
 ]
 
-export default async function AdminComplaintsPage({
-  searchParams,
-}: {
-  searchParams: { status?: string }
-}) {
+export default async function AdminComplaintsPage(
+  props: {
+    searchParams: Promise<{ status?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/admin/login')

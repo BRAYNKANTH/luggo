@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import { Link } from '@/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { requireAdmin } from '@/lib/admin/actions'
+import { requireAdmin } from '@/lib/admin/guard'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { type UserRole, type BookingStatus, type BagType } from '@/types/database'
 import { isPast } from 'date-fns'
@@ -74,11 +74,12 @@ type SealProof = {
   confirmed_by_user_at: string | null
 }
 
-export default async function AdminBookingDetailPage({
-  params,
-}: {
-  params: { bookingId: string }
-}) {
+export default async function AdminBookingDetailPage(
+  props: {
+    params: Promise<{ bookingId: string }>
+  }
+) {
+  const params = await props.params;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/admin/login')
@@ -361,5 +362,5 @@ export default async function AdminBookingDetailPage({
         </div>
       </div>
     </AdminShell>
-  )
+  );
 }

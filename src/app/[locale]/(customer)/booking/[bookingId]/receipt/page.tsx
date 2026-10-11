@@ -11,11 +11,12 @@ import { type BagType } from '@/types/database'
 type Bag = { id: string; bag_type: BagType; sticker_number: string | null; seal_number: string | null }
 type Payment = { id: string; amount: number; status: string; type: string; gateway_ref: string | null; created_at: string }
 
-export default async function BookingReceiptPage({
-  params,
-}: {
-  params: { bookingId: string }
-}) {
+export default async function BookingReceiptPage(
+  props: {
+    params: Promise<{ bookingId: string }>
+  }
+) {
+  const params = await props.params;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')

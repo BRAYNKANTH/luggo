@@ -29,11 +29,12 @@ type NearbyPlace = {
   map_url: string | null
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { hubId: string; locale: string }
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ hubId: string; locale: string }>
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const supabase = await createClient()
   const { data: hub } = await supabase
     .from('hubs')
@@ -60,11 +61,12 @@ export async function generateMetadata({
   }
 }
 
-export default async function HubDetailPage({
-  params,
-}: {
-  params: { hubId: string; locale: string }
-}) {
+export default async function HubDetailPage(
+  props: {
+    params: Promise<{ hubId: string; locale: string }>
+  }
+) {
+  const params = await props.params;
   const supabase = await createClient()
 
   const [userResult, hubResult] = await Promise.all([

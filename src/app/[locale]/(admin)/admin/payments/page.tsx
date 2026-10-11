@@ -17,11 +17,12 @@ const STATUS_COLOUR: Record<string, string> = {
   refunded: 'bg-gray-100 text-gray-500',
 }
 
-export default async function AdminPaymentsPage({
-  searchParams,
-}: {
-  searchParams: { type?: string; status?: string; page?: string }
-}) {
+export default async function AdminPaymentsPage(
+  props: {
+    searchParams: Promise<{ type?: string; status?: string; page?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/admin/login')

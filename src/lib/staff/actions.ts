@@ -35,10 +35,31 @@ async function requireStaff() {
     redirect('/staff/login')
   }
 
+  // A hub_staff row alone is not enough: a demoted user keeps the row until it is deactivated.
+  const { data: profile } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .single() as { data: { role: string } | null; error: unknown }
+  if (profile?.role !== 'hub_staff') {
+    redirect('/staff/login')
+  }
+
   // Service client for writes — bypasses RLS for trusted staff operations
   const svc = createServiceClient()
 
   return { supabase, svc, userId: user.id, hubId: staffRow.hub_id, hubAlias: staffRow.hubs?.alias ?? '' }
+}
+
+// The service client bypasses RLS, so every write keyed by a client-supplied
+// booking ID must first prove the booking belongs to the caller's hub.
+async function bookingIsAtHub(svc: SupabaseClient, bookingId: string, hubId: string): Promise<boolean> {
+  const { data } = await svc
+    .from('bookings')
+    .select('hub_id')
+    .eq('id', bookingId)
+    .maybeSingle() as { data: { hub_id: string } | null }
+  return data?.hub_id === hubId
 }
 
 // ─────────────────────────────────────────────
@@ -303,8 +324,24 @@ export async function uploadSealProof(
     return { error: 'Photo must be under 10 MB.' }
   }
 
-  const { svc, userId } = await requireStaff()
-  const ext = file.name.split('.').pop() ?? 'jpg'
+  const validBagId = uuidSchema.safeParse(bagId)
+  if (!validBagId.success) return { error: validBagId.error.issues[0].message }
+
+  const extByType: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
+  const ext = extByType[file.type]
+  if (!ext) return { error: 'Only JPG, PNG, and WebP photos are supported.' }
+
+  const { svc, userId, hubId } = await requireStaff()
+  if (!(await bookingIsAtHub(svc, bookingId, hubId))) return { error: 'Booking not found at your hub.' }
+
+  const { data: bag } = await svc
+    .from('booking_bags' as never)
+    .select('id')
+    .eq('id', bagId)
+    .eq('booking_id', bookingId)
+    .maybeSingle() as { data: { id: string } | null }
+  if (!bag) return { error: 'Bag not found on this booking.' }
+
   const path = `${bookingId}/${bagId}_${Date.now()}.${ext}`
   const arrayBuffer = await file.arrayBuffer()
 
@@ -1067,7 +1104,7 @@ export async function resolveIncidentReport(
   incidentId: string,
   note: string
 ): Promise<{ error?: string }> {
-  const { svc, userId } = await requireStaff()
+  const { svc, userId, hubId } = await requireStaff()
 
   const isSupervisor = await checkIsSupervisor(userId, svc)
   if (!isSupervisor) {
@@ -1080,7 +1117,7 @@ export async function resolveIncidentReport(
     .eq('id', incidentId)
     .single() as { data: { id: string; booking_id: string; bag_id: string | null } | null }
 
-  if (!report) return { error: 'Incident report not found.' }
+  if (!report || !(await bookingIsAtHub(svc, report.booking_id, hubId))) return { error: 'Incident report not found.' }
 
   await svc
     .from('incident_reports' as never)
@@ -1260,8 +1297,9 @@ export async function rejectBookingIdentity(bookingId: string, reason: string) {
   const validId = uuidSchema.safeParse(bookingId)
   if (!validId.success) return { error: validId.error.issues[0].message }
   if (!reason.trim()) return { error: 'Rejection reason is required' }
-  
-  const { svc, userId } = await requireStaff()
+
+  const { svc, userId, hubId } = await requireStaff()
+  if (!(await bookingIsAtHub(svc, bookingId, hubId))) return { error: 'Booking not found at your hub.' }
 
   // 1. Transition booking to exception_hold
   const { error: bookingError } = await svc
@@ -2292,7 +2330,8 @@ export async function recordBagAccessEventAction(
   const validId = uuidSchema.safeParse(bookingId)
   if (!validId.success) return { error: validId.error.issues[0].message }
 
-  const { svc, userId } = await requireStaff()
+  const { svc, userId, hubId } = await requireStaff()
+  if (!(await bookingIsAtHub(svc, bookingId, hubId))) return { error: 'Booking not found at your hub.' }
 
   // Get old seal number
   const { data: bag } = await svc
@@ -2556,7 +2595,7 @@ export async function updateBookingBagsAction(
   const validId = uuidSchema.safeParse(bookingId)
   if (!validId.success) return { error: validId.error.issues[0].message }
 
-  const { svc, userId } = await requireStaff()
+  const { svc, userId, hubId } = await requireStaff()
 
   // 1. Fetch booking details to calculate new price
   const { data: booking } = await svc
@@ -2565,7 +2604,7 @@ export async function updateBookingBagsAction(
     .eq('id', bookingId)
     .single() as { data: { hub_id: string; start_time: string; end_time: string; total_price: number } | null }
 
-  if (!booking) return { error: 'Booking not found.' }
+  if (!booking || booking.hub_id !== hubId) return { error: 'Booking not found at your hub.' }
 
   // Recalculate price of updated bags
   const start = new Date(booking.start_time)
@@ -2609,6 +2648,7 @@ export async function updateBookingBagsAction(
           notes: bag.notes
         })
         .eq('id', bag.id)
+        .eq('booking_id', bookingId)
       if (updError) return { error: `Failed to update bag: ${updError.message}` }
     } else {
       // Insert new

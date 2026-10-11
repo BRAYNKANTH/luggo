@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, use } from 'react';
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { User, CheckCircle, Phone, Fingerprint, Mail, ShieldCheck, AlertTriangle, LogOut, ChevronRight } from 'lucide-react'
@@ -8,15 +8,21 @@ import { Link } from '@/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Spinner } from '@/components/ui/Spinner'
+import { OtpInput } from '@/components/ui/OtpInput'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { updateProfile, signOut } from '@/lib/auth/actions'
 import { updateProfileSchema, type UpdateProfileInput } from '@/lib/validators/auth'
 import { useUser } from '@/lib/hooks/useUser'
 
-export default function ProfilePage({ searchParams }: { searchParams: { welcome?: string } }) {
+export default function ProfilePage(props: { searchParams: Promise<{ welcome?: string }> }) {
+  const searchParams = use(props.searchParams);
   const { profile, loading } = useUser()
   const [serverError, setServerError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  // A new phone number is only saved after the SMS code sent to it is confirmed.
+  const [pendingPhone, setPendingPhone] = useState<UpdateProfileInput | null>(null)
+  const [otp, setOtp] = useState('')
+  const [verifying, setVerifying] = useState(false)
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting, isDirty } } = useForm<UpdateProfileInput>({
     resolver: zodResolver(updateProfileSchema),
@@ -30,8 +36,42 @@ export default function ProfilePage({ searchParams }: { searchParams: { welcome?
     setServerError(null)
     setSaved(false)
     const result = await updateProfile(data)
-    if (result?.error) setServerError(result.error)
-    else { setSaved(true); setTimeout(() => setSaved(false), 3000) }
+    if (result?.error) return setServerError(result.error)
+    if (result?.needsPhoneVerification) {
+      const res = await fetch('/api/auth/phone/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: data.phone }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) return setServerError(body.error ?? 'Could not send a verification code.')
+      setOtp('')
+      setPendingPhone(data)
+      return
+    }
+    setSaved(true); setTimeout(() => setSaved(false), 3000)
+  }
+
+  async function verifyPhone() {
+    if (!pendingPhone) return
+    setServerError(null)
+    setVerifying(true)
+    const res = await fetch('/api/auth/phone/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: pendingPhone.phone,
+        otp,
+        name: pendingPhone.name,
+        nic: pendingPhone.nic_passport || undefined,
+      }),
+    })
+    const body = await res.json().catch(() => ({}))
+    setVerifying(false)
+    if (!res.ok) return setServerError(body.error ?? 'Verification failed.')
+    reset(pendingPhone)
+    setPendingPhone(null)
+    setSaved(true); setTimeout(() => setSaved(false), 3000)
   }
 
   if (loading) {
@@ -119,8 +159,23 @@ export default function ProfilePage({ searchParams }: { searchParams: { welcome?
               </label>
               <Input id="profile-phone" type="tel" autoComplete="tel" placeholder="07XXXXXXXX"
                 error={errors.phone?.message} {...register('phone')} />
-              <p className="text-xs text-gray-400 mt-1">Used for SMS alerts and notifications</p>
+              <p className="text-xs text-gray-400 mt-1">Used for SMS alerts and notifications. A new number is confirmed by SMS code.</p>
             </div>
+
+            {pendingPhone && (
+              <div className="rounded-xl border border-brand/20 bg-brand/5 p-4 space-y-3">
+                <p className="text-xs text-gray-700">We sent a code to <strong>{pendingPhone.phone}</strong>. Enter it to save your new number.</p>
+                <OtpInput value={otp} onChange={setOtp} />
+                <div className="flex gap-2">
+                  <Button type="button" onClick={verifyPhone} loading={verifying} disabled={otp.length !== 6}>
+                    Confirm number
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={() => setPendingPhone(null)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <div>
               <label htmlFor="profile-nic" className="block text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5">

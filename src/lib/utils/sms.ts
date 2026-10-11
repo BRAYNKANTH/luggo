@@ -1,5 +1,5 @@
-'use server'
-
+// Server-only helper. Do NOT add 'use server': that would expose sendSMS as a
+// public server action anyone could call to send texts as Luggo.
 import https from 'node:https'
 
 const TEXTLK_ENDPOINT = 'https://app.text.lk/api/v3/sms/send'
@@ -15,7 +15,7 @@ export async function sendSMS(to: string, message: string): Promise<void> {
 
   const recipient = normaliseLKPhone(to)
   if (!recipient) {
-    console.warn('SMS: invalid phone number', to)
+    console.warn('SMS: invalid phone number')
     return
   }
 
@@ -38,14 +38,13 @@ export async function sendSMS(to: string, message: string): Promise<void> {
     }
 
     const req = https.request(options, (res) => {
-      let data = ''
-      res.on('data', (chunk) => { data += chunk })
+      res.resume()
       res.on('end', () => {
         if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-          console.log('SMS sent to', recipient, '→', data)
+          console.log('SMS sent', res.statusCode)
           resolve()
         } else {
-          console.error('SMS send failed', res.statusCode, data)
+          console.error('SMS send failed', res.statusCode)
           reject(new Error(`SMS failed: ${res.statusCode}`))
         }
       })

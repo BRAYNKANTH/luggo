@@ -10,11 +10,12 @@ import { type BagType } from '@/types/database'
 
 type Bag = { id: string; bag_type: BagType; sticker_number: string | null; hub_alias: string | null; seal_status: string; seal_number: string | null }
 
-export default async function ConfirmSealPage({
-  params,
-}: {
-  params: { bookingId: string }
-}) {
+export default async function ConfirmSealPage(
+  props: {
+    params: Promise<{ bookingId: string }>
+  }
+) {
+  const params = await props.params;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')

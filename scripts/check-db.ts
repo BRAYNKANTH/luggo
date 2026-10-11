@@ -29,7 +29,7 @@ async function check() {
   console.log('--- Trial Create Dummy ---')
   const res = await supabase.auth.admin.createUser({
     email: 'test_dummy@luggo.lk',
-    password: 'password123',
+    password: crypto.randomUUID(), // throwaway user, deleted below
     email_confirm: true,
     user_metadata: { name: 'Test Dummy' }
   })

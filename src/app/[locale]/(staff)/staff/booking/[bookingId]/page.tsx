@@ -48,11 +48,12 @@ type BookingFull = {
   }[]
 }
 
-export default async function StaffBookingPage({
-  params,
-}: {
-  params: { bookingId: string }
-}) {
+export default async function StaffBookingPage(
+  props: {
+    params: Promise<{ bookingId: string }>
+  }
+) {
+  const params = await props.params;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/staff/login')

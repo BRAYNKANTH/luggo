@@ -15,7 +15,8 @@ type Hub = {
   active: boolean
 }
 
-export default async function BookPage({ params }: { params: { hubId: string } }) {
+export default async function BookPage(props: { params: Promise<{ hubId: string }> }) {
+  const params = await props.params;
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()

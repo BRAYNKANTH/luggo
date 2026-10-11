@@ -35,7 +35,7 @@ BEGIN
     SELECT id INTO v_hub2_id FROM public.hubs WHERE active = true ORDER BY name LIMIT 1 OFFSET 1;
   END IF;
 
-  -- ── Staff 1: staff@luggo.lk / Staff1234! ─────────────────
+  -- ── Staff 1: staff@luggo.lk (random password; use 'Send password recovery' in Supabase Auth) ─────────────────
   -- Check if auth user already exists
   SELECT id INTO v_user1_id FROM auth.users WHERE email = 'staff@luggo.lk';
 
@@ -53,7 +53,7 @@ BEGIN
       'authenticated',
       'authenticated',
       'staff@luggo.lk',
-      crypt('Staff1234!', gen_salt('bf')),
+      crypt(gen_random_uuid()::text, gen_salt('bf')), -- random: set a real password via reset email
       now(), now(), now(),
       '{"provider":"email","providers":["email"]}',
       '{"name":"Kamal Perera"}',
@@ -71,7 +71,7 @@ BEGIN
   VALUES (v_user1_id, v_hub1_id, true)
   ON CONFLICT (user_id, hub_id) DO UPDATE SET active = true;
 
-  -- ── Staff 2: staff2@luggo.lk / Staff1234! ────────────────
+  -- ── Staff 2: staff2@luggo.lk (random password; use 'Send password recovery' in Supabase Auth) ────────────────
   SELECT id INTO v_user2_id FROM auth.users WHERE email = 'staff2@luggo.lk';
 
   IF v_user2_id IS NULL THEN
@@ -88,7 +88,7 @@ BEGIN
       'authenticated',
       'authenticated',
       'staff2@luggo.lk',
-      crypt('Staff1234!', gen_salt('bf')),
+      crypt(gen_random_uuid()::text, gen_salt('bf')), -- random: set a real password via reset email
       now(), now(), now(),
       '{"provider":"email","providers":["email"]}',
       '{"name":"Nimal Fernando"}',

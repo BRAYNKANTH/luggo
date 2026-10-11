@@ -49,13 +49,14 @@ type Incident = {
   users: { name: string } | null
 }
 
-export default async function StaffPickupPage({
-  params,
-  searchParams,
-}: {
-  params: { bookingId: string }
-  searchParams?: { error?: string }
-}) {
+export default async function StaffPickupPage(
+  props: {
+    params: Promise<{ bookingId: string }>
+    searchParams?: Promise<{ error?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/staff/login')

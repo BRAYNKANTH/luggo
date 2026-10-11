@@ -9,6 +9,21 @@ function hashOtp(otp: string) {
   return createHash('sha256').update(otp).digest('hex')
 }
 
+type ServiceClient = ReturnType<typeof createServiceClient>
+
+// True only if this account's auth record has this phone confirmed by SMS.
+async function isPhoneVerifiedOn(supabase: ServiceClient, userId: string, phone: string) {
+  const { data } = await supabase.auth.admin.getUserById(userId)
+  const authPhone = data?.user?.phone?.replace(/\D/g, '') ?? ''
+  return !!data?.user?.phone_confirmed_at && authPhone.slice(-9) === phone.replace(/\D/g, '').slice(-9)
+}
+
+async function releasePhone(supabase: ServiceClient, userId: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from('users') as any).update({ phone: null }).eq('id', userId)
+  return !error
+}
+
 function getClientIp(req: NextRequest) {
   return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
 }
@@ -20,11 +35,11 @@ export async function POST(req: NextRequest) {
   const phone = parsed.data.phone!
 
   const clientIp = getClientIp(req)
-  if (!hitRateLimit(`otp-verify:ip:${clientIp}`, 20, 10 * 60_000).allowed) {
+  if (!(await hitRateLimit(`otp-verify:ip:${clientIp}`, 20, 10 * 60_000)).allowed) {
     return NextResponse.json({ error: 'Too many verification attempts. Please try again later.' }, { status: 429 })
   }
 
-  if (!hitRateLimit(`otp-verify:phone:${phone}`, 8, 10 * 60_000).allowed) {
+  if (!(await hitRateLimit(`otp-verify:phone:${phone}`, 8, 10 * 60_000)).allowed) {
     return NextResponse.json({ error: 'Too many verification attempts for this number. Please request a new code later.' }, { status: 429 })
   }
 
@@ -58,7 +73,7 @@ export async function POST(req: NextRequest) {
     .select('phone')
   if (consumeError) return NextResponse.json({ error: 'Verification unavailable.' }, { status: 500 })
   if (!consumed?.length) return NextResponse.json({ error: 'Incorrect or expired code.' }, { status: 400 })
-  clearRateLimit(`otp-verify:phone:${phone}`)
+  await clearRateLimit(`otp-verify:phone:${phone}`)
 
   // ── 2. Find or create user ─────────────────────────────────
   const response = NextResponse.json({ success: true })
@@ -90,7 +105,10 @@ export async function POST(req: NextRequest) {
 
     if (phoneLookupError) return NextResponse.json({ error: 'Unable to retrieve account.' }, { status: 500 })
     if (phoneUser && phoneUser.id !== currentUser.id) {
-      return NextResponse.json({ error: 'This phone number is already registered to another account.' }, { status: 400 })
+      if (await isPhoneVerifiedOn(supabase, phoneUser.id, phone)) {
+        return NextResponse.json({ error: 'This phone number is already registered to another account.' }, { status: 400 })
+      }
+      if (!(await releasePhone(supabase, phoneUser.id))) return NextResponse.json({ error: 'Unable to retrieve account.' }, { status: 500 })
     }
 
     // Update Auth user phone
@@ -126,7 +144,18 @@ export async function POST(req: NextRequest) {
   if (profileLookupError) return NextResponse.json({ error: 'Unable to retrieve account.' }, { status: 500 })
   let accountEmail: string
 
+  // Only sign in to an account whose phone was itself proven by SMS. A phone typed
+  // into a profile without verification must not let its owner capture this login.
+  let phoneVerifiedOnAccount = false
   if (existingProfile) {
+    phoneVerifiedOnAccount = await isPhoneVerifiedOn(supabase, existingProfile.id, phone)
+    // The SMS-verified owner wins: release the unverified claim on this number.
+    if (!phoneVerifiedOnAccount && !(await releasePhone(supabase, existingProfile.id))) {
+      return NextResponse.json({ error: 'Unable to retrieve account.' }, { status: 500 })
+    }
+  }
+
+  if (existingProfile && phoneVerifiedOnAccount) {
     // email can be null for phone-only users — fall back to synthetic address
     accountEmail = existingProfile.email || `${phone.replace(/\D/g, '')}@phone.luggo.lk`
   } else {
@@ -163,7 +192,8 @@ export async function POST(req: NextRequest) {
   })
 
   if (linkErr || !linkData?.properties?.hashed_token) {
-    console.error('[Verify] generateLink error:', linkErr, 'props:', linkData?.properties)
+    // Never log linkData.properties: it contains a working sign-in link.
+    console.error('[Verify] generateLink error:', linkErr?.message ?? 'missing hashed_token')
     return NextResponse.json({ error: 'Failed to generate session token.' }, { status: 500 })
   }
 

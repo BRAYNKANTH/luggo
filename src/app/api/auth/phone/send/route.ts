@@ -24,11 +24,11 @@ export async function POST(req: NextRequest) {
   if (!process.env.TEXTLK_API_TOKEN) return NextResponse.json({ error: 'SMS verification is temporarily unavailable.' }, { status: 503 })
 
   const clientIp = getClientIp(req)
-  if (!hitRateLimit(`otp-send:ip:${clientIp}`, 10, 10 * 60_000).allowed) {
+  if (!(await hitRateLimit(`otp-send:ip:${clientIp}`, 10, 10 * 60_000)).allowed) {
     return NextResponse.json({ error: 'Too many requests. Please try again shortly.' }, { status: 429 })
   }
 
-  if (!hitRateLimit(`otp-send:phone:${phone}`, 3, 10 * 60_000).allowed) {
+  if (!(await hitRateLimit(`otp-send:phone:${phone}`, 3, 10 * 60_000)).allowed) {
     return NextResponse.json({ error: 'Too many codes requested for this number. Please try again later.' }, { status: 429 })
   }
 
