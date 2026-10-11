@@ -2,6 +2,12 @@
 
 import 'leaflet/dist/leaflet.css'
 import { useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
+
+// Hub fields are admin-entered text; never interpolate them into popup HTML raw.
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
+}
 
 type Hub = {
   id: string
@@ -19,8 +25,14 @@ interface HubMapProps {
 }
 
 export function HubMap({ hubs, onHubClick, className }: HubMapProps) {
+  const t = useTranslations('Hubs')
+  const viewLabel = t('viewHub')
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<import('leaflet').Map | null>(null)
+  // Callers pass inline handlers; keep the latest in a ref so the map isn't rebuilt every render.
+  const onHubClickRef = useRef(onHubClick)
+  onHubClickRef.current = onHubClick
+  const clickable = !!onHubClick
 
   useEffect(() => {
     if (!mapRef.current) return
@@ -62,12 +74,12 @@ export function HubMap({ hubs, onHubClick, className }: HubMapProps) {
         html: `
           <div style="position:relative; display:flex; flex-direction:column; align-items:center;">
             <div style="
-              background:#038cc9;
+              background:#0277b0;
               color:#fff;
               width:32px;
               height:32px;
               display:flex;
-              items-center:center;
+              align-items:center;
               justify-content:center;
               border-radius:12px;
               border:2px solid #fff;
@@ -91,23 +103,22 @@ export function HubMap({ hubs, onHubClick, className }: HubMapProps) {
 
       hubs.forEach((hub) => {
         if (hub.latitude && hub.longitude) {
-          const marker = L.marker([hub.latitude, hub.longitude], { icon: brandIcon })
+          // title/alt give each keyboard-focusable pin an accessible name.
+          const marker = L.marker([hub.latitude, hub.longitude], { icon: brandIcon, title: hub.name, alt: hub.name })
             .addTo(map!)
             .bindPopup(`
-              <div style="font-family:sans-serif;min-width:140px">
-                <div style="font-weight:800;color:#011a2e;font-size:13px">${hub.name}</div>
-                <div style="color:#666;font-size:11px;margin-top:2px">${hub.address}</div>
-                <div style="margin-top:8px">
-                  <span style="background:#038cc9;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">${hub.alias}</span>
-                </div>
+              <div style="font-family:sans-serif;min-width:160px">
+                <div style="font-weight:800;color:#011a2e;font-size:13px">${escapeHtml(hub.name)}</div>
+                <div style="color:#4b5563;font-size:12px;margin-top:2px">${escapeHtml(hub.address)}</div>
+                ${clickable ? `<button type="button" id="hub-popup-${hub.id}" style="margin-top:10px;min-height:40px;width:100%;background:#0277b0;color:#fff;font-size:13px;font-weight:700;border:0;border-radius:10px;cursor:pointer">${escapeHtml(viewLabel)}</button>` : ''}
               </div>
             `)
 
-          if (onHubClick) {
+          if (clickable) {
             marker.on('popupopen', () => {
               setTimeout(() => {
                 const btn = document.getElementById(`hub-popup-${hub.id}`)
-                btn?.addEventListener('click', () => onHubClick(hub.id))
+                btn?.addEventListener('click', () => onHubClickRef.current?.(hub.id))
               }, 50)
             })
           }
@@ -126,7 +137,7 @@ export function HubMap({ hubs, onHubClick, className }: HubMapProps) {
         map.remove()
       }
     }
-  }, [hubs, onHubClick])
+  }, [hubs, clickable, viewLabel])
 
   const hasCoords = hubs.some((h) => h.latitude && h.longitude)
 
@@ -139,8 +150,8 @@ export function HubMap({ hubs, onHubClick, className }: HubMapProps) {
       {!hasCoords && (
         <div className="absolute inset-0 flex items-center justify-center bg-ocean-900/80 rounded-3xl">
           <div className="text-center text-white px-6">
-            <p className="font-bold text-sm">Map coming soon</p>
-            <p className="text-white/60 text-xs mt-1">Add hub coordinates in admin to see pins</p>
+            <p className="font-bold text-sm">{t('mapUnavailable')}</p>
+            <p className="text-white/70 text-xs mt-1">{t('mapUnavailableDesc')}</p>
           </div>
         </div>
       )}

@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
 
       {/* Card */}
       <div className="w-full max-w-sm bg-white rounded-3xl shadow-sm border border-gray-200 p-8">
-        <h2 className="text-xl font-bold text-ocean-900 mb-1">Admin sign in</h2>
+        <h1 className="text-xl font-bold text-ocean-900 mb-1">Admin sign in</h1>
         <p className="text-sm text-gray-500 mb-6">
           Authorised personnel only.
         </p>
@@ -74,7 +74,7 @@ export default function AdminLoginPage() {
         </form>
       </div>
 
-      <p className="mt-6 text-gray-400 text-xs text-center">
+      <p className="mt-6 text-gray-500 text-xs text-center">
         Luggo Admin &mdash; Authorised access only
       </p>
     </div>

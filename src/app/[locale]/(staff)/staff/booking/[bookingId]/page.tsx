@@ -205,11 +205,11 @@ export default async function StaffBookingPage(
                 <MapPin size={18} className="stroke-[2.5]" />
               </div>
               <div>
-                <p className="text-[10px] text-amber-400 font-black uppercase tracking-widest">Storage Location Slot</p>
+                <p className="text-[11px] text-amber-400 font-black uppercase tracking-widest">Storage Location Slot</p>
                 <p className="text-sm font-extrabold text-white">Slot #{booking.slot_number}</p>
               </div>
             </div>
-            <span className="text-[10px] font-black uppercase tracking-widest bg-amber-400/20 text-amber-300 px-3 py-1 rounded-full border border-amber-400/20">
+            <span className="text-[11px] font-black uppercase tracking-widest bg-amber-400/20 text-amber-300 px-3 py-1 rounded-full border border-amber-400/20">
               Assigned Shelf
             </span>
           </div>
@@ -238,7 +238,7 @@ export default async function StaffBookingPage(
                 <h3 className="text-xs font-black uppercase tracking-widest text-white/70">Identity Verification</h3>
               </div>
               {booking.id_verified && (
-                <span className="flex items-center gap-1 text-[10px] font-bold text-green-400 uppercase">
+                <span className="flex items-center gap-1 text-[11px] font-bold text-green-400 uppercase">
                   <CheckCircle2 size={12} /> Verified
                 </span>
               )}
@@ -246,13 +246,13 @@ export default async function StaffBookingPage(
             
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-0.5">NIC / Passport</p>
+                <p className="text-[11px] text-white/40 font-bold uppercase tracking-widest mb-0.5">NIC / Passport</p>
                 <p className="font-mono text-sm tracking-widest">
                   {booking.walk_in_nic_passport_ref || booking.users?.nic_passport || 'Not provided'}
                 </p>
               </div>
               {!booking.id_verified && booking.status === 'arrived' && (
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-brand-light animate-pulse">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-brand-light animate-pulse">
                   <AlertCircle size={12} /> Match with Physical ID
                 </div>
               )}
@@ -325,12 +325,12 @@ export default async function StaffBookingPage(
                 <div className="flex flex-col">
                   <span className="text-white/80 font-medium">{BAG_LABELS[bag.bag_type]}</span>
                   {bag.seal_number && (
-                    <span className="text-[10px] text-brand-accent font-mono font-bold">
+                    <span className="text-[11px] text-brand-accent font-mono font-bold">
                       🔒 Seal: {bag.seal_number}
                     </span>
                   )}
                   {bag.seal_status === 'seal_not_applicable' && (
-                    <span className="text-[10px] text-white/40 font-bold italic">
+                    <span className="text-[11px] text-white/40 font-bold italic">
                       Unsealable
                     </span>
                   )}

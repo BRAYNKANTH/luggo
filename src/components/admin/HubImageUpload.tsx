@@ -104,7 +104,7 @@ export function HubImageUpload({ hubId, hubName, currentImageUrl }: HubImageUplo
         className="hidden"
         onChange={handleFileChange}
       />
-      <p className="text-[10px] text-gray-400 mt-1.5">JPG, PNG or WebP · max 5 MB</p>
+      <p className="text-[11px] text-gray-500 mt-1.5">JPG, PNG or WebP · max 5 MB</p>
     </div>
   )
 }

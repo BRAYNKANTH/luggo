@@ -22,8 +22,8 @@ const STATUS_COLOUR: Record<string, string> = {
   active_storage:                   'bg-green-100 text-green-700',
   pickup_requested:                 'bg-cyan-100 text-cyan-700',
   completed:                        'bg-green-100 text-green-800',
-  cancelled:                        'bg-gray-100 text-gray-400',
-  expired:                          'bg-gray-100 text-gray-400',
+  cancelled:                        'bg-gray-100 text-gray-500',
+  expired:                          'bg-gray-100 text-gray-500',
   overstayed:                       'bg-red-100 text-red-600',
   disputed:                         'bg-orange-100 text-orange-600',
 }
@@ -127,7 +127,7 @@ export default async function AdminBookingDetailPage(
 
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6">
-          <Link href="/admin/bookings" className="text-sm text-gray-400 hover:text-ocean-900 flex items-center gap-1">
+          <Link href="/admin/bookings" className="text-sm text-gray-500 hover:text-ocean-900 flex items-center gap-1">
             <ChevronLeft size={14} /> Bookings
           </Link>
           <span className="text-gray-300">/</span>
@@ -138,7 +138,7 @@ export default async function AdminBookingDetailPage(
         <div className="flex items-start justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-extrabold text-ocean-900">Booking Detail</h1>
-            <p className="text-sm text-gray-400 mt-0.5">
+            <p className="text-sm text-gray-500 mt-0.5">
               Created {formatInSLT(booking.created_at, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
             </p>
           </div>
@@ -154,7 +154,7 @@ export default async function AdminBookingDetailPage(
 
             {/* Customer */}
             <div className="bg-white rounded-2xl border border-gray-100 p-5">
-              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
                 <User size={13} /> Customer
               </h2>
               <div className="flex items-center gap-3">
@@ -164,7 +164,7 @@ export default async function AdminBookingDetailPage(
                 <div>
                   <p className="font-bold text-ocean-900">{booking.users?.name ?? '—'}</p>
                   <p className="text-sm text-gray-500">{booking.users?.email}</p>
-                  {booking.users?.phone && <p className="text-sm text-gray-400">{booking.users.phone}</p>}
+                  {booking.users?.phone && <p className="text-sm text-gray-500">{booking.users.phone}</p>}
                 </div>
               </div>
             </div>
@@ -173,7 +173,7 @@ export default async function AdminBookingDetailPage(
             <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
               <div className="flex items-start justify-between w-full">
                 <div>
-                  <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
                     <MapPin size={13} /> Hub
                   </h2>
                   <p className="font-semibold text-ocean-900">{booking.hubs?.name}</p>
@@ -181,7 +181,7 @@ export default async function AdminBookingDetailPage(
                 </div>
                 {booking.slot_number && (
                   <div className="text-right shrink-0">
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Assigned Slot</p>
+                    <p className="text-[11px] text-gray-500 font-bold uppercase tracking-wider mb-1">Assigned Slot</p>
                     <span className="text-xs font-black bg-brand/10 border border-brand/20 text-brand px-3 py-1.5 rounded-xl">
                       Slot #{booking.slot_number}
                     </span>
@@ -190,22 +190,22 @@ export default async function AdminBookingDetailPage(
               </div>
               <div className="border-t border-gray-50 pt-4 grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-gray-400 font-medium mb-1 flex items-center gap-1">
+                  <p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1">
                     <Clock size={11} /> Drop-off
                   </p>
                   <p className="font-semibold text-sm text-ocean-900">
                     {formatDateSLT(booking.start_time)}
                   </p>
-                  <p className="text-xs text-gray-400">{formatInSLT(booking.start_time, { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
+                  <p className="text-xs text-gray-500">{formatInSLT(booking.start_time, { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
                 </div>
                 <div>
-                  <p className={`text-xs font-medium mb-1 flex items-center gap-1 ${isOverdue && isActive ? 'text-red-500' : 'text-gray-400'}`}>
+                  <p className={`text-xs font-medium mb-1 flex items-center gap-1 ${isOverdue && isActive ? 'text-red-500' : 'text-gray-500'}`}>
                     <Clock size={11} /> Pick-up by
                   </p>
                   <p className={`font-semibold text-sm ${isOverdue && isActive ? 'text-red-600' : 'text-ocean-900'}`}>
                     {formatDateSLT(booking.end_time)}
                   </p>
-                  <p className={`text-xs ${isOverdue && isActive ? 'text-red-400 font-semibold' : 'text-gray-400'}`}>
+                  <p className={`text-xs ${isOverdue && isActive ? 'text-red-400 font-semibold' : 'text-gray-500'}`}>
                     {formatInSLT(booking.end_time, { hour: '2-digit', minute: '2-digit', hour12: true })}
                     {isOverdue && isActive && ' — OVERDUE'}
                   </p>
@@ -215,7 +215,7 @@ export default async function AdminBookingDetailPage(
 
             {/* Bags */}
             <div className="bg-white rounded-2xl border border-gray-100 p-5">
-              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
                 <Package size={13} /> Bags ({booking.booking_bags.length})
               </h2>
               <div className="space-y-2">
@@ -224,7 +224,7 @@ export default async function AdminBookingDetailPage(
                     <div className="flex flex-col">
                       <span className="text-sm text-gray-700">{BAG_LABELS[bag.bag_type]}</span>
                       {bag.seal_number && (
-                        <span className="text-[10px] font-mono text-gray-400">
+                        <span className="text-[11px] font-mono text-gray-500">
                           🔒 Seal: {bag.seal_number}
                         </span>
                       )}
@@ -244,7 +244,7 @@ export default async function AdminBookingDetailPage(
             {/* Seal proofs */}
             {sealProofs && sealProofs.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
                   <Shield size={13} /> Seal History ({sealProofs.length})
                 </h2>
                 <div className="space-y-2">
@@ -254,7 +254,7 @@ export default async function AdminBookingDetailPage(
                         <p className="text-gray-700 font-medium text-xs">
                           Attempt {sealProofs.length - i}
                         </p>
-                        <p className="text-gray-400 text-xs">
+                        <p className="text-gray-500 text-xs">
                           {formatInSLT(sp.uploaded_at, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
                         </p>
                       </div>
@@ -281,7 +281,7 @@ export default async function AdminBookingDetailPage(
 
             {/* Price */}
             <div className="bg-white rounded-2xl border border-gray-100 p-5">
-              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
                 <CreditCard size={13} /> Payments
               </h2>
               <div className="space-y-2">
@@ -289,16 +289,16 @@ export default async function AdminBookingDetailPage(
                   <div key={p.id} className="flex items-start justify-between gap-2 py-2 border-b border-gray-50 last:border-0">
                     <div>
                       <p className="text-xs font-semibold text-gray-700 capitalize">{p.type.replace('_', ' ')}</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">
+                      <p className="text-[11px] text-gray-500 mt-0.5">
                         {formatInSLT(p.created_at, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
                       </p>
                       {p.gateway_ref && (
-                        <p className="text-[10px] font-mono text-gray-300 mt-0.5">{p.gateway_ref}</p>
+                        <p className="text-[11px] font-mono text-gray-300 mt-0.5">{p.gateway_ref}</p>
                       )}
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-ocean-900">LKR {p.amount.toLocaleString()}</p>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${
                         p.status === 'paid'     ? 'bg-green-100 text-green-700' :
                         p.status === 'pending'  ? 'bg-amber-100 text-amber-700' :
                         p.status === 'failed'   ? 'bg-red-100 text-red-600' :
@@ -310,7 +310,7 @@ export default async function AdminBookingDetailPage(
                   </div>
                 ))}
                 {!payments?.length && (
-                  <p className="text-xs text-gray-400 text-center py-3">No payment records</p>
+                  <p className="text-xs text-gray-500 text-center py-3">No payment records</p>
                 )}
               </div>
               <div className="border-t border-gray-100 mt-3 pt-3 flex justify-between items-center">
@@ -322,10 +322,10 @@ export default async function AdminBookingDetailPage(
             {/* Admin actions */}
             {!isTerminal && (
               <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
                   <AlertTriangle size={13} /> Admin Actions
                 </h2>
-                <p className="text-xs text-gray-400 mb-4">Use with caution — these actions are irreversible.</p>
+                <p className="text-xs text-gray-500 mb-4">Use with caution — these actions are irreversible.</p>
                 <div className="space-y-2">
                   {booking.status !== 'completed' && (
                     <form action={forceCompleteAction.bind(null, booking.id)}>
@@ -353,7 +353,7 @@ export default async function AdminBookingDetailPage(
 
             {/* Booking ref */}
             <div className="bg-gray-50 rounded-2xl p-4 text-center">
-              <p className="text-xs text-gray-400 mb-1">Booking Reference</p>
+              <p className="text-xs text-gray-500 mb-1">Booking Reference</p>
               <p className="font-mono font-black text-ocean-900 text-lg tracking-wider">
                 #{booking.id.slice(0, 8).toUpperCase()}
               </p>

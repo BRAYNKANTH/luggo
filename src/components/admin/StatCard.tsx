@@ -42,12 +42,12 @@ export function StatCard({
        </div>
 
        <div className="mt-8 relative z-10">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{label}</p>
+          <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest mb-1">{label}</p>
           <div className="flex items-baseline gap-2">
              <p className="text-3xl md:text-4xl font-black text-ocean-900 tracking-tighter leading-none">{value}</p>
           </div>
           {sub && (
-             <p className="text-[10px] text-gray-400 font-bold mt-2 uppercase tracking-tight italic opacity-70">
+             <p className="text-[11px] text-gray-500 font-bold mt-2 uppercase tracking-tight italic opacity-70">
                 {sub}
              </p>
           )}

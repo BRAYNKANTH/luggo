@@ -230,7 +230,7 @@ export default async function StaffDashboardPage(
               ].map(({ label, value, highlight }) => (
                 <div key={label} className={`rounded-xl p-2.5 text-center ${highlight ? 'bg-white/25 border border-white/20' : 'bg-white/10'}`}>
                   <p className={`text-xl font-black ${highlight ? 'text-white' : 'text-white/90'}`}>{value}</p>
-                  <p className="text-[9px] text-white/60 font-bold uppercase tracking-wider leading-tight mt-0.5">{label}</p>
+                  <p className="text-[11px] text-white/60 font-bold uppercase tracking-wider leading-tight mt-0.5">{label}</p>
                 </div>
               ))}
             </div>
@@ -281,7 +281,7 @@ export default async function StaffDashboardPage(
                 }`}
               >
                 {tab.label}
-                <span className="bg-white/10 px-2 py-0.5 rounded-full text-[10px] text-white/60 font-black">
+                <span className="bg-white/10 px-2 py-0.5 rounded-full text-[11px] text-white/60 font-black">
                   {tab.count}
                 </span>
               </Link>
@@ -376,7 +376,7 @@ function BookingCard({
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <span className="font-mono text-[10px] text-white/20">
+            <span className="font-mono text-[11px] text-white/20">
               #{booking.id.slice(0, 6).toUpperCase()}
             </span>
             <ChevronRight size={14} className="text-white/20 group-hover:text-white/50 transition-colors" />
@@ -386,11 +386,11 @@ function BookingCard({
         {/* Middle: duration */}
         <div className="grid grid-cols-2 gap-2 mb-3">
           <div className="bg-white/5 rounded-xl px-3 py-2">
-            <p className="text-[10px] text-white/30 uppercase tracking-wider font-bold mb-0.5">Drop-off</p>
+            <p className="text-[11px] text-white/30 uppercase tracking-wider font-bold mb-0.5">Drop-off</p>
             <p className="text-xs font-semibold text-white/80">{formatDropoff(booking.start_time)}</p>
           </div>
           <div className={`rounded-xl px-3 py-2 ${isOverdue ? 'bg-red-500/15' : 'bg-white/5'}`}>
-            <p className="text-[10px] text-white/30 uppercase tracking-wider font-bold mb-0.5">Pick-up by</p>
+            <p className="text-[11px] text-white/30 uppercase tracking-wider font-bold mb-0.5">Pick-up by</p>
             <p className={`text-xs font-semibold ${isOverdue ? 'text-red-400 font-bold animate-pulse' : 'text-white/80'}`}>
               {isOver && isOverdue
                 ? `Overdue ${formatDistanceToNow(new Date(booking.end_time))}`
@@ -410,12 +410,12 @@ function BookingCard({
             {tagCodes.length > 0 && (
               <div className="flex items-center gap-1 flex-wrap">
                 {tagCodes.slice(0, 2).map(tag => (
-                  <span key={tag} className="font-mono text-[9px] bg-brand-accent/15 text-brand-accent px-1.5 py-0.5 rounded font-black tracking-wider border border-brand-accent/10">
+                  <span key={tag} className="font-mono text-[11px] bg-brand-accent/15 text-brand-accent px-1.5 py-0.5 rounded font-black tracking-wider border border-brand-accent/10">
                     🏷️ {tag}
                   </span>
                 ))}
                 {tagCodes.length > 2 && (
-                  <span className="text-[10px] text-white/30">+{tagCodes.length - 2}</span>
+                  <span className="text-[11px] text-white/30">+{tagCodes.length - 2}</span>
                 )}
               </div>
             )}
@@ -423,7 +423,7 @@ function BookingCard({
 
           {/* Next Action tag */}
           {next && (
-            <div className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${next.color}`}>
+            <div className={`flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider ${next.color}`}>
               {next.icon}
               <span className="hidden sm:inline">{next.label}</span>
             </div>

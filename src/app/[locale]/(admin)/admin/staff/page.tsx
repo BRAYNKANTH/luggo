@@ -67,14 +67,14 @@ export default async function AdminStaffPage() {
     <AdminShell userName={profile?.name ?? '—'} userRole={profile?.role ?? 'admin'}>
       <div className="px-6 py-8 max-w-5xl mx-auto">
         <h1 className="text-2xl font-extrabold text-ocean-900 mb-1">Staff Management</h1>
-        <p className="text-sm text-gray-400 mb-8">
+        <p className="text-sm text-gray-500 mb-8">
           {activeStaff.length} active staff across {hubs?.length ?? 0} hubs
         </p>
 
         {/* Add new staff */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-8">
           <h2 className="font-bold text-ocean-900 mb-1">Add Staff Member</h2>
-          <p className="text-xs text-gray-400 mb-5">
+          <p className="text-xs text-gray-500 mb-5">
             Enter the staff member&apos;s email and select their hub. If they don&apos;t have a Luggo account yet, one will be created and they&apos;ll receive a login link.
           </p>
           <StaffForm hubs={hubs ?? []} />
@@ -95,7 +95,7 @@ export default async function AdminStaffPage() {
         {inactiveStaff.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-50 flex items-center gap-2">
-              <UserX size={16} className="text-gray-400" />
+              <UserX size={16} className="text-gray-500" />
               <h2 className="font-bold text-gray-500">Deactivated Staff ({inactiveStaff.length})</h2>
             </div>
             <StaffTable rows={inactiveStaff} isActive={false} toggleAction={toggleStaffAction} />
@@ -103,7 +103,7 @@ export default async function AdminStaffPage() {
         )}
 
         {staffList?.length === 0 && (
-          <div className="text-center py-16 text-gray-400 bg-white rounded-2xl border border-gray-100">
+          <div className="text-center py-16 text-gray-500 bg-white rounded-2xl border border-gray-100">
             <Building2 size={32} className="mx-auto mb-3 opacity-30" />
             <p className="font-medium">No staff added yet</p>
             <p className="text-sm mt-1">Use the form above to add your first staff member.</p>
@@ -128,11 +128,11 @@ function StaffTable({
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-50 bg-gray-50/50">
-            <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Name</th>
-            <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Email</th>
-            <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Hub</th>
-            <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Added</th>
-            <th className="text-right px-5 py-3 text-xs font-semibold text-gray-400">Action</th>
+            <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Name</th>
+            <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Email</th>
+            <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Hub</th>
+            <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Added</th>
+            <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -149,7 +149,7 @@ function StaffTable({
                   </span>
                 ) : '—'}
               </td>
-              <td className="px-5 py-3 text-xs text-gray-400">
+              <td className="px-5 py-3 text-xs text-gray-500">
                 {format(new Date(s.created_at), 'dd MMM yyyy')}
               </td>
               <td className="px-5 py-3 text-right">

@@ -109,7 +109,7 @@ export default async function BagRegistrationPage(
 
       <div className="px-4 py-5 space-y-4 max-w-4xl mx-auto">
         <div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-brand-light">Step 2 of 2</span>
+          <span className="text-[11px] font-black uppercase tracking-widest text-brand-light">Step 2 of 2</span>
           <h1 className="text-2xl font-extrabold mb-1 tracking-tight">Register Bag Seals</h1>
           <p className="text-white/50 text-xs">
             Verify and enter/scan physical zip-lock seals for customer <strong className="text-white/80 font-bold">{customerName}</strong>.

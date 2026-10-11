@@ -74,7 +74,7 @@ export default function TermsPage() {
       <div className="max-w-3xl mx-auto px-6 py-12">
         {/* Header */}
         <h1 className="text-3xl font-extrabold text-ocean-900 mb-1">Terms of Service</h1>
-        <p className="text-gray-400 text-sm mb-2">Last Updated: October 9, 2026</p>
+        <p className="text-gray-500 text-sm mb-2">Last Updated: October 9, 2026</p>
 
         <div className="bg-brand/5 border border-brand/15 rounded-2xl p-4 mb-8">
           <p className="text-sm text-gray-700 leading-relaxed">
@@ -99,7 +99,7 @@ export default function TermsPage() {
 
         {/* Table of Contents */}
         <div className="border border-gray-100 rounded-2xl p-5 mb-8">
-          <p className="text-xs font-extrabold uppercase tracking-widest text-gray-400 mb-3">Table of Contents</p>
+          <p className="text-xs font-extrabold uppercase tracking-widest text-gray-500 mb-3">Table of Contents</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
             {TOC_ITEMS.map(({ id, label }) => (
               <a key={id} href={`#${id}`}
@@ -389,7 +389,7 @@ export default function TermsPage() {
 
         {/* Footer note */}
         <div className="mt-12 pt-8 border-t border-gray-100">
-          <p className="text-xs text-gray-400 leading-relaxed text-center">
+          <p className="text-xs text-gray-500 leading-relaxed text-center">
             By using the Luggo Platform, you acknowledge that you have read, understood, and agree to be bound
             by these Terms of Service.
             <br />

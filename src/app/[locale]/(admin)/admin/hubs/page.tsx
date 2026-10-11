@@ -59,12 +59,12 @@ export default async function AdminHubsPage() {
     <AdminShell userName={profile?.name ?? '—'} userRole={profile?.role ?? 'admin'}>
       <div className="px-6 py-8 max-w-5xl mx-auto">
         <h1 className="text-2xl font-extrabold text-ocean-900 mb-1">Hubs</h1>
-        <p className="text-sm text-gray-400 mb-8">{hubs?.length ?? 0} hubs registered</p>
+        <p className="text-sm text-gray-500 mb-8">{hubs?.length ?? 0} hubs registered</p>
 
         {/* Add new hub */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-8 shadow-sm">
           <h2 className="font-bold text-ocean-900 mb-1 text-base">Add New Hub</h2>
-          <p className="text-xs text-gray-400 mb-5">
+          <p className="text-xs text-gray-500 mb-5">
             Configure the name, alias prefix, location coordinates, capacity, and business hours for a new luggage hub.
           </p>
           <HubForm />

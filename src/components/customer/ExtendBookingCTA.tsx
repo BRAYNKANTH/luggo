@@ -123,7 +123,7 @@ export function ExtendBookingCTA({ bookingId, bags, hourlyRate, minimal = false 
                         }`}
                       >
                         <p className="font-bold">{opt.label}</p>
-                        <p className="text-[10px] opacity-70">LKR {(opt.hours * hourlyRate).toLocaleString()}</p>
+                        <p className="text-[11px] opacity-70">LKR {(opt.hours * hourlyRate).toLocaleString()}</p>
                       </button>
                     ))}
                   </div>

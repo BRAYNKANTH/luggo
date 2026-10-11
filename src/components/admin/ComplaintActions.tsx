@@ -22,7 +22,7 @@ const COLOURS: Record<ComplaintStatus, string> = {
   open:      'bg-red-100 text-red-600',
   in_review: 'bg-amber-100 text-amber-700',
   resolved:  'bg-green-100 text-green-700',
-  closed:    'bg-gray-100 text-gray-400',
+  closed:    'bg-gray-100 text-gray-500',
 }
 
 interface ComplaintActionsProps {

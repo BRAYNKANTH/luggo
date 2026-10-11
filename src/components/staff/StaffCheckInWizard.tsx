@@ -342,7 +342,7 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending, rates = DEFA
             <p className="text-white/60 text-xs mt-0.5">
               Sent online payment link for early check-in fee of LKR {earlyCheckinFee.toLocaleString()}.
             </p>
-            <p className="text-brand-light font-mono text-[10px] truncate mt-1 bg-black/30 p-2 rounded border border-white/5">
+            <p className="text-brand-light font-mono text-[11px] truncate mt-1 bg-black/30 p-2 rounded border border-white/5">
               {paymentLink}
             </p>
           </div>
@@ -401,7 +401,7 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending, rates = DEFA
 
         <div className="space-y-3.5">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/50">Authorized Supervisor</label>
+            <label className="text-[11px] font-black uppercase tracking-widest text-white/50">Authorized Supervisor</label>
             <select
               value={selectedSupervisorId}
               onChange={(e) => setSelectedSupervisorId(e.target.value)}
@@ -415,7 +415,7 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending, rates = DEFA
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/50">Waiver Reason</label>
+            <label className="text-[11px] font-black uppercase tracking-widest text-white/50">Waiver Reason</label>
             <select
               value={overrideReason}
               onChange={(e) => setOverrideReason(e.target.value)}
@@ -474,7 +474,7 @@ export function StaffCheckInWizard({ booking, isCashPaymentPending, rates = DEFA
             <p className="text-xs text-white/70 leading-normal">
               Collect payment for early drop-off. Customer keeps their original pickup deadline.
             </p>
-            <p className="text-[10px] text-amber-300/80 leading-normal italic">
+            <p className="text-[11px] text-amber-300/80 leading-normal italic">
               * Early fee is calculated from the time Luggo staff accepts your luggage.
             </p>
             <div className="bg-black/20 p-3 rounded-xl border border-white/5 text-[11px] space-y-1 text-white/50">

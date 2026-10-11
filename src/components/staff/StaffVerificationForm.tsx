@@ -199,7 +199,7 @@ export function StaffVerificationForm({ bookingId }: StaffVerificationFormProps)
       {/* Reject / Escalate Form */}
       {showRejectForm && (
         <div className="bg-red-950/20 border border-red-500/20 rounded-2xl p-4 space-y-3">
-          <label className="block text-[10px] font-black text-red-300 uppercase tracking-widest pl-1">
+          <label className="block text-[11px] font-black text-red-300 uppercase tracking-widest pl-1">
             Specify Rejection / Escalation Reason
           </label>
           <textarea
@@ -222,7 +222,7 @@ export function StaffVerificationForm({ bookingId }: StaffVerificationFormProps)
       {showOverrideForm && (
         <div className="bg-amber-950/20 border border-amber-500/20 rounded-2xl p-4 space-y-3">
           <div className="space-y-1.5">
-            <label className="block text-[10px] font-black text-amber-300 uppercase tracking-widest pl-1">
+            <label className="block text-[11px] font-black text-amber-300 uppercase tracking-widest pl-1">
               Select Supervisor
             </label>
             <select
@@ -238,7 +238,7 @@ export function StaffVerificationForm({ bookingId }: StaffVerificationFormProps)
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-[10px] font-black text-amber-300 uppercase tracking-widest pl-1">
+            <label className="block text-[11px] font-black text-amber-300 uppercase tracking-widest pl-1">
               Override Reason
             </label>
             <input

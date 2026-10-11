@@ -146,7 +146,7 @@ export function WalkInForm({ hubId, rates = DEFAULT_BAG_RATES }: WalkInFormProps
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/50">Full Name</label>
+            <label className="text-[11px] font-black uppercase tracking-widest text-white/50">Full Name</label>
             <input
               type="text"
               required
@@ -158,7 +158,7 @@ export function WalkInForm({ hubId, rates = DEFAULT_BAG_RATES }: WalkInFormProps
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/50">Phone Number (LK)</label>
+            <label className="text-[11px] font-black uppercase tracking-widest text-white/50">Phone Number (LK)</label>
             <input
               type="tel"
               required
@@ -171,7 +171,7 @@ export function WalkInForm({ hubId, rates = DEFAULT_BAG_RATES }: WalkInFormProps
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-[10px] font-black uppercase tracking-widest text-white/50">NIC / Passport Number</label>
+          <label className="text-[11px] font-black uppercase tracking-widest text-white/50">NIC / Passport Number</label>
           <input
             type="text"
             required
@@ -229,7 +229,7 @@ export function WalkInForm({ hubId, rates = DEFAULT_BAG_RATES }: WalkInFormProps
         <h3 className="text-sm font-black uppercase tracking-wider text-brand-light">Duration & Payment</h3>
 
         <div className="space-y-1.5">
-          <label className="text-[10px] font-black uppercase tracking-widest text-white/50">Expected Collection Time</label>
+          <label className="text-[11px] font-black uppercase tracking-widest text-white/50">Expected Collection Time</label>
           <input
             type="datetime-local"
             required
@@ -259,7 +259,7 @@ export function WalkInForm({ hubId, rates = DEFAULT_BAG_RATES }: WalkInFormProps
         )}
 
         <div className="space-y-2 pt-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-white/50 block">Payment Mode</label>
+          <label className="text-[11px] font-black uppercase tracking-widest text-white/50 block">Payment Mode</label>
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"

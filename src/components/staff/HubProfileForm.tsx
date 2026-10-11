@@ -81,7 +81,7 @@ export function HubProfileForm({ hub }: HubProfileFormProps) {
             </div>
             <div>
               <p className="text-sm font-black text-white">Hub is {formData.active ? 'ACTIVE' : 'CLOSED'}</p>
-              <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Today&apos;s Status</p>
+              <p className="text-[11px] text-white/40 font-bold uppercase tracking-widest">Today&apos;s Status</p>
             </div>
           </div>
           <button
@@ -103,7 +103,7 @@ export function HubProfileForm({ hub }: HubProfileFormProps) {
 
         <div className="space-y-4">
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Hub Name</label>
+            <label className="text-[11px] font-black uppercase tracking-widest text-white/40 ml-1">Hub Name</label>
             <input 
               type="text" 
               value={formData.name}
@@ -112,7 +112,7 @@ export function HubProfileForm({ hub }: HubProfileFormProps) {
             />
           </div>
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Address</label>
+            <label className="text-[11px] font-black uppercase tracking-widest text-white/40 ml-1">Address</label>
             <textarea 
               rows={2}
               value={formData.address}
@@ -132,7 +132,7 @@ export function HubProfileForm({ hub }: HubProfileFormProps) {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Opens at</label>
+            <label className="text-[11px] font-black uppercase tracking-widest text-white/40 ml-1">Opens at</label>
             <input 
               type="time" 
               value={formData.open_time}
@@ -141,7 +141,7 @@ export function HubProfileForm({ hub }: HubProfileFormProps) {
             />
           </div>
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Closes at</label>
+            <label className="text-[11px] font-black uppercase tracking-widest text-white/40 ml-1">Closes at</label>
             <input 
               type="time" 
               value={formData.close_time}
@@ -178,7 +178,7 @@ export function HubProfileForm({ hub }: HubProfileFormProps) {
             )
           })}
         </div>
-        <p className="text-[10px] text-white/30 text-center font-bold italic">Customers cannot book slots on unselected days</p>
+        <p className="text-[11px] text-white/30 text-center font-bold italic">Customers cannot book slots on unselected days</p>
       </div>
 
       {/* Messages */}

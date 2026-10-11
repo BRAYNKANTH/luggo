@@ -89,7 +89,7 @@ export default async function RootLayout(
       </head>
 
       <body suppressHydrationWarning>
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages} timeZone="Asia/Colombo">
           <MotionConfig>{children}</MotionConfig>
         </NextIntlClientProvider>
       </body>

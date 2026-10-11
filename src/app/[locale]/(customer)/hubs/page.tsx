@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { HubList } from '@/components/hubs/HubList'
 import { PageHeader } from '@/components/shared/PageHeader'
@@ -16,10 +17,11 @@ export async function generateMetadata(
 
   const path = '/hubs'
   const canonicalPath = locale === 'en' ? path : `/${locale}${path}`
+  const t = await getTranslations({ locale, namespace: 'Meta' })
 
   return {
-    title: 'Luggage Storage Locations in Sri Lanka',
-    description: 'Find trusted luggage storage hubs across Sri Lanka. Secure storage in Colombo, Kandy, Galle, Ella, Negombo, and Bandaranaike International Airport (BIA).',
+    title: t('hubsTitle'),
+    description: t('hubsDescription'),
     alternates: {
       canonical: canonicalPath,
       languages: {
@@ -45,6 +47,7 @@ type Hub = {
 }
 
 export default async function HubsPage() {
+  const t = await getTranslations('Hubs')
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -78,7 +81,7 @@ export default async function HubsPage() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <PageHeader title="Find a Hub" subtitle={`${hubs.length} location${hubs.length !== 1 ? 's' : ''} available`} />
+      <PageHeader title={t('title')} subtitle={t('count', { count: hubs.length })} />
       <HubList hubs={hubs} isLoggedIn={!!user} />
     </div>
   )

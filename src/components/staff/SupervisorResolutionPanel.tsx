@@ -127,7 +127,7 @@ export function SupervisorResolutionPanel({ bookingId, exceptions }: Props) {
             <h4 className="text-xs font-bold uppercase tracking-wider text-white/70">Resolve Logged Exception</h4>
             <div className="grid grid-cols-1 gap-3">
               <div>
-                <label className="block text-[10px] text-white/40 font-semibold mb-1">Select Active Exception</label>
+                <label className="block text-[11px] text-white/40 font-semibold mb-1">Select Active Exception</label>
                 <select
                   value={selectedExId}
                   onChange={(e) => setSelectedExId(e.target.value)}
@@ -141,7 +141,7 @@ export function SupervisorResolutionPanel({ bookingId, exceptions }: Props) {
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] text-white/40 font-semibold mb-1">Resolution Detail</label>
+                <label className="block text-[11px] text-white/40 font-semibold mb-1">Resolution Detail</label>
                 <input
                   type="text"
                   value={resolutionNote}
@@ -168,7 +168,7 @@ export function SupervisorResolutionPanel({ bookingId, exceptions }: Props) {
           <h4 className="text-xs font-bold uppercase tracking-wider text-white/70">Late Fee Waiver Override</h4>
           <div className="grid grid-cols-1 gap-3">
             <div>
-              <label className="block text-[10px] text-white/40 font-semibold mb-1">Reason / Justification</label>
+              <label className="block text-[11px] text-white/40 font-semibold mb-1">Reason / Justification</label>
               <input
                 type="text"
                 value={waiverReason}
@@ -194,7 +194,7 @@ export function SupervisorResolutionPanel({ bookingId, exceptions }: Props) {
           <h4 className="text-xs font-bold uppercase tracking-wider text-red-400">Emergency Manual Release</h4>
           <div className="grid grid-cols-1 gap-3">
             <div>
-              <label className="block text-[10px] text-white/40 font-semibold mb-1">Override Security Justification</label>
+              <label className="block text-[11px] text-white/40 font-semibold mb-1">Override Security Justification</label>
               <input
                 type="text"
                 value={releaseReason}

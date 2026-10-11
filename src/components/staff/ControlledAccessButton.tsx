@@ -123,7 +123,7 @@ export function ControlledAccessButton({ bookingId, bags }: ControlledAccessButt
               <div className="space-y-3">
                 {/* Select Bag */}
                 <div className="space-y-1.5">
-                  <label className="block text-[10px] text-white/50 uppercase tracking-widest font-black pl-1">
+                  <label className="block text-[11px] text-white/50 uppercase tracking-widest font-black pl-1">
                     Select Bag to Open
                   </label>
                   <select
@@ -149,7 +149,7 @@ export function ControlledAccessButton({ bookingId, bags }: ControlledAccessButt
 
                 {/* Input New Seal */}
                 <div className="space-y-1.5">
-                  <label className="block text-[10px] text-white/50 uppercase tracking-widest font-black pl-1">
+                  <label className="block text-[11px] text-white/50 uppercase tracking-widest font-black pl-1">
                     New Security Seal Serial #
                   </label>
                   <input
@@ -164,7 +164,7 @@ export function ControlledAccessButton({ bookingId, bags }: ControlledAccessButt
 
                 {/* Access Notes */}
                 <div className="space-y-1.5">
-                  <label className="block text-[10px] text-white/50 uppercase tracking-widest font-black pl-1">
+                  <label className="block text-[11px] text-white/50 uppercase tracking-widest font-black pl-1">
                     Reason for Access
                   </label>
                   <input

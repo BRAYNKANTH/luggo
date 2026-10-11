@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
 import Image from 'next/image'
 import { Logo } from '@/components/ui/Logo'
@@ -9,7 +10,7 @@ import {
   MapPin, Clock, ChevronLeft,
   ArrowRight, ShieldCheck, Star
 } from 'lucide-react'
-import { BAG_LABELS, type BagRates } from '@/lib/utils/pricing'
+import { type BagRates } from '@/lib/utils/pricing'
 import { type BagType } from '@/types/database'
 import { getConfig } from '@/lib/utils/ui'
 
@@ -52,44 +53,48 @@ export function HubDetailsUI({
   isLoggedIn,
   rates,
 }: HubDetailsUIProps) {
+  const t = useTranslations('Hub')
+  const tBags = useTranslations('Bags')
   const [showAllNearby, setShowAllNearby] = useState(false)
+  const categoryLabel = (cat: string) => (t.has(`categories.${cat}`) ? t(`categories.${cat}`) : cat)
 
   const availability = hub.capacity - activeCount
   const availabilityLabel =
     availability > hub.capacity * 0.5
-      ? { text: 'Available', color: 'bg-emerald-500', dot: 'bg-emerald-500' }
+      ? { text: t('available'), color: 'bg-emerald-500', dot: 'bg-emerald-500' }
       : availability > 0
-      ? { text: 'Limited', color: 'bg-amber-500', dot: 'bg-amber-400' }
-      : { text: 'Full', color: 'bg-red-500', dot: 'bg-red-500' }
+      ? { text: t('limited'), color: 'bg-amber-500', dot: 'bg-amber-400' }
+      : { text: t('full'), color: 'bg-red-500', dot: 'bg-red-500' }
 
   const bookHref = `/book/${hub.id}`
 
   const ctaClass = 'flex min-h-14 items-center justify-center text-center rounded-2xl px-5 py-3 text-base font-bold bg-ocean-600 text-white shadow-lg hover:bg-ocean-700'
   const BookCTA = availability > 0
-    ? <Link href={bookHref} className={ctaClass}>Reserve Storage</Link>
-    : <span aria-disabled="true" className={`${ctaClass} opacity-60`}>Hub is Full</span>
+    ? <Link href={bookHref} className={ctaClass}>{t('reserve')}</Link>
+    : <span aria-disabled="true" className={`${ctaClass} opacity-60`}>{t('hubFull')}</span>
 
   return (
     <div className="min-h-screen bg-gray-50 pb-32 md:pb-12">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 py-3.5 sticky top-0 z-[100] shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/hubs" className="flex items-center gap-1.5 text-gray-500 hover:text-brand font-semibold text-sm transition-colors">
+          <Link href="/hubs" className="flex items-center gap-1.5 min-h-11 pr-2 text-gray-600 hover:text-brand font-semibold text-sm transition-colors">
             <ChevronLeft size={18} />
-            Back
+            {t('back')}
           </Link>
           <Logo size="sm" />
           {isLoggedIn ? (
             <SignOutButton portal="customer" iconOnly />
           ) : (
-            <Link href="/login" className="text-sm font-bold text-gray-500 hover:text-brand transition-colors">
-              Sign in
+            <Link href="/login" className="flex items-center min-h-11 px-2 text-sm font-bold text-gray-600 hover:text-brand transition-colors">
+              {t('signIn')}
             </Link>
           )}
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 py-4 md:py-10">
+      {/* Not <main>: the customer shell already provides the page's main landmark. */}
+      <div className="max-w-7xl mx-auto px-4 py-4 md:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
           {/* ── Left Column ── */}
@@ -107,8 +112,8 @@ export function HubDetailsUI({
                     priority
                   />
                 ) : (
-                  <div className="absolute inset-0 bg-ocean-900 flex items-center justify-center">
-                    <Logo variant="white" size="lg" className="opacity-10" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-ocean-500 via-ocean-600 to-ocean-800 flex items-center justify-center">
+                    <MapPin size={56} className="text-white/25" aria-hidden="true" />
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
@@ -122,7 +127,7 @@ export function HubDetailsUI({
 
               {/* Hub name overlay */}
               <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
-                <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-0.5">
+                <span className="inline-block text-[11px] font-bold uppercase tracking-widest text-white/60 mb-0.5">
                   {hub.alias}
                 </span>
                 <h1 className="text-2xl md:text-4xl font-bold text-white tracking-tight leading-tight">
@@ -138,7 +143,7 @@ export function HubDetailsUI({
                 <div className="bg-white/10 p-2 rounded-xl">
                   <MapPin size={16} className="text-brand-light" />
                 </div>
-                <h2 className="text-base font-bold">Location</h2>
+                <h2 className="text-base font-bold">{t('location')}</h2>
               </div>
               <p className="text-white/80 text-xs md:text-sm leading-relaxed relative z-10">
                 {hub.address}
@@ -147,9 +152,10 @@ export function HubDetailsUI({
                 <Link 
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hub.address)}`}
                   target="_blank"
-                  className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white text-[10px] md:text-xs font-semibold px-3.5 py-2 rounded-xl border border-white/10 transition-colors"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 min-h-11 bg-white/10 hover:bg-white/15 text-white text-xs font-semibold px-3.5 py-2 rounded-xl border border-white/10 transition-colors"
                 >
-                  Open in Maps <ArrowRight size={10} />
+                  {t('openInMaps')} <ArrowRight size={10} />
                 </Link>
               </div>
             </div>
@@ -157,15 +163,15 @@ export function HubDetailsUI({
             {/* Quick attributes */}
             <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
               {[
-                { icon: <Clock size={16} />, label: 'Open Hours', value: `${hub.open_time.slice(0, 5)}–${hub.close_time.slice(0, 5)}` },
-                { icon: <ShieldCheck size={16} />, label: 'Security', value: 'Vault Grade' },
+                { icon: <Clock size={16} />, label: t('openHours'), value: `${hub.open_time.slice(0, 5)}–${hub.close_time.slice(0, 5)}` },
+                { icon: <ShieldCheck size={16} />, label: t('security'), value: t('securityValue') },
               ].map((attr, i) => (
                 <div key={i} className="bg-white p-3 md:p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-2">
                   <div className="w-8 h-8 bg-brand/8 rounded-xl flex items-center justify-center text-brand">
                     {attr.icon}
                   </div>
                   <div>
-                    <p className="text-[9px] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">{attr.label}</p>
+                    <p className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-0.5">{attr.label}</p>
                     <p className="font-bold text-gray-900 text-[11px] sm:text-xs">{attr.value}</p>
                   </div>
                 </div>
@@ -176,12 +182,14 @@ export function HubDetailsUI({
             {categories.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm md:text-base font-bold text-gray-900">Explore the Neighbourhood</h3>
-                  <button 
+                  <h3 className="text-sm md:text-base font-bold text-gray-900">{t('exploreNeighbourhood')}</h3>
+                  <button
+                    type="button"
+                    aria-expanded={showAllNearby}
                     onClick={() => setShowAllNearby(!showAllNearby)}
-                    className="md:hidden text-brand text-xs font-bold bg-brand/5 px-3 py-1.5 rounded-lg active:scale-95 transition-transform"
+                    className="md:hidden min-h-11 text-brand text-xs font-bold bg-brand/5 px-3 py-1.5 rounded-lg active:scale-95 transition-transform"
                   >
-                    {showAllNearby ? 'Show Less' : `Show All (${categories.length})`}
+                    {showAllNearby ? t('showLess') : t('showAll', { count: categories.length })}
                   </button>
                 </div>
                 
@@ -190,20 +198,20 @@ export function HubDetailsUI({
                     const cfg = getConfig(cat)
                     return (
                       <div key={cat} className="bg-white p-4 md:p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                        <div className={`flex items-center gap-2 text-[10px] md:text-xs font-bold uppercase tracking-wider ${cfg.text}`}>
+                        <div className={`flex items-center gap-2 text-[11px] md:text-xs font-bold uppercase tracking-wider ${cfg.text}`}>
                           <div className={`p-1.5 md:p-2 rounded-xl ${cfg.bg}`}>{cfg.icon}</div>
-                          {cat}
+                          {categoryLabel(cat)}
                         </div>
                         <div className="space-y-2.5 md:space-y-3">
                           {grouped[cat].map((place) => (
                             <div key={place.id} className="flex items-center justify-between">
                               <div className="min-w-0 pr-2">
                                 <p className="font-semibold text-gray-900 text-xs md:text-sm truncate">{place.name}</p>
-                                <p className="text-[10px] text-gray-400 mt-0.5">{place.distance_km} km away</p>
+                                <p className="text-[11px] text-gray-500 mt-0.5">{t('kmAway', { km: place.distance_km })}</p>
                               </div>
                               {place.map_url && (
-                                <Link href={place.map_url} target="_blank" className="text-brand text-[10px] md:text-xs font-semibold flex items-center gap-1 hover:underline shrink-0">
-                                  Maps <ArrowRight size={10} />
+                                <Link href={place.map_url} target="_blank" rel="noopener noreferrer" className="text-brand text-xs font-semibold flex items-center gap-1 min-h-11 px-1 hover:underline shrink-0">
+                                  {t('maps')} <ArrowRight size={10} />
                                 </Link>
                               )}
                             </div>
@@ -223,26 +231,26 @@ export function HubDetailsUI({
             {/* Pricing card */}
             <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-lg space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-gray-900">Storage Rates</h2>
+                <h2 className="text-lg font-bold text-gray-900">{t('storageRates')}</h2>
                 <div className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5">
                   <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                  Best Rate
+                  {t('bestRate')}
                 </div>
               </div>
 
               {/* Rate list */}
               <div className="space-y-2">
-                {(Object.entries(BAG_LABELS) as [BagType, string][]).map(([type, label]) => (
+                {(['small', 'regular', 'large'] as BagType[]).map((type) => (
                   <div key={type} className="flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-gray-400">
+                      <div className="w-8 h-8 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-gray-500">
                         <Star size={14} />
                       </div>
-                      <span className="font-semibold text-gray-800 text-sm">{label}</span>
+                      <span className="font-semibold text-gray-800 text-sm">{tBags(`${type}.label`)}</span>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-black text-gray-900 leading-tight">LKR {rates[type].hourlyRate.toLocaleString()}/hr</p>
-                      <p className="text-[9px] text-brand font-black uppercase mt-0.5 tracking-wider">Max LKR {rates[type].dailyCap.toLocaleString()}/day</p>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-black text-gray-900 leading-tight whitespace-nowrap">{t('perHour', { amount: rates[type].hourlyRate.toLocaleString() })}</p>
+                      <p className="text-[11px] text-brand font-black uppercase mt-0.5 tracking-wider whitespace-nowrap">{t('maxPerDay', { amount: rates[type].dailyCap.toLocaleString() })}</p>
                     </div>
                   </div>
                 ))}
@@ -252,7 +260,7 @@ export function HubDetailsUI({
               {/* Desktop CTA */}
               <div className="space-y-3 hidden md:block">
                 {BookCTA}
-                <p className="text-center text-xs text-gray-400 font-medium">No deposit required · Instant confirmation</p>
+                <p className="text-center text-xs text-gray-500 font-medium">{t('noDeposit')}</p>
               </div>
             </div>
 
@@ -260,8 +268,7 @@ export function HubDetailsUI({
             {categories.length > 0 && (
               <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-gray-900 text-sm">Nearby</h3>
-                  <span className="text-brand text-xs font-semibold">Explore</span>
+                  <h3 className="font-bold text-gray-900 text-sm">{t('nearby')}</h3>
                 </div>
                 <div className="space-y-5">
                   {categories.slice(0, 2).map((cat) => {
@@ -270,16 +277,15 @@ export function HubDetailsUI({
                       <div key={cat} className="space-y-3">
                         <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${cfg.text}`}>
                           <div className={`p-2 rounded-xl ${cfg.bg}`}>{cfg.icon}</div>
-                          {cat}
+                          {categoryLabel(cat)}
                         </div>
                         <div className="space-y-2">
                           {grouped[cat].slice(0, 2).map((place) => (
                             <div key={place.id} className="flex items-center justify-between">
                               <div>
                                 <p className="font-semibold text-gray-900 text-sm">{place.name}</p>
-                                <p className="text-xs text-gray-400">{place.distance_km} km away</p>
+                                <p className="text-xs text-gray-500">{t('kmAway', { km: place.distance_km })}</p>
                               </div>
-                              <ArrowRight size={14} className="text-gray-300" />
                             </div>
                           ))}
                         </div>
@@ -292,19 +298,19 @@ export function HubDetailsUI({
 
           </aside>
         </div>
-      </main>
+      </div>
 
       {/* ── Mobile sticky booking bar ── */}
       <div className="md:hidden fixed bottom-[calc(60px_+_env(safe-area-inset-bottom))] inset-x-0 z-40 bg-white border-t border-gray-100 px-4 py-3 shadow-2xl shadow-gray-300/50">
         <div className="flex items-center gap-3 max-w-lg mx-auto">
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-500 font-medium">Starting from</p>
-            <p className="text-sm font-bold text-gray-900">
-              LKR {Math.min(...Object.values(rates).map(r => r.hourlyRate)).toLocaleString()}<span className="text-gray-400 font-normal">/hr</span>
+            <p className="text-xs text-gray-500 font-medium">{t('startingFrom')}</p>
+            <p className="text-sm font-bold text-gray-900 whitespace-nowrap">
+              {t('perHour', { amount: Math.min(...Object.values(rates).map(r => r.hourlyRate)).toLocaleString() })}
             </p>
           </div>
-          {availability > 0 ? <Link href={bookHref} className={`${ctaClass} shrink-0 text-sm`}>Reserve Storage</Link>
-            : <span aria-disabled="true" className={`${ctaClass} shrink-0 text-sm opacity-60`}>Hub is Full</span>}
+          {availability > 0 ? <Link href={bookHref} className={`${ctaClass} shrink-0 text-sm`}>{t('reserve')}</Link>
+            : <span aria-disabled="true" className={`${ctaClass} shrink-0 text-sm opacity-60`}>{t('hubFull')}</span>}
         </div>
       </div>
 

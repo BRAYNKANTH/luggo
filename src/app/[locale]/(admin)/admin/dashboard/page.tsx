@@ -91,7 +91,7 @@ export default async function AdminDashboardPage() {
     pickup_requested:                 'bg-cyan-100 text-cyan-700',
     completed:                        'bg-green-100 text-green-700',
     cancelled:                        'bg-gray-100 text-gray-500',
-    expired:                          'bg-gray-100 text-gray-400',
+    expired:                          'bg-gray-100 text-gray-500',
     overstayed:                       'bg-red-100 text-red-600',
     disputed:                         'bg-orange-100 text-orange-600',
   }
@@ -103,7 +103,7 @@ export default async function AdminDashboardPage() {
     >
       <div className="px-6 py-8 max-w-6xl mx-auto">
         <h1 className="text-2xl font-extrabold text-ocean-900 mb-1">Dashboard</h1>
-        <p className="text-sm text-gray-400 mb-8">Overview of the Luggo platform</p>
+        <p className="text-sm text-gray-500 mb-8">Overview of the Luggo platform</p>
 
         {/* Stats grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -169,17 +169,17 @@ export default async function AdminDashboardPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-50">
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Ref</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Customer</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Hub</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Status</th>
-                  <th className="text-right px-5 py-3 text-xs font-semibold text-gray-400">Amount</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Ref</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Customer</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Hub</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Status</th>
+                  <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500">Amount</th>
                 </tr>
               </thead>
               <tbody>
                 {recentBookings?.map((b) => (
                   <tr key={b.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
-                    <td className="px-5 py-3 font-mono text-xs text-gray-400">
+                    <td className="px-5 py-3 font-mono text-xs text-gray-500">
                       #{b.id.slice(0, 8).toUpperCase()}
                     </td>
                     <td className="px-5 py-3 text-ocean-900 font-medium">

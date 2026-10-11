@@ -9,6 +9,8 @@ export default getRequestConfig(async ({ requestLocale }) => {
 
   return {
     locale,
+    // Hubs operate on Sri Lanka time; format server-rendered dates the same way.
+    timeZone: 'Asia/Colombo',
     messages: (
       locale === 'si' ? (await import('../messages/si.json')).default :
       locale === 'ta' ? (await import('../messages/ta.json')).default :

@@ -37,7 +37,7 @@ export default function StaffLoginPage() {
 
       {/* Card */}
       <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8">
-        <h2 className="text-xl font-bold text-ocean-900 mb-1">Staff sign in</h2>
+        <h1 className="text-xl font-bold text-ocean-900 mb-1">Staff sign in</h1>
         <p className="text-sm text-gray-500 mb-6">
           Use your Luggo staff credentials to continue.
         </p>

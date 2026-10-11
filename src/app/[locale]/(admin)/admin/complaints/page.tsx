@@ -60,7 +60,7 @@ export default async function AdminComplaintsPage(
     <AdminShell userName={profile?.name ?? '—'} userRole={profile?.role ?? 'admin'}>
       <div className="px-6 py-8 max-w-5xl mx-auto">
         <h1 className="text-2xl font-extrabold text-ocean-900 mb-1">Complaints</h1>
-        <p className="text-sm text-gray-400 mb-6">{complaints?.length ?? 0} shown</p>
+        <p className="text-sm text-gray-500 mb-6">{complaints?.length ?? 0} shown</p>
 
         {/* Status filter */}
         <div className="flex flex-wrap gap-2 mb-6">
@@ -85,13 +85,13 @@ export default async function AdminComplaintsPage(
               <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
                 <div>
                   <p className="font-semibold text-ocean-900 text-sm">{c.users?.name ?? '—'}</p>
-                  <p className="text-xs text-gray-400">{c.users?.email}</p>
+                  <p className="text-xs text-gray-500">{c.users?.email}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-500">
                     Booking #{(c.bookings?.id ?? '').slice(0, 8).toUpperCase()}
                   </p>
-                  <p className="text-xs text-gray-400">{c.bookings?.hubs?.name}</p>
+                  <p className="text-xs text-gray-500">{c.bookings?.hubs?.name}</p>
                   <p className="text-xs text-gray-300 mt-0.5">
                     {format(new Date(c.created_at), 'dd MMM yyyy, h:mm a')}
                   </p>
@@ -109,7 +109,7 @@ export default async function AdminComplaintsPage(
             </div>
           ))}
           {!complaints?.length && (
-            <div className="bg-white rounded-2xl border border-gray-100 px-5 py-12 text-center text-gray-400 text-sm">
+            <div className="bg-white rounded-2xl border border-gray-100 px-5 py-12 text-center text-gray-500 text-sm">
               No complaints found.
             </div>
           )}

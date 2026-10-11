@@ -1,6 +1,7 @@
 'use client'
 
 import QRCode from 'react-qr-code'
+import { useTranslations } from 'next-intl'
 import { Download } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
@@ -11,6 +12,7 @@ interface BookingQRProps {
 }
 
 export function BookingQR({ qrCode, bookingId, className }: BookingQRProps) {
+  const t = useTranslations('BookingDetail')
   function downloadQR() {
     const svg = document.getElementById('booking-qr-svg')
     if (!svg) return
@@ -35,12 +37,13 @@ export function BookingQR({ qrCode, bookingId, className }: BookingQRProps) {
           bgColor="#ffffff"
           fgColor="#011a2e"
           level="M"
+          title={t('qrAlt')}
         />
       </div>
 
       {/* Code label */}
       <div className="text-center">
-        <p className="text-xs text-gray-400 mb-1">Booking reference</p>
+        <p className="text-xs text-gray-600 mb-1">{t('reference')}</p>
         <p className="font-mono font-bold text-ocean-900 text-lg tracking-widest">
           {bookingId.slice(0, 8).toUpperCase()}
         </p>
@@ -50,10 +53,10 @@ export function BookingQR({ qrCode, bookingId, className }: BookingQRProps) {
       <button
         type="button"
         onClick={downloadQR}
-        className="flex items-center gap-1.5 text-sm text-brand hover:text-ocean-600 transition-colors font-medium"
+        className="flex min-h-11 items-center gap-1.5 px-2 text-sm text-brand hover:text-ocean-600 transition-colors font-medium"
       >
-        <Download size={14} />
-        Save QR code
+        <Download size={14} aria-hidden="true" />
+        {t('saveQr')}
       </button>
     </div>
   )

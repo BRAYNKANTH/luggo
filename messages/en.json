@@ -11,7 +11,13 @@
       "hubs": "Hubs",
       "travellers": "Travellers",
       "bagsLost": "Bags Lost"
-    }
+    },
+    "chips": {
+      "noAccount": "No account needed",
+      "seals": "Tamper-proof seals",
+      "protection": "{amount} protection"
+    },
+    "ctaTitle": "Explore Sri Lanka Hands-Free"
   },
   "Common": {
     "protection": "LKR {amount} Protection",
@@ -23,14 +29,17 @@
     "open": "Open",
     "closed": "Closed",
     "vetted": "Vetted",
-    "capacity": "Capacity"
+    "capacity": "Capacity",
+    "payhere": "PayHere secure",
+    "fromRate": "From LKR {amount}/hr"
   },
   "Nav": {
     "how": "How It Works",
     "locations": "Locations",
     "faq": "FAQ",
     "signIn": "Sign In",
-    "findStorage": "Find Storage"
+    "findStorage": "Find Storage",
+    "about": "About"
   },
   "Dashboard": {
     "welcomeBack": "Welcome back",
@@ -66,7 +75,9 @@
     "showQr": "Show QR",
     "qrInstruction": "Present this QR to hub staff for bag collection",
     "timeExceeded": "⚠ Time exceeded",
-    "clearSearch": "Clear"
+    "clearSearch": "Clear",
+    "there": "there",
+    "searchLabel": "Search hubs"
   },
   "Statuses": {
     "pending_payment": "Awaiting Payment",
@@ -99,7 +110,9 @@
       "step3": "Drop & Secure",
       "step3Desc": "Check in your bags and get them sealed with our tamper-proof tags.",
       "step4": "Pick Up & Go",
-      "step4Desc": "Show your booking ID to pick up your bags whenever you're ready."
+      "step4Desc": "Show your booking ID to pick up your bags whenever you're ready.",
+      "previousSteps": "Previous steps",
+      "nextSteps": "Next steps"
     },
     "features": {
       "tag": "Why Luggo?",
@@ -121,5 +134,541 @@
       "tag": "Testimonials",
       "title": "Loved by travellers worldwide"
     }
+  },
+  "Shell": {
+    "skipToContent": "Skip to content",
+    "goBack": "Go back",
+    "language": "Language",
+    "navLabel": "Main navigation",
+    "nav": {
+      "dashboard": "Dashboard",
+      "home": "Home",
+      "hubs": "Hubs",
+      "bookings": "My Bookings",
+      "profile": "Profile"
+    },
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "skip": "Skip",
+    "socialLabel": "Luggo on social media",
+    "newTab": "opens in a new tab"
+  },
+  "LoginPrompt": {
+    "title": "Sign in to book",
+    "body": "Create a free account to book storage, track your bags, and manage your bookings.",
+    "signIn": "Sign in / Create account",
+    "continue": "Continue browsing",
+    "close": "Close"
+  },
+  "Bags": {
+    "small": {
+      "label": "Small (Backpack)",
+      "name": "Small",
+      "bag": "Small Bag",
+      "desc": "Backpack, handbag, laptop bag, or briefcase"
+    },
+    "regular": {
+      "label": "Regular (Cabin Bag)",
+      "name": "Regular",
+      "bag": "Regular Bag",
+      "desc": "Cabin luggage, standard carry-on suitcase, or duffel bag"
+    },
+    "large": {
+      "label": "Large (Check-in Bag)",
+      "name": "Large",
+      "bag": "Large Bag",
+      "desc": "Large check-in suitcase, backpacker pack, golf clubs, or oversized gear"
+    }
+  },
+  "Hubs": {
+    "title": "Find a Hub",
+    "count": "{count, plural, one {# location available} other {# locations available}}",
+    "none": "No active hubs found.",
+    "list": "List",
+    "map": "Map",
+    "locating": "Locating…",
+    "nearMe": "Near me",
+    "nearMeOn": "Near me ✓",
+    "locationUnavailable": "Location is unavailable in this browser. Browse the hub list instead.",
+    "locationDenied": "Unable to access your location. You can still browse all hubs.",
+    "book": "Book",
+    "viewHub": "View hub",
+    "mapUnavailable": "Map unavailable",
+    "mapUnavailableDesc": "Use the list view to browse hubs."
+  },
+  "Hub": {
+    "available": "Available",
+    "limited": "Limited",
+    "full": "Full",
+    "reserve": "Reserve Storage",
+    "hubFull": "Hub is Full",
+    "back": "Back",
+    "signIn": "Sign in",
+    "location": "Location",
+    "openInMaps": "Open in Maps",
+    "openHours": "Open Hours",
+    "security": "Security",
+    "securityValue": "Vault Grade",
+    "exploreNeighbourhood": "Explore the Neighbourhood",
+    "showLess": "Show less",
+    "showAll": "Show all ({count})",
+    "kmAway": "{km} km away",
+    "maps": "Maps",
+    "storageRates": "Storage Rates",
+    "bestRate": "Best Rate",
+    "perHour": "LKR {amount}/hr",
+    "maxPerDay": "Max LKR {amount}/day",
+    "noDeposit": "No deposit required · Instant confirmation",
+    "nearby": "Nearby",
+    "startingFrom": "Starting from",
+    "categories": {
+      "Restaurant": "Restaurants",
+      "Cafe": "Cafés",
+      "Hotel": "Hotels",
+      "Shopping": "Shopping",
+      "Attraction": "Attractions",
+      "Transport": "Transport",
+      "Beach": "Beaches",
+      "Hospital": "Hospitals",
+      "Bank / ATM": "Banks / ATMs",
+      "Other": "Other"
+    }
+  },
+  "Meta": {
+    "hubsTitle": "Luggage Storage Locations in Sri Lanka",
+    "hubsDescription": "Find trusted luggage storage hubs across Sri Lanka. Secure storage in Colombo, Kandy, Galle, Ella, Negombo, and Bandaranaike International Airport (BIA).",
+    "hubTitle": "Luggage Storage at {name}, {location}",
+    "hubDescription": "Store your bags securely at {name} in {location} ({address}). Verified, secure luggage storage in Sri Lanka.",
+    "aboutTitle": "About Luggo",
+    "aboutDescription": "Get to know Luggo, a luggage storage platform connecting travellers with storage hubs in Sri Lanka.",
+    "book": "Book storage",
+    "bookHub": "Book {name}",
+    "login": "Sign in",
+    "forgotPassword": "Reset password",
+    "resetPassword": "Set a new password",
+    "profile": "My profile",
+    "dashboard": "Dashboard",
+    "bookings": "My bookings",
+    "booking": "Booking details",
+    "confirmSeal": "Confirm seal",
+    "receipt": "Receipt",
+    "notifications": "Notifications",
+    "pickup": "Request pickup",
+    "staffLogin": "Staff sign in",
+    "adminLogin": "Admin sign in",
+    "staffScan": "Scan booking",
+    "offline": "You're offline"
+  },
+  "Booking": {
+    "pageTitle": "Book at {name}",
+    "secureCheckout": "Secure checkout",
+    "operatingHours": "Operating hours: {open} – {close}",
+    "storageTimes": "Storage times",
+    "dropOff": "Drop-off",
+    "pickUp": "Pick-up",
+    "dropOffDate": "Drop-off date",
+    "dropOffTime": "Drop-off time",
+    "pickUpDate": "Pick-up date",
+    "pickUpTime": "Pick-up time",
+    "openShort": "Open {open} – {close}",
+    "storageDuration": "Storage duration: <strong>{count, plural, one {# hour} other {# hours}}</strong>",
+    "timeErrors": {
+      "past": "Drop-off time must be in the future.",
+      "hours": "Selected times must be within the hub's opening hours.",
+      "order": "Pick-up time must be after drop-off time."
+    },
+    "luggageItems": "Luggage items",
+    "rate": "LKR {hourly}/hr · max LKR {cap}/day",
+    "removeBag": "Remove one {bag} bag",
+    "addBag": "Add one {bag} bag",
+    "maxBags": "Maximum 10 bags per booking",
+    "customerDetails": "Your details",
+    "customerDetailsDesc": "We use these to confirm your booking and contact you.",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "e.g. Amal Perera",
+    "email": "Email address",
+    "emailPlaceholder": "e.g. amal@example.com",
+    "idType": "ID type",
+    "nic": "NIC",
+    "passport": "Passport",
+    "idNumber": "NIC / Passport number (optional)",
+    "idHint": "Staff check this against your ID at drop-off. You can leave it blank and show your ID at the counter.",
+    "phone": "Mobile number",
+    "phoneHint": "We'll text you a 6-digit code to verify this number.",
+    "phoneVerified": "Number verified",
+    "sendCode": "Send verification code",
+    "sendingCode": "Sending code…",
+    "codeLabel": "Verification code",
+    "codeHint": "Enter the six-digit code. You can paste the full code.",
+    "verifyPhone": "Verify number",
+    "paymentMethod": "Payment method",
+    "paymentMethodDesc": "Choose how you want to pay.",
+    "payOnline": "Pay online (card / wallet)",
+    "payOnlineDesc": "Pay securely by credit/debit card, Genie, or mobile wallet through PayHere.",
+    "payAtHub": "Pay at the hub (cash)",
+    "payAtHubDesc": "Reserve now and pay cash at the counter when you drop off your bags.",
+    "declareProhibited": "I confirm my luggage does not contain prohibited, illegal, hazardous, perishable, or restricted items.",
+    "mayRefuse": "Luggo may refuse storage if luggage appears unsafe, leaking, damaged, suspicious, or against storage rules.",
+    "agreeTerms": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>.",
+    "governingLaw": "These terms are governed by the Consumer Affairs Authority Act of Sri Lanka and local laws.",
+    "viewProhibited": "View prohibited items",
+    "hideProhibited": "Hide prohibited items",
+    "prohibitedTitle": "Prohibited items",
+    "prohibited": {
+      "illegal": "Illegal items",
+      "weapons": "Weapons",
+      "hazardous": "Hazardous or flammable items",
+      "perishable": "Perishable food",
+      "smelly": "Strong-smelling items",
+      "liquids": "Leaking liquids",
+      "animals": "Live animals",
+      "valuables": "Cash, jewellery, or high-value items",
+      "fragile": "Fragile items (stored at your own risk)",
+      "restricted": "Any item restricted by law or hub policy"
+    },
+    "summary": "Booking summary",
+    "hubLocation": "Hub",
+    "timeWindow": "Time window",
+    "durationHours": "{count, plural, one {# hour} other {# hours}} of storage",
+    "selectTimes": "Choose your drop-off and pick-up times",
+    "items": "Items",
+    "itemCount": "{count, plural, one {# item} other {# items}}",
+    "noItems": "No bags added yet",
+    "priceBreakdown": "Price breakdown",
+    "hoursShort": "{count}h",
+    "capApplied": "Daily cap applied",
+    "totalAmount": "Total",
+    "secure": "Secure",
+    "guest": "Guest details",
+    "guestName": "Name",
+    "guestPhone": "Phone",
+    "guestEmail": "Email",
+    "guestId": "ID",
+    "securePaymentNote": "Secure payment. We'll send your confirmation once payment is complete.",
+    "toContinue": "To continue:",
+    "missing": {
+      "times": "choose valid times",
+      "bags": "add at least one bag",
+      "phone": "verify your mobile number",
+      "declarations": "tick both declarations"
+    },
+    "errors": {
+      "createFailed": "We couldn't create your booking. Please try again.",
+      "network": "Network error. Please check your connection.",
+      "phoneInvalid": "Enter a valid Sri Lankan mobile number (e.g. 077 123 4567).",
+      "smsFailed": "We couldn't send the SMS. Please try again.",
+      "codeNetwork": "We couldn't send the code. Please check your connection.",
+      "badCode": "Incorrect or expired code.",
+      "verifyNetwork": "Verification failed. Please check your connection.",
+      "times": "Choose drop-off and pick-up times within the hub's opening hours.",
+      "bags": "Add at least one bag.",
+      "name": "Enter your full name (at least 2 characters).",
+      "email": "Enter a valid email address.",
+      "phoneUnverified": "Verify your mobile number with the SMS code.",
+      "id": "Enter a valid {type} number.",
+      "prohibited": "Confirm the prohibited items declaration.",
+      "terms": "Accept the Terms of Service and Privacy Policy."
+    },
+    "continue": "Continue",
+    "reservePayAtHub": "Reserve · Pay at hub",
+    "payOnlineAmount": "Pay LKR {amount} online"
+  },
+  "Login": {
+    "home": "Home",
+    "signIn": "Sign in",
+    "createAccount": "Create account",
+    "agree": "By continuing you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>.",
+    "welcomeBack": "Welcome back",
+    "welcomeBackDesc": "Enter your email or phone number.",
+    "emailOrPhone": "Email or phone",
+    "emailOrPhonePlaceholder": "you@email.com or 071 234 5678",
+    "sendCode": "Send code",
+    "sending": "Sending…",
+    "noAccount": "No account found. Please create an account first.",
+    "smsFailed": "We couldn't send the SMS. Please try again.",
+    "badCode": "Incorrect or expired code.",
+    "createTitle": "Create your account",
+    "createDesc": "Fill in your details to get started.",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "Amal Perera",
+    "email": "Email address",
+    "phone": "Phone number",
+    "nic": "NIC / Passport",
+    "checking": "Checking…",
+    "continue": "Continue",
+    "cannotCreate": "We couldn't create an account with those details. Please sign in or try different details.",
+    "back": "Back",
+    "verifyTitle": "Verify your account",
+    "verifyDesc": "How would you like to receive your verification code?",
+    "viaEmail": "By email",
+    "viaSms": "By SMS",
+    "enterCode": "Enter your code",
+    "sentTo": "Sent to <target></target>",
+    "codeLabel": "Verification code",
+    "codeHint": "Enter the six-digit code. You can paste the full code.",
+    "verifying": "Verifying…",
+    "verifyCode": "Verify code",
+    "resend": "Resend code",
+    "resendIn": "Resend in {seconds}s"
+  },
+  "Password": {
+    "backToLogin": "Back to sign in",
+    "resetTitle": "Reset password",
+    "resetDesc": "Enter your email and we'll send you a reset link.",
+    "email": "Email address",
+    "sending": "Sending…",
+    "sendLink": "Send reset link",
+    "sendFailed": "We couldn't send the reset link. Please try again.",
+    "checkEmail": "Check your email",
+    "sentTo": "We sent a password reset link to <email></email>. Open it to set a new password.",
+    "newTitle": "Set a new password",
+    "rules": "Use at least 8 characters, including one uppercase letter and one number.",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "mismatch": "Passwords do not match.",
+    "updateFailed": "We couldn't update your password. Please try again.",
+    "save": "Save password",
+    "requestAnother": "Request another reset link",
+    "show": "Show password",
+    "hide": "Hide password"
+  },
+  "About": {
+    "navLabel": "About page navigation",
+    "homeLabel": "Luggo home",
+    "backHome": "Back to home",
+    "eyebrow": "About Luggo",
+    "title": "Explore Sri Lanka with your hands free.",
+    "intro": "Luggo connects travellers with luggage storage hubs in Sri Lanka. Whether you are waiting to check in, heading out after checkout, or stopping between journeys, you can find a place to leave your bags while you explore.",
+    "howTitle": "How Luggo works",
+    "steps": {
+      "find": {
+        "title": "Find a hub",
+        "text": "Browse available hubs and check opening hours, bag sizes, and prices before booking."
+      },
+      "drop": {
+        "title": "Drop off your bags",
+        "text": "Show your booking at the hub. Staff record your bags and their security seals at check-in."
+      },
+      "collect": {
+        "title": "Collect when ready",
+        "text": "Return within your booked time and the hub's opening hours. Use your booking reference to collect your bags."
+      }
+    },
+    "knowTitle": "Know before you book",
+    "knowText": "Availability and pricing depend on the hub and your storage duration. Review your booking details, the <terms>Terms of Service</terms>, and our <privacy>Privacy Policy</privacy> before booking.",
+    "findHub": "Find a storage hub",
+    "contactTitle": "Get in touch",
+    "contactText": "For questions about Luggo or working with us, email <email></email>."
+  },
+  "NotFound": {
+    "title": "Page or booking not found",
+    "body": "We couldn't find the page or booking you were looking for. It may have been removed, or you may not have permission to view it.",
+    "cta": "Go to dashboard"
+  },
+  "Offline": {
+    "title": "You're offline",
+    "body": "Looks like you've lost your internet connection. Check your Wi-Fi or mobile data and try again.",
+    "retry": "Try again",
+    "cached": "Pages you've visited recently may still be available."
+  },
+  "Footer": {
+    "label": "Footer",
+    "how": "How it works",
+    "about": "About",
+    "locations": "Locations",
+    "terms": "Terms",
+    "privacy": "Privacy"
+  },
+  "Preview": {
+    "confirmed": "Booking confirmed!",
+    "hub": "Colombo Fort Hub",
+    "active": "Active",
+    "dropOff": "Drop-off",
+    "dropOffTime": "Today, 2:00 PM",
+    "pickUp": "Pick-up",
+    "pickUpTime": "Tomorrow, 9:00 AM",
+    "showAtCounter": "Show at the hub counter",
+    "sealed": "Bags sealed & secured",
+    "photoProof": "Photo proof uploaded"
+  },
+  "Cities": {
+    "tag": "Coverage",
+    "colombo": {
+      "name": "Colombo",
+      "desc": "Near Colombo Fort, Pettah & Galle Face."
+    },
+    "kandy": {
+      "name": "Kandy",
+      "desc": "Temple of the Tooth & Kandy Lake."
+    },
+    "galle": {
+      "name": "Galle",
+      "desc": "Galle Fort & the southern coast."
+    },
+    "ella": {
+      "name": "Ella",
+      "desc": "Little Adam's Peak & Nine Arch Bridge."
+    },
+    "mirissa": {
+      "name": "Mirissa",
+      "desc": "Beaches & whale watching."
+    },
+    "negombo": {
+      "name": "Negombo",
+      "desc": "Beach & lagoon without the luggage."
+    },
+    "airport": {
+      "name": "Airport / BIA",
+      "desc": "Store bags when arriving early or leaving late."
+    }
+  },
+  "Pricing": {
+    "tag": "Pricing",
+    "title": "Simple, hourly rates",
+    "note": "These are our lowest rates across all hubs. Exact pricing is confirmed at checkout for your chosen hub.",
+    "popular": "Most popular",
+    "from": "From",
+    "perHour": "/ hr"
+  },
+  "Faq": {
+    "title": "Got questions?",
+    "how": {
+      "q": "How does it work?",
+      "a": "Find a hub on the map, book online in seconds, and drop your bags at the counter. Staff seal them with a tamper-proof tag and photograph the seal before you leave. Pick up whenever you're ready, up to closing time."
+    },
+    "late": {
+      "q": "What if I'm running late to pick up my bags?",
+      "a": "You get a 15-minute grace period after your booked pickup time at no extra charge. After that, storage is billed in 30-minute blocks at your hub's rate, capped at the daily rate, so a short delay never costs more than a day would."
+    },
+    "covered": {
+      "q": "What's covered if something happens to my bags?",
+      "a": "Every hub is vetted, and your bags are sealed and photographed at drop-off. You can also add Luggo Guarantee for LKR 150 per bag, with compensation up to {amount} per booking for eligible accidental damage, loss, or theft while stored, subject to the Terms of Service."
+    },
+    "account": {
+      "q": "Do I need to create an account or pay upfront?",
+      "a": "No. You can book as a guest and pay by card online, or reserve now and pay cash at the counter when you drop off. An account just makes it faster to book again and manage extensions."
+    }
+  },
+  "Bookings": {
+    "title": "My Bookings",
+    "emptyTitle": "No bookings yet",
+    "emptyBody": "Store your bags safely at any Luggo hub across Sri Lanka.",
+    "emptyPerks": "Fast check-in · Secure storage · Easy pickup",
+    "findHub": "Find a hub near you",
+    "active": "Active ({count})",
+    "past": "Past ({count})",
+    "hub": "Hub"
+  },
+  "Profile": {
+    "title": "My Profile",
+    "signOut": "Sign out",
+    "welcomeTitle": "Welcome to Luggo!",
+    "welcomeBody": "Complete your profile for faster checkout.",
+    "account": "Account",
+    "roles": {
+      "customer": "Customer",
+      "hub_staff": "Hub staff",
+      "support_admin": "Support admin",
+      "ops_admin": "Operations admin",
+      "master_admin": "Master admin"
+    },
+    "email": "Email",
+    "editDetails": "Edit details",
+    "fullName": "Full name",
+    "phone": "Phone number",
+    "phoneHint": "Used for SMS alerts. A new number is confirmed with an SMS code.",
+    "codeSent": "We sent a code to <phone></phone>. Enter it to save your new number.",
+    "codeLabel": "Verification code",
+    "codeHint": "Enter the six-digit code. You can paste the full code.",
+    "confirmNumber": "Confirm number",
+    "cancel": "Cancel",
+    "nic": "NIC / Passport",
+    "nicHint": "Needed to release your bags at pickup.",
+    "saved": "Profile saved",
+    "save": "Save changes",
+    "sendFailed": "We couldn't send a verification code.",
+    "verifyFailed": "Verification failed.",
+    "general": "General",
+    "homepage": "Visit the Luggo homepage",
+    "language": "Language"
+  },
+  "Tracker": {
+    "title": "Your luggage journey",
+    "booked": "Booked",
+    "atHub": "At hub",
+    "sealed": "Sealed",
+    "inVault": "In storage",
+    "collected": "Collected"
+  },
+  "BookingDetail": {
+    "booking": "Booking",
+    "cashPendingTitle": "Cash payment due at the hub",
+    "cashPendingBody": "Please pay <strong>LKR {amount}</strong> in cash at the counter when you drop off.",
+    "paymentConfirmed": "Payment confirmed!",
+    "paymentConfirmedBody": "Your booking is secured. We'll see you at the hub.",
+    "paymentPendingTitle": "Payment pending or declined",
+    "paymentPendingBody": "Your payment wasn't completed or was declined by the bank. Please try again to confirm your reservation.",
+    "editBooking": "Back to edit booking details",
+    "extended": "Booking extended!",
+    "extendedBody": "Your new pickup time is shown below.",
+    "lateFeePaid": "Late fee paid!",
+    "lateFeePaidBody": "Head to the hub counter to collect your bags.",
+    "paymentCancelled": "Payment not completed",
+    "paymentCancelledBody": "Your booking is held for 30 minutes.",
+    "actionRequired": "Action required",
+    "reviewSealBody": "Staff have sealed your bags. Please review the photo and confirm.",
+    "reviewSeal": "Review & confirm seal",
+    "earlyPayTitle": "Early drop-off payment required",
+    "earlyPayBody": "You're {minutes} minutes early. To keep your original pickup time, please pay LKR {fee}.",
+    "earlyPayNote": "The early fee is calculated from when Luggo staff accept your luggage.",
+    "freeEarlyTitle": "Free early check-in applied",
+    "freeEarlyBody": "You're slightly early. Early check-in is free and your pickup time stays the same.",
+    "shiftedTitle": "Booking moved earlier",
+    "shiftedBody": "You moved your booking window earlier. Your new pickup time is {time}.",
+    "earlyPaidTitle": "Early check-in fee paid",
+    "earlyPaidBody": "You checked in {minutes} minutes early and paid LKR {fee} to keep your original pickup time.",
+    "pickupFailed": "Pickup request failed",
+    "lateFeeTitle": "Late fee required",
+    "lateFeeBody": "Your storage has passed the booked pickup time. Please pay the late fee before requesting pickup.",
+    "overstayDuration": "Overstay:",
+    "overstayValue": "{hours} h ({blocks} half-hour blocks)",
+    "lateFeeTotal": "Late fee due:",
+    "payLateFee": "Pay late fee online & request pickup",
+    "retrieving": "Staff are retrieving your bags",
+    "retrievingBody": "Please show your QR code at the counter.",
+    "protectionTitle": "Luggage protection active",
+    "protectionBody": "Your bags are covered by Luggo Guarantee up to <strong>{amount}</strong> against loss, damage, or theft.",
+    "qrTitle": "Your entry QR",
+    "qrHint": "Show this at the hub desk for drop-off and collection",
+    "qrAlt": "Booking QR code",
+    "reference": "Booking reference",
+    "saveQr": "Save QR code",
+    "sealProof": "Seal proof",
+    "sealed": "Sealed & secure",
+    "sealPhotoAlt": "Photo of your sealed luggage",
+    "sealPhotoHint": "This photo confirms your bags were sealed in our hub.",
+    "hub": "Hub",
+    "slot": "Storage slot",
+    "dropOff": "Drop-off",
+    "pickUp": "Pick-up",
+    "bags": "Bags ({count})",
+    "seal": "Seal: {number}",
+    "unsealed": "No seal",
+    "payableAtCounter": "Amount due at the counter",
+    "totalPaid": "Total paid",
+    "payAtHub": "Pay at hub (cash)",
+    "paid": "Paid",
+    "requestPickup": "Request pickup",
+    "viewReceipt": "View receipt",
+    "cancel": "Cancel booking",
+    "refundNote": "Full refund within 3–5 business days if cancelled before check-in",
+    "payStartFailed": "We couldn't start the payment. Please try again.",
+    "payOnline": "Pay LKR {amount} online",
+    "genericError": "Something went wrong. Please try again.",
+    "redirecting": "Redirecting to PayHere…",
+    "openingPayment": "Opening the secure payment page",
+    "payEarlyFee": "Pay early drop-off fee (LKR {amount})"
   }
 }

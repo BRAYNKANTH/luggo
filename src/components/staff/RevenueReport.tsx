@@ -29,7 +29,7 @@ export function RevenueReport({ data }: RevenueReportProps) {
             <DollarSign size={20} className="text-brand-light" />
           </div>
           <div>
-            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest">Total Revenue</p>
+            <p className="text-white/40 text-[11px] font-black uppercase tracking-widest">Total Revenue</p>
             <p className="text-2xl font-black text-white mt-1">LKR {total.toLocaleString()}</p>
           </div>
         </div>
@@ -39,7 +39,7 @@ export function RevenueReport({ data }: RevenueReportProps) {
             <TrendingUp size={20} className="text-green-400" />
           </div>
           <div>
-            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest">Last 30 Days</p>
+            <p className="text-white/40 text-[11px] font-black uppercase tracking-widest">Last 30 Days</p>
             <p className="text-2xl font-black text-green-400 mt-1">LKR {recentTotal.toLocaleString()}</p>
           </div>
         </div>

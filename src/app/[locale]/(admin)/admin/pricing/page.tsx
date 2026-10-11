@@ -47,7 +47,7 @@ export default async function AdminPricingPage() {
     <AdminShell userName={profile?.name ?? '—'} userRole={profile?.role ?? 'admin'}>
       <div className="px-6 py-8 max-w-5xl mx-auto">
         <h1 className="text-2xl font-extrabold text-ocean-900 mb-1">Pricing</h1>
-        <p className="text-sm text-gray-400 mb-8">
+        <p className="text-sm text-gray-500 mb-8">
           Set the hourly rate and daily cap for each bag size, per hub. Changes apply immediately to new bookings,
           extensions, and late fees at that hub — existing bookings already priced are not affected.
         </p>
@@ -66,7 +66,7 @@ export default async function AdminPricingPage() {
         </div>
 
         {(!hubs || hubs.length === 0) && (
-          <div className="text-center py-16 text-gray-400 bg-white rounded-2xl border border-gray-100">
+          <div className="text-center py-16 text-gray-500 bg-white rounded-2xl border border-gray-100">
             <p className="font-medium">No hubs yet</p>
             <p className="text-sm mt-1">Add a hub first from the Hubs page, then set its pricing here.</p>
           </div>

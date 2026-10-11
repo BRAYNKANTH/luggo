@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import { createBookingRetryPayment } from '@/lib/customer/actions'
@@ -12,6 +13,7 @@ interface BookingPaymentRetryButtonProps {
 }
 
 export function BookingPaymentRetryButton({ bookingId, price }: BookingPaymentRetryButtonProps) {
+  const t = useTranslations('BookingDetail')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [payhereData, setPayhereData] = useState<PayhereFormData | null>(null)
@@ -28,7 +30,7 @@ export function BookingPaymentRetryButton({ bookingId, price }: BookingPaymentRe
         setPayhereData(res.formData)
       }
     } catch {
-      setError('Failed to initiate payment. Please try again.')
+      setError(t('payStartFailed'))
     } finally {
       setLoading(false)
     }
@@ -59,7 +61,7 @@ export function BookingPaymentRetryButton({ bookingId, price }: BookingPaymentRe
         fullWidth
         className="bg-brand text-ocean-900 hover:bg-brand-light font-extrabold"
       >
-        {loading ? <Spinner size="sm" /> : `💳 Pay LKR ${price.toLocaleString()} Online`}
+        {loading ? <Spinner size="sm" /> : `💳 ${t('payOnline', { amount: price.toLocaleString() })}`}
       </Button>
     </div>
   )

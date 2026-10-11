@@ -2,31 +2,33 @@
 
 import React from 'react'
 import { motion } from 'framer-motion'
+import { useTranslations } from 'next-intl'
 import { Package, MapPin, ShieldCheck, Warehouse, UserCheck } from 'lucide-react'
 import { type BookingStatus } from '@/types/database'
 
 interface Step {
   id: string
-  label: string
+  labelKey: string
   icon: React.ElementType
   statuses: BookingStatus[]
 }
 
 const STEPS: Step[] = [
-  { id: 'booked',   label: 'Booked',        icon: MapPin,      statuses: ['confirmed'] },
-  { id: 'arrived',  label: 'At Hub',        icon: UserCheck,   statuses: ['arrived'] },
-  { id: 'sealed',   label: 'Sealed',        icon: ShieldCheck, statuses: ['sealing_in_progress', 'sealed_waiting_user_confirmation'] },
-  { id: 'storing',  label: 'In Vault',      icon: Warehouse,   statuses: ['active_storage'] },
-  { id: 'pickup',   label: 'Collected',     icon: Package,     statuses: ['completed'] },
+  { id: 'booked',   labelKey: 'booked',        icon: MapPin,      statuses: ['confirmed'] },
+  { id: 'arrived',  labelKey: 'atHub',        icon: UserCheck,   statuses: ['arrived'] },
+  { id: 'sealed',   labelKey: 'sealed',        icon: ShieldCheck, statuses: ['sealing_in_progress', 'sealed_waiting_user_confirmation'] },
+  { id: 'storing',  labelKey: 'inVault',      icon: Warehouse,   statuses: ['active_storage'] },
+  { id: 'pickup',   labelKey: 'collected',     icon: Package,     statuses: ['completed'] },
 ]
 
 export function BookingProgressTracker({ status }: { status: BookingStatus }) {
+  const t = useTranslations('Tracker')
   const currentStepIndex = STEPS.findIndex(s => s.statuses.includes(status))
   const displayIndex = currentStepIndex === -1 && status === 'completed' ? 4 : currentStepIndex
 
   return (
     <div className="bg-white rounded-2xl md:rounded-3xl border border-gray-100 p-4 md:p-6 shadow-sm overflow-hidden relative">
-      <h3 className="text-[10px] md:text-sm font-black text-gray-900 uppercase tracking-widest mb-4 md:mb-8 text-center">Luggage Lifecycle</h3>
+      <h3 className="text-[11px] md:text-sm font-black text-gray-900 uppercase tracking-widest mb-4 md:mb-8 text-center">{t('title')}</h3>
       
       <div className="relative flex justify-between">
         {/* Progress Line */}
@@ -68,16 +70,16 @@ export function BookingProgressTracker({ status }: { status: BookingStatus }) {
                 )}
               </motion.div>
               <div className="text-center">
-                <p className={`text-[10px] font-black uppercase tracking-tighter ${
-                  isCompleted || isCurrent ? 'text-gray-900' : 'text-gray-400'
+                <p className={`text-[11px] font-black uppercase tracking-tighter ${
+                  isCompleted || isCurrent ? 'text-gray-900' : 'text-gray-500'
                 }`}>
-                  {step.label}
+                  {t(step.labelKey)}
                 </p>
                 {isCurrent && (
                   <motion.p 
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-[9px] font-bold text-brand mt-0.5 animate-pulse"
+                    className="text-[11px] font-bold text-brand mt-0.5 animate-pulse"
                   >
                     Current
                   </motion.p>

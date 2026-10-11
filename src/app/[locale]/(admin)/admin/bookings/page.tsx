@@ -85,7 +85,7 @@ export default async function AdminBookingsPage(
     <AdminShell userName={profile?.name ?? '—'} userRole={profile?.role ?? 'admin'}>
       <div className="px-6 py-8 max-w-7xl mx-auto">
         <h1 className="text-2xl font-extrabold text-ocean-900 mb-1">Bookings</h1>
-        <p className="text-sm text-gray-400 mb-6">{count ?? 0} total</p>
+        <p className="text-sm text-gray-500 mb-6">{count ?? 0} total</p>
 
         {/* Filters */}
         <div className="flex flex-wrap gap-3 mb-6">
@@ -129,7 +129,7 @@ export default async function AdminBookingsPage(
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-5 py-3 border-t border-gray-50">
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-500">
                 Page {page} of {totalPages}
               </p>
               <div className="flex gap-2">

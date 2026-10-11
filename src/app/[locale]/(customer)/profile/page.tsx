@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from 'react';
 import { useForm } from 'react-hook-form'
+import { useTranslations } from 'next-intl'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { User, CheckCircle, Phone, Fingerprint, Mail, ShieldCheck, AlertTriangle, LogOut, ChevronRight } from 'lucide-react'
 import { Link } from '@/navigation'
@@ -13,9 +14,11 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { updateProfile, signOut } from '@/lib/auth/actions'
 import { updateProfileSchema, type UpdateProfileInput } from '@/lib/validators/auth'
 import { useUser } from '@/lib/hooks/useUser'
+import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher'
 
 export default function ProfilePage(props: { searchParams: Promise<{ welcome?: string }> }) {
   const searchParams = use(props.searchParams);
+  const t = useTranslations('Profile')
   const { profile, loading } = useUser()
   const [serverError, setServerError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
@@ -44,7 +47,7 @@ export default function ProfilePage(props: { searchParams: Promise<{ welcome?: s
         body: JSON.stringify({ phone: data.phone }),
       })
       const body = await res.json().catch(() => ({}))
-      if (!res.ok) return setServerError(body.error ?? 'Could not send a verification code.')
+      if (!res.ok) return setServerError(body.error ?? t('sendFailed'))
       setOtp('')
       setPendingPhone(data)
       return
@@ -68,7 +71,7 @@ export default function ProfilePage(props: { searchParams: Promise<{ welcome?: s
     })
     const body = await res.json().catch(() => ({}))
     setVerifying(false)
-    if (!res.ok) return setServerError(body.error ?? 'Verification failed.')
+    if (!res.ok) return setServerError(body.error ?? t('verifyFailed'))
     reset(pendingPhone)
     setPendingPhone(null)
     setSaved(true); setTimeout(() => setSaved(false), 3000)
@@ -85,11 +88,11 @@ export default function ProfilePage(props: { searchParams: Promise<{ welcome?: s
   return (
     <div className="max-w-2xl mx-auto">
       <PageHeader
-        title="My Profile"
+        title={t('title')}
         action={
           <form action={signOut}>
             <button type="submit" className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-red-600 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors">
-              <LogOut size={14} /> Sign out
+              <LogOut size={14} /> {t('signOut')}
             </button>
           </form>
         }
@@ -101,8 +104,8 @@ export default function ProfilePage(props: { searchParams: Promise<{ welcome?: s
           <div className="bg-brand/10 border border-brand/20 rounded-2xl p-4 flex items-start gap-3">
             <CheckCircle size={18} className="text-brand mt-0.5 shrink-0" />
             <div>
-              <p className="font-semibold text-ocean-900 text-sm">Welcome to Luggo!</p>
-              <p className="text-xs text-gray-600 mt-0.5">Complete your profile to enable fast checkout.</p>
+              <p className="font-semibold text-ocean-900 text-sm">{t('welcomeTitle')}</p>
+              <p className="text-xs text-gray-600 mt-0.5">{t('welcomeBody')}</p>
             </div>
           </div>
         )}
@@ -125,8 +128,8 @@ export default function ProfilePage(props: { searchParams: Promise<{ welcome?: s
                 <ShieldCheck size={14} />
               </div>
               <div>
-                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Account</p>
-                <p className="text-xs font-semibold text-gray-700 capitalize">{profile?.role?.replace('_', ' ')}</p>
+                <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wide">{t('account')}</p>
+                <p className="text-xs font-semibold text-gray-700 capitalize">{profile?.role ? t(`roles.${profile.role}`) : ''}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -134,7 +137,7 @@ export default function ProfilePage(props: { searchParams: Promise<{ welcome?: s
                 <Mail size={14} />
               </div>
               <div>
-                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Email</p>
+                <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wide">{t('email')}</p>
                 <p className="text-xs font-semibold text-gray-700 truncate">{profile?.email}</p>
               </div>
             </div>
@@ -143,35 +146,35 @@ export default function ProfilePage(props: { searchParams: Promise<{ welcome?: s
 
         {/* Edit form */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h2 className="font-bold text-gray-900 mb-4">Edit Details</h2>
+          <h2 className="font-bold text-gray-900 mb-4">{t('editDetails')}</h2>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             <div>
               <label htmlFor="profile-name" className="block text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5">
-                <User size={12} /> Full Name
+                <User size={12} /> {t('fullName')}
               </label>
               <Input id="profile-name" type="text" autoComplete="name" error={errors.name?.message} {...register('name')} />
             </div>
 
             <div>
               <label htmlFor="profile-phone" className="block text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5">
-                <Phone size={12} /> Phone Number
+                <Phone size={12} /> {t('phone')}
               </label>
               <Input id="profile-phone" type="tel" autoComplete="tel" placeholder="07XXXXXXXX"
                 error={errors.phone?.message} {...register('phone')} />
-              <p className="text-xs text-gray-400 mt-1">Used for SMS alerts and notifications. A new number is confirmed by SMS code.</p>
+              <p className="text-xs text-gray-500 mt-1">{t('phoneHint')}</p>
             </div>
 
             {pendingPhone && (
               <div className="rounded-xl border border-brand/20 bg-brand/5 p-4 space-y-3">
-                <p className="text-xs text-gray-700">We sent a code to <strong>{pendingPhone.phone}</strong>. Enter it to save your new number.</p>
-                <OtpInput value={otp} onChange={setOtp} />
+                <p className="text-xs text-gray-700">{t.rich('codeSent', { phone: () => <strong>{pendingPhone.phone}</strong> })}</p>
+                <OtpInput value={otp} onChange={setOtp} label={t('codeLabel')} hint={t('codeHint')} />
                 <div className="flex gap-2">
                   <Button type="button" onClick={verifyPhone} loading={verifying} disabled={otp.length !== 6}>
-                    Confirm number
+                    {t('confirmNumber')}
                   </Button>
                   <Button type="button" variant="ghost" onClick={() => setPendingPhone(null)}>
-                    Cancel
+                    {t('cancel')}
                   </Button>
                 </div>
               </div>
@@ -179,11 +182,11 @@ export default function ProfilePage(props: { searchParams: Promise<{ welcome?: s
 
             <div>
               <label htmlFor="profile-nic" className="block text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5">
-                <Fingerprint size={12} /> NIC / Passport
+                <Fingerprint size={12} /> {t('nic')}
               </label>
               <Input id="profile-nic" type="text" placeholder="e.g. 200012345678"
                 error={errors.nic_passport?.message} {...register('nic_passport')} />
-              <p className="text-xs text-gray-400 mt-1">Required to release your bags at check-out</p>
+              <p className="text-xs text-gray-500 mt-1">{t('nicHint')}</p>
             </div>
 
             {serverError && (
@@ -196,23 +199,27 @@ export default function ProfilePage(props: { searchParams: Promise<{ welcome?: s
             {saved && (
               <div role="status" className="rounded-xl bg-green-50 border border-green-200 p-3 flex items-center gap-2 text-xs text-green-700 font-semibold">
                 <CheckCircle size={14} />
-                Profile saved successfully
+                {t('saved')}
               </div>
             )}
 
             <Button type="submit" fullWidth loading={isSubmitting} disabled={!isDirty} className="mt-2">
-              Save Changes
+              {t('save')}
             </Button>
           </form>
         </div>
 
         {/* General Options */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h2 className="font-bold text-gray-900 mb-3">General</h2>
+          <h2 className="font-bold text-gray-900 mb-3">{t('general')}</h2>
           <Link href="/" className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all text-sm font-semibold text-ocean-900 group">
-            <span className="group-hover:text-brand transition-colors">Visit Public Homepage</span>
-            <ChevronRight size={16} className="text-gray-400 group-hover:text-brand transition-colors" />
+            <span className="group-hover:text-brand transition-colors">{t('homepage')}</span>
+            <ChevronRight size={16} className="text-gray-500 group-hover:text-brand transition-colors" />
           </Link>
+          <div className="mt-3 flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-xl">
+            <span className="text-sm font-semibold text-ocean-900">{t('language')}</span>
+            <LanguageSwitcher />
+          </div>
         </div>
       </div>
     </div>

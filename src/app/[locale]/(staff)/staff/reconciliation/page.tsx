@@ -62,11 +62,11 @@ export default async function ReconciliationPage() {
         {/* Total Cash expected */}
         <div className="bg-brand rounded-3xl p-6 relative overflow-hidden shadow-xl border border-white/10">
           <div className="relative z-10 space-y-1">
-            <span className="text-[10px] font-black uppercase tracking-widest text-white/60">Expected Drawer Cash</span>
+            <span className="text-[11px] font-black uppercase tracking-widest text-white/60">Expected Drawer Cash</span>
             <p className="text-4xl font-black tracking-tight text-white">
               LKR {total.toLocaleString()}
             </p>
-            <p className="text-[10px] text-white/50 pt-2 italic">
+            <p className="text-[11px] text-white/50 pt-2 italic">
               Computed strictly from system-calculated paid counter transactions collected today.
             </p>
           </div>
@@ -87,7 +87,7 @@ export default async function ReconciliationPage() {
                     {meta.icon}
                     <div>
                       <p className="font-bold text-white/90">{meta.label}</p>
-                      <p className="text-[10px] text-white/40">{item.count} transaction{item.count !== 1 ? 's' : ''}</p>
+                      <p className="text-[11px] text-white/40">{item.count} transaction{item.count !== 1 ? 's' : ''}</p>
                     </div>
                   </div>
                   <p className="font-mono font-bold text-white">LKR {item.total.toLocaleString()}</p>

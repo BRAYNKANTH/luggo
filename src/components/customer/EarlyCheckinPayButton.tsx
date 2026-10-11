@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Shield, AlertCircle, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { createEarlyCheckinPayment } from '@/lib/customer/actions'
@@ -12,6 +13,7 @@ interface EarlyCheckinPayButtonProps {
 }
 
 export function EarlyCheckinPayButton({ bookingId, fee }: EarlyCheckinPayButtonProps) {
+  const t = useTranslations('BookingDetail')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [payhereData, setPayhereData] = useState<PayhereFormData | null>(null)
@@ -35,7 +37,7 @@ export function EarlyCheckinPayButton({ bookingId, fee }: EarlyCheckinPayButtonP
         setPayhereData(result.formData)
       }
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError(t('genericError'))
       setLoading(false)
     }
   }
@@ -46,8 +48,8 @@ export function EarlyCheckinPayButton({ bookingId, fee }: EarlyCheckinPayButtonP
         <div className="w-12 h-12 bg-brand/10 rounded-2xl flex items-center justify-center mx-auto animate-pulse">
           <ArrowRight size={24} className="text-brand" />
         </div>
-        <p className="font-bold text-ocean-900 text-sm">Redirecting to PayHere...</p>
-        <p className="text-xs text-gray-400">Opening secure payment page</p>
+        <p className="font-bold text-ocean-900 text-sm">{t('redirecting')}</p>
+        <p className="text-xs text-gray-500">{t('openingPayment')}</p>
 
         <form
           ref={payhereFormRef}
@@ -80,10 +82,10 @@ export function EarlyCheckinPayButton({ bookingId, fee }: EarlyCheckinPayButtonP
         disabled={loading}
         onClick={handlePayment}
       >
-        Pay Early Drop-off Fee (LKR {fee.toLocaleString()})
+        {t('payEarlyFee', { amount: fee.toLocaleString() })}
       </Button>
 
-      <p className="text-[10px] text-gray-400 text-center flex items-center justify-center gap-1.5 font-bold uppercase tracking-wider">
+      <p className="text-[11px] text-gray-500 text-center flex items-center justify-center gap-1.5 font-bold uppercase tracking-wider">
         <Shield size={12} className="text-brand/50" />
         Secure payment via PayHere
       </p>

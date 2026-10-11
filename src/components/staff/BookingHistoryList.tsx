@@ -84,10 +84,10 @@ export function BookingHistoryList({ bookings }: BookingHistoryListProps) {
                     </div>
                     <div>
                       <p className="font-bold text-sm text-white">{b.users?.name ?? 'Customer'}</p>
-                      <p className="text-white/40 text-[10px] font-mono">#{b.id.slice(0, 8).toUpperCase()}</p>
+                      <p className="text-white/40 text-[11px] font-mono">#{b.id.slice(0, 8).toUpperCase()}</p>
                     </div>
                   </div>
-                  <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border ${STATUS_COLORS[b.status] || 'text-white/40 bg-white/5 border-white/10'}`}>
+                  <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border ${STATUS_COLORS[b.status] || 'text-white/40 bg-white/5 border-white/10'}`}>
                     {b.status.replace('_', ' ')}
                   </span>
                 </div>
@@ -95,11 +95,11 @@ export function BookingHistoryList({ bookings }: BookingHistoryListProps) {
                 <div className="grid grid-cols-2 gap-3 mb-1">
                   <div className="flex items-center gap-2 text-white/40">
                     <Calendar size={12} />
-                    <span className="text-[10px] font-bold">{format(new Date(b.created_at), 'dd MMM yyyy')}</span>
+                    <span className="text-[11px] font-bold">{format(new Date(b.created_at), 'dd MMM yyyy')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-white/40 justify-end">
                     <Tag size={12} />
-                    <span className="text-[10px] font-bold">LKR {b.total_price.toLocaleString()}</span>
+                    <span className="text-[11px] font-bold">LKR {b.total_price.toLocaleString()}</span>
                   </div>
                 </div>
               </div>

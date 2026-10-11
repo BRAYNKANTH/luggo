@@ -8,10 +8,13 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string
   label?: string
   hint?: string
+  /** Translated labels for the password reveal toggle. */
+  showPasswordLabel?: string
+  hidePasswordLabel?: string
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ error, label, hint, className, type, id, 'aria-describedby': describedBy, 'aria-invalid': invalid, ...props }, ref) => {
+  ({ error, label, hint, className, type, id, 'aria-describedby': describedBy, 'aria-invalid': invalid, showPasswordLabel = 'Show password', hidePasswordLabel = 'Hide password', ...props }, ref) => {
     const generatedId = useId()
     const inputId = id ?? generatedId
     const messageId = `${inputId}-message`
@@ -34,7 +37,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           {isPassword && <button type="button" disabled={props.disabled}
             onClick={() => setShowPassword(v => !v)}
             className="absolute right-1 top-1/2 -translate-y-1/2 min-h-11 min-w-11 flex items-center justify-center rounded-xl text-gray-600 hover:text-ocean-900 disabled:opacity-50"
-            aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} aria-controls={inputId}>
+            aria-label={showPassword ? hidePasswordLabel : showPasswordLabel} aria-pressed={showPassword} aria-controls={inputId}>
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>}
         </div>

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { HubDetailsUI } from '@/components/hubs/HubDetailsUI'
@@ -47,9 +48,10 @@ export async function generateMetadata(
   const path = `/hubs/${params.hubId}`
   const canonicalPath = params.locale === 'en' ? path : `/${params.locale}${path}`
 
+  const t = await getTranslations({ locale: params.locale, namespace: 'Meta' })
   return {
-    title: `Luggage Storage at ${hub.name}, ${hub.location}`,
-    description: `Store your bags securely at ${hub.name} in ${hub.location} (${hub.address}). Fully verified, secure, and insured luggage storage network in Sri Lanka.`,
+    title: t('hubTitle', { name: hub.name, location: hub.location }),
+    description: t('hubDescription', { name: hub.name, location: hub.location, address: hub.address }),
     alternates: {
       canonical: canonicalPath,
       languages: {
@@ -151,7 +153,8 @@ export default async function HubDetailPage(
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        // Escape "<" so admin-entered hub text can never close the script tag.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
       <HubDetailsUI
         hub={hub}

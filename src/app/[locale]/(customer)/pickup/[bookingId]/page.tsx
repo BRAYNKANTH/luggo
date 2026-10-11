@@ -22,6 +22,9 @@ import {
 import { format, isPast } from 'date-fns'
 import { type BookingStatus, type BagType } from '@/types/database'
 import { BAG_LABELS } from '@/lib/utils/pricing'
+import { titleMetadata } from '@/lib/i18n/metadata'
+
+export const generateMetadata = titleMetadata('pickup')
 
 type Bag = { id: string; bag_type: BagType; sticker_number: string | null }
 type BookingDetail = {
@@ -114,7 +117,7 @@ export default async function CustomerPickupPage(
                   </div>
                   <div>
                      <h1 className="text-xl md:text-3xl font-black text-ocean-900 tracking-tighter">Collection</h1>
-                     <p className="text-gray-400 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] mt-0.5 md:mt-1">Status: {booking.status.replace('_', ' ')}</p>
+                     <p className="text-gray-500 text-[11px] md:text-[11px] font-black uppercase tracking-[0.2em] mt-0.5 md:mt-1">Status: {booking.status.replace('_', ' ')}</p>
                   </div>
                </div>
                <BookingStatusBadge status={booking.status} />
@@ -130,7 +133,7 @@ export default async function CustomerPickupPage(
                   </div>
                   <div>
                     <p className="font-black text-ocean-900 leading-tight italic text-sm md:text-base">Action Required: Payment Not Completed</p>
-                    <p className="text-ocean-900/60 text-[10px] md:text-xs font-bold mt-1 max-w-sm">
+                    <p className="text-ocean-900/60 text-[11px] md:text-xs font-bold mt-1 max-w-sm">
                       The late fee must be paid before your bags can be released from secure storage.
                     </p>
                   </div>
@@ -156,7 +159,7 @@ export default async function CustomerPickupPage(
                      <div className="w-8 h-8 md:w-10 md:h-10 border-4 border-brand-light/30 border-t-brand-light rounded-full animate-spin" />
                      <div>
                        <p className="font-black text-base md:text-lg tracking-tight">Staff are retrieving your bags</p>
-                       <p className="text-white/40 text-[9px] md:text-[10px] font-black uppercase tracking-widest mt-0.5">Please wait at the counter with your QR Code</p>
+                       <p className="text-white/40 text-[11px] md:text-[11px] font-black uppercase tracking-widest mt-0.5">Please wait at the counter with your QR Code</p>
                      </div>
                    </div>
                 </div>
@@ -170,11 +173,11 @@ export default async function CustomerPickupPage(
                      <div className="bg-ocean-50 p-2 rounded-xl text-brand">
                         <MapPin size={18} />
                      </div>
-                     <h3 className="font-black text-ocean-900 uppercase tracking-widest text-[9px]">Active Hub</h3>
+                     <h3 className="font-black text-ocean-900 uppercase tracking-widest text-[11px]">Active Hub</h3>
                   </div>
                   <div>
                      <p className="font-black text-lg md:text-xl text-ocean-900 tracking-tight leading-none mb-1">{booking.hubs?.name}</p>
-                     <p className="text-gray-400 text-[10px] md:text-xs font-bold leading-relaxed">{booking.hubs?.address}</p>
+                     <p className="text-gray-500 text-[11px] md:text-xs font-bold leading-relaxed">{booking.hubs?.address}</p>
                   </div>
                </div>
 
@@ -183,15 +186,15 @@ export default async function CustomerPickupPage(
                      <div className="bg-ocean-50 p-2 rounded-xl text-brand">
                         <Clock size={18} />
                      </div>
-                     <h3 className="font-black text-ocean-900 uppercase tracking-widest text-[9px]">Storage Period</h3>
+                     <h3 className="font-black text-ocean-900 uppercase tracking-widest text-[11px]">Storage Period</h3>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                      <div className="space-y-1">
-                        <p className="text-[8px] md:text-[9px] text-gray-400 font-bold uppercase tracking-widest">Entry</p>
+                        <p className="text-[11px] md:text-[11px] text-gray-500 font-bold uppercase tracking-widest">Entry</p>
                         <p className="text-xs md:text-sm font-black text-ocean-900">{format(new Date(booking.start_time), 'dd MMM, HH:mm')}</p>
                      </div>
                      <div className="space-y-1">
-                        <p className={`text-[8px] md:text-[9px] font-bold uppercase tracking-widest ${isOverdue ? 'text-red-500' : 'text-gray-400'}`}>Expiry</p>
+                        <p className={`text-[11px] md:text-[11px] font-bold uppercase tracking-widest ${isOverdue ? 'text-red-500' : 'text-gray-500'}`}>Expiry</p>
                         <p className={`text-xs md:text-sm font-black ${isOverdue ? 'text-red-600' : 'text-brand'}`}>
                            {format(new Date(booking.end_time), 'dd MMM, HH:mm')}
                         </p>
@@ -209,24 +212,24 @@ export default async function CustomerPickupPage(
                      </div>
                      <h3 className="font-black text-ocean-900 tracking-tight text-sm md:text-base">Your Inventory</h3>
                   </div>
-                  <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">{booking.booking_bags.length} Items</span>
+                  <span className="text-[11px] md:text-[11px] font-black text-gray-500 uppercase tracking-widest">{booking.booking_bags.length} Items</span>
                </div>
                
                <div className="space-y-2 md:space-y-3">
                   {booking.booking_bags.map((bag) => (
                     <div key={bag.id} className="flex items-center justify-between bg-gray-50/50 p-3 md:p-4 rounded-xl md:rounded-2xl border border-gray-100">
                        <div className="flex items-center gap-3 md:gap-4">
-                          <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400">
+                          <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-500">
                              <Tag size={16} />
                           </div>
                           <span className="font-bold text-ocean-900 text-xs md:text-sm">{BAG_LABELS[bag.bag_type]}</span>
                        </div>
                        {bag.sticker_number ? (
-                          <div className="bg-brand text-white px-2.5 py-1 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-sm">
+                          <div className="bg-brand text-white px-2.5 py-1 rounded-lg md:rounded-xl text-[11px] md:text-[11px] font-black uppercase tracking-widest shadow-sm">
                              {booking.hubs?.alias}-{bag.sticker_number}
                           </div>
                        ) : (
-                          <span className="text-[9px] md:text-[10px] text-gray-300 font-bold uppercase tracking-widest italic leading-none">Not Tagged</span>
+                          <span className="text-[11px] md:text-[11px] text-gray-300 font-bold uppercase tracking-widest italic leading-none">Not Tagged</span>
                        )}
                     </div>
                   ))}
@@ -261,7 +264,7 @@ export default async function CustomerPickupPage(
                        </div>
                      )}
                      <div className="pt-6 border-t border-white/10 flex justify-between items-center">
-                        <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.3em]">Total Transaction</p>
+                        <p className="text-white/40 text-[11px] font-black uppercase tracking-[0.3em]">Total Transaction</p>
                         <p className="text-3xl font-black text-white tracking-tighter">LKR {(booking.total_price + fee).toLocaleString()}</p>
                      </div>
                   </div>
@@ -286,7 +289,7 @@ export default async function CustomerPickupPage(
                <div className="md:hidden fixed bottom-14 left-0 right-0 z-50 px-4 pb-4">
                   <div className="bg-ocean-900 rounded-[2.5rem] shadow-2xl shadow-ocean-900/40 p-1.5 flex items-center justify-between">
                      <div className="pl-6 py-2">
-                        <p className="text-white/40 text-[8px] font-black uppercase tracking-[0.2em] mb-0.5">Total Payable</p>
+                        <p className="text-white/40 text-[11px] font-black uppercase tracking-[0.2em] mb-0.5">Total Payable</p>
                         <p className="text-xl font-black text-white tracking-tighter">
                            LKR {(booking.total_price + fee).toLocaleString()}
                         </p>
