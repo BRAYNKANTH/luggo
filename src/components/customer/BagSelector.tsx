@@ -64,7 +64,7 @@ export function BagSelector({ value, onChange, className, rates = DEFAULT_BAG_RA
              {/* Rate Information */}
              <div className="hidden sm:block text-right">
                 <p className="text-sm font-black text-ocean-900 italic">LKR {rates[type].hourlyRate.toLocaleString()}</p>
-                <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">Per Hour</p>
+                <p className="text-[11px] text-gray-500 font-black uppercase tracking-widest">Per Hour</p>
              </div>
 
              {/* Dynamic Counter Controls */}
@@ -108,7 +108,7 @@ export function BagSelector({ value, onChange, className, rates = DEFAULT_BAG_RA
       ))}
 
       {total >= 10 && (
-        <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex items-center justify-center gap-2 text-amber-600 font-black text-[10px] uppercase tracking-widest mt-2 animate-pulse">
+        <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex items-center justify-center gap-2 text-amber-600 font-black text-[11px] uppercase tracking-widest mt-2 animate-pulse">
            <ShoppingBag size={12} /> Limit Reached: 10 Storage Units
         </div>
       )}

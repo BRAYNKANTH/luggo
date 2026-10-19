@@ -4,9 +4,12 @@
 // and navigates to a page not in the cache.
 // It must be fully self-contained — no data fetching, no server actions.
 
+import { useTranslations } from 'next-intl'
+
 export default function OfflinePage() {
+  const t = useTranslations('Offline')
   return (
-    <div className="min-h-screen bg-ocean-900 text-white flex flex-col items-center justify-center px-6 text-center">
+    <main className="min-h-screen bg-ocean-900 text-white flex flex-col items-center justify-center px-6 text-center">
       {/* Animated luggage icon */}
       <div className="mb-8 relative">
         <div className="w-24 h-24 rounded-3xl bg-white/10 flex items-center justify-center">
@@ -16,14 +19,15 @@ export default function OfflinePage() {
             viewBox="0 0 22 22"
             fill="none"
             className="opacity-80"
+            aria-hidden="true"
           >
             <path
               d="M8 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
-              stroke="#038cc9"
+              stroke="#0277b0"
               strokeWidth="1.5"
               strokeLinecap="round"
             />
-            <rect x="2" y="7" width="18" height="13" rx="2" fill="#038cc9" />
+            <rect x="2" y="7" width="18" height="13" rx="2" fill="#0277b0" />
             <rect x="2" y="12" width="18" height="2" fill="#011a2e" opacity="0.4" />
             <rect x="9" y="10" width="4" height="4" rx="1" fill="#f0c040" />
           </svg>
@@ -43,23 +47,23 @@ export default function OfflinePage() {
         </div>
       </div>
 
-      <h1 className="text-2xl font-extrabold mb-2">You&apos;re offline</h1>
-      <p className="text-white/60 text-sm mb-8 max-w-xs leading-relaxed">
-        Looks like you&apos;ve lost your internet connection.
-        Check your Wi-Fi or mobile data and try again.
+      <h1 className="text-2xl font-extrabold mb-2">{t('title')}</h1>
+      <p className="text-white/70 text-sm mb-8 max-w-xs leading-relaxed">
+        {t('body')}
       </p>
 
       {/* Retry button — pure client-side reload */}
       <button
+        type="button"
         onClick={() => window.location.reload()}
-        className="bg-brand text-white font-semibold px-8 py-3 rounded-2xl text-sm active:scale-95 transition-transform"
+        className="min-h-11 bg-brand text-white font-semibold px-8 py-3 rounded-2xl text-sm active:scale-95 transition-transform"
       >
-        Try again
+        {t('retry')}
       </button>
 
-      <p className="text-white/30 text-xs mt-8">
-        Pages you&apos;ve visited recently may still be available.
+      <p className="text-white/70 text-xs mt-8">
+        {t('cached')}
       </p>
-    </div>
+    </main>
   )
 }

@@ -8,11 +8,12 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Users — Admin' }
 
-export default async function AdminUsersPage({
-  searchParams,
-}: {
-  searchParams: { role?: string; q?: string }
-}) {
+export default async function AdminUsersPage(
+  props: {
+    searchParams: Promise<{ role?: string; q?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/admin/login')
@@ -65,7 +66,7 @@ export default async function AdminUsersPage({
     <AdminShell userName={profile?.name ?? '—'} userRole={profile?.role ?? 'admin'}>
       <div className="px-6 py-8 max-w-6xl mx-auto">
         <h1 className="text-2xl font-extrabold text-ocean-900 mb-1">Users</h1>
-        <p className="text-sm text-gray-400 mb-6">{count ?? 0} in this role</p>
+        <p className="text-sm text-gray-500 mb-6">{count ?? 0} in this role</p>
 
         {/* Role tabs */}
         <div className="flex flex-wrap gap-2 mb-6">
@@ -89,14 +90,14 @@ export default async function AdminUsersPage({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-50 bg-gray-50/50">
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Name</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Email</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Phone</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Name</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Email</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Phone</th>
                   {roleFilter === 'customer' && (
-                    <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400">Bookings</th>
+                    <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500">Bookings</th>
                   )}
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Joined</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Role / Action</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Joined</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Role / Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -104,7 +105,7 @@ export default async function AdminUsersPage({
                   <tr key={u.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
                     <td className="px-5 py-3 font-medium text-ocean-900">{u.name}</td>
                     <td className="px-5 py-3 text-gray-500">{u.email}</td>
-                    <td className="px-5 py-3 text-gray-400">{u.phone ?? '—'}</td>
+                    <td className="px-5 py-3 text-gray-500">{u.phone ?? '—'}</td>
                     {roleFilter === 'customer' && (
                       <td className="px-5 py-3 text-center">
                         <span className="text-xs font-bold bg-brand/10 text-brand px-2 py-0.5 rounded-full">
@@ -112,7 +113,7 @@ export default async function AdminUsersPage({
                         </span>
                       </td>
                     )}
-                    <td className="px-5 py-3 text-xs text-gray-400">
+                    <td className="px-5 py-3 text-xs text-gray-500">
                       {format(new Date(u.created_at), 'dd MMM yyyy')}
                     </td>
                     <td className="px-5 py-3">
@@ -126,7 +127,7 @@ export default async function AdminUsersPage({
                 ))}
                 {!users?.length && (
                   <tr>
-                    <td colSpan={6} className="px-5 py-10 text-center text-gray-400 text-sm">
+                    <td colSpan={6} className="px-5 py-10 text-center text-gray-500 text-sm">
                       No users found.
                     </td>
                   </tr>
@@ -137,5 +138,5 @@ export default async function AdminUsersPage({
         </div>
       </div>
     </AdminShell>
-  )
+  );
 }

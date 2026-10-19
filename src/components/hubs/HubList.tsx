@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import { Link, useRouter } from '@/navigation'
@@ -36,6 +37,7 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
 }
 
 export function HubList({ hubs, isLoggedIn = false }: { hubs: Hub[]; isLoggedIn?: boolean }) {
+  const t = useTranslations('Hubs')
   const router = useRouter()
   void isLoggedIn
   const [view, setView] = useState<'list' | 'map'>('list')
@@ -69,7 +71,7 @@ export function HubList({ hubs, isLoggedIn = false }: { hubs: Hub[]; isLoggedIn?
   if (!hubs.length) {
     return (
       <div className="px-4 py-20 text-center">
-        <p className="text-gray-400 font-medium text-sm">No active hubs found.</p>
+        <p className="text-gray-500 font-medium text-sm">{t('none')}</p>
       </div>
     )
   }
@@ -82,29 +84,29 @@ export function HubList({ hubs, isLoggedIn = false }: { hubs: Hub[]; isLoggedIn?
           <button
             type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}
             className={`flex items-center gap-1.5 min-h-11 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              view === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+              view === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-700'
             }`}
           >
-            <List size={13} /> List
+            <List size={13} /> {t('list')}
           </button>
           <button
             type="button" aria-pressed={view === 'map'} onClick={() => setView('map')}
             className={`flex items-center gap-1.5 min-h-11 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              view === 'map' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+              view === 'map' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-700'
             }`}
           >
-            <Map size={13} /> Map
+            <Map size={13} /> {t('map')}
           </button>
         </div>
 
         <button
           onClick={() => {
             setLocationError(null)
-            if (!navigator.geolocation) { setLocationError('Location is unavailable in this browser. Browse the hub list instead.'); return }
+            if (!navigator.geolocation) { setLocationError(t('locationUnavailable')); return }
             setLocating(true)
             navigator.geolocation?.getCurrentPosition(
               (pos) => { setUserPos({ lat: pos.coords.latitude, lon: pos.coords.longitude }); setLocating(false) },
-              () => { setLocating(false); setLocationError('Unable to access your location. You can still browse all hubs.') },
+              () => { setLocating(false); setLocationError(t('locationDenied')) },
               { timeout: 6000 }
             )
           }}
@@ -116,7 +118,7 @@ export function HubList({ hubs, isLoggedIn = false }: { hubs: Hub[]; isLoggedIn?
           }`}
         >
           <Navigation size={12} className={locating ? 'animate-pulse' : ''} />
-          {locating ? 'Locating…' : userPos ? 'Near me ✓' : 'Near me'}
+          {locating ? t('locating') : userPos ? t('nearMeOn') : t('nearMe')}
         </button>
       </div>
 
@@ -152,14 +154,14 @@ export function HubList({ hubs, isLoggedIn = false }: { hubs: Hub[]; isLoggedIn?
                         unoptimized={hub.image_url.includes('?t=')}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Map size={32} className="text-white/20" />
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-ocean-500 via-ocean-600 to-ocean-800">
+                        <Map size={36} className="text-white/30" aria-hidden="true" />
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                     {hub.distanceKm !== null && (
                       <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg">
-                        <span className="text-[10px] font-bold text-gray-700">
+                        <span className="text-[11px] font-bold text-gray-700">
                           {hub.distanceKm < 1
                             ? `${(hub.distanceKm * 1000).toFixed(0)}m`
                             : `${hub.distanceKm.toFixed(1)}km`}
@@ -181,7 +183,7 @@ export function HubList({ hubs, isLoggedIn = false }: { hubs: Hub[]; isLoggedIn?
                       </span>
                     </div>
                     <div className="flex items-center gap-1 text-brand text-xs font-semibold">
-                      Book <ChevronRight size={13} />
+                      {t('book')} <ChevronRight size={13} />
                     </div>
                   </div>
                 </div>

@@ -84,9 +84,9 @@ export function AdminShell({ children, userName, userRole }: AdminShellProps) {
               <Users size={18} />
            </div>
            <div className="min-w-0">
-             <p className="text-[10px] text-slate-300 font-black uppercase tracking-widest leading-none mb-1">Authenticated as</p>
+             <p className="text-[11px] text-slate-300 font-black uppercase tracking-widest leading-none mb-1">Authenticated as</p>
              <p className="text-sm font-black text-white truncate">{userName}</p>
-             <p className="text-[10px] text-brand-light font-bold uppercase tracking-widest mt-0.5">
+             <p className="text-[11px] text-brand-light font-bold uppercase tracking-widest mt-0.5">
                {userRole.replace(/_/g, ' ')}
              </p>
            </div>

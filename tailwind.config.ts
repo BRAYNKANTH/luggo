@@ -10,7 +10,7 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: '#038cc9',
+          DEFAULT: '#0277b0', // 4.9:1 on white (WCAG AA for text); #038cc9 was 3.75:1
           light: '#7ec6ea',
           dark: '#011a2e',
           accent: '#f0c040',

@@ -5,6 +5,9 @@ import { Bell, CheckCheck, Package, ShieldCheck, Clock, AlertTriangle, MessageSq
 import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns'
 import { type NotificationType } from '@/types/database'
 import { markAllNotificationsRead } from '@/lib/auth/actions'
+import { titleMetadata } from '@/lib/i18n/metadata'
+
+export const generateMetadata = titleMetadata('notifications')
 
 type Notif = {
   id: string
@@ -20,7 +23,7 @@ const TYPE_ICON: Record<NotificationType, React.ReactNode> = {
   pickup_reminder:    <Clock size={16} className="text-violet-500" />,
   late_fee:           <AlertTriangle size={16} className="text-red-500" />,
   complaint_update:   <MessageSquare size={16} className="text-orange-500" />,
-  general:            <Info size={16} className="text-gray-400" />,
+  general:            <Info size={16} className="text-gray-500" />,
 }
 
 const TYPE_BG: Record<NotificationType, string> = {
@@ -86,7 +89,7 @@ export default async function NotificationsPage() {
               <Bell size={28} className="text-gray-300" />
             </div>
             <p className="font-bold text-gray-500">No notifications yet</p>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-gray-500 mt-1">
               We&apos;ll notify you about your bookings, seals, and pickups.
             </p>
           </div>
@@ -94,7 +97,7 @@ export default async function NotificationsPage() {
           <div className="space-y-6">
             {Object.entries(groups).map(([date, items]) => (
               <section key={date}>
-                <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3 px-1">
+                <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3 px-1">
                   {date}
                 </p>
                 <div className="space-y-2">
@@ -114,7 +117,7 @@ export default async function NotificationsPage() {
 
                       {/* Icon */}
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${TYPE_BG[n.type] ?? 'bg-gray-50'}`}>
-                        {TYPE_ICON[n.type] ?? <Info size={16} className="text-gray-400" />}
+                        {TYPE_ICON[n.type] ?? <Info size={16} className="text-gray-500" />}
                       </div>
 
                       {/* Content */}
@@ -122,7 +125,7 @@ export default async function NotificationsPage() {
                         <p className={`text-sm leading-relaxed ${n.read ? 'text-gray-600' : 'text-gray-900 font-medium'}`}>
                           {n.message}
                         </p>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="text-xs text-gray-500 mt-1">
                           {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                         </p>
                       </div>

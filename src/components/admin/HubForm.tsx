@@ -115,7 +115,7 @@ export function HubForm({ hub, onSuccess, onCancel }: HubFormProps) {
         {/* Name */}
         <div>
           <label className="block text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1">
-            <Globe size={13} className="text-gray-400" />
+            <Globe size={13} className="text-gray-500" />
             Hub Name *
           </label>
           <input
@@ -131,7 +131,7 @@ export function HubForm({ hub, onSuccess, onCancel }: HubFormProps) {
         {/* Alias */}
         <div>
           <label className="block text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1">
-            <PlusCircle size={13} className="text-gray-400" />
+            <PlusCircle size={13} className="text-gray-500" />
             Alias (3-letter Code) *
           </label>
           <input
@@ -148,7 +148,7 @@ export function HubForm({ hub, onSuccess, onCancel }: HubFormProps) {
         {/* City/Location */}
         <div>
           <label className="block text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1">
-            <MapPin size={13} className="text-gray-400" />
+            <MapPin size={13} className="text-gray-500" />
             Location (City/Area) *
           </label>
           <input
@@ -164,7 +164,7 @@ export function HubForm({ hub, onSuccess, onCancel }: HubFormProps) {
         {/* Address */}
         <div className="md:col-span-3">
           <label className="block text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1">
-            <MapPin size={13} className="text-gray-400" />
+            <MapPin size={13} className="text-gray-500" />
             Street Address *
           </label>
           <input
@@ -180,7 +180,7 @@ export function HubForm({ hub, onSuccess, onCancel }: HubFormProps) {
         {/* Capacity */}
         <div>
           <label className="block text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1">
-            <Users size={13} className="text-gray-400" />
+            <Users size={13} className="text-gray-500" />
             Max Bag Capacity *
           </label>
           <input
@@ -197,7 +197,7 @@ export function HubForm({ hub, onSuccess, onCancel }: HubFormProps) {
         {/* Open Time */}
         <div>
           <label className="block text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1">
-            <Clock size={13} className="text-gray-400" />
+            <Clock size={13} className="text-gray-500" />
             Open Time *
           </label>
           <input
@@ -212,7 +212,7 @@ export function HubForm({ hub, onSuccess, onCancel }: HubFormProps) {
         {/* Close Time */}
         <div>
           <label className="block text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1">
-            <Clock size={13} className="text-gray-400" />
+            <Clock size={13} className="text-gray-500" />
             Close Time *
           </label>
           <input
@@ -227,7 +227,7 @@ export function HubForm({ hub, onSuccess, onCancel }: HubFormProps) {
         {/* Latitude */}
         <div>
           <label className="block text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1">
-            <Globe size={13} className="text-gray-400" />
+            <Globe size={13} className="text-gray-500" />
             Latitude *
           </label>
           <input
@@ -243,7 +243,7 @@ export function HubForm({ hub, onSuccess, onCancel }: HubFormProps) {
         {/* Longitude */}
         <div>
           <label className="block text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1">
-            <Globe size={13} className="text-gray-400" />
+            <Globe size={13} className="text-gray-500" />
             Longitude *
           </label>
           <input

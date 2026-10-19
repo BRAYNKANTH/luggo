@@ -72,7 +72,7 @@ export function HubPricingCard({ hubId, hubName, hubAlias, hubActive, rates }: H
           <h2 className="font-bold text-ocean-900 truncate">{hubName}</h2>
           <span className="text-xs font-mono bg-gray-150 text-gray-500 px-2 py-0.5 rounded-lg shrink-0">{hubAlias}</span>
           {!hubActive && (
-            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-100 px-2 py-0.5 rounded-lg shrink-0">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 bg-gray-100 px-2 py-0.5 rounded-lg shrink-0">
               Inactive
             </span>
           )}

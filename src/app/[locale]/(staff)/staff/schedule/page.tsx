@@ -241,20 +241,20 @@ function ScheduleCard({
           {stickers.length > 0 ? (
             <>
               {stickers.slice(0, 3).map(s => (
-                <span key={s} className="font-mono text-[10px] bg-brand-accent/15 text-brand-accent px-1.5 py-0.5 rounded font-bold">
+                <span key={s} className="font-mono text-[11px] bg-brand-accent/15 text-brand-accent px-1.5 py-0.5 rounded font-bold">
                   {s}
                 </span>
               ))}
-              {stickers.length > 3 && <span className="text-[10px] text-white/30">+{stickers.length - 3}</span>}
+              {stickers.length > 3 && <span className="text-[11px] text-white/30">+{stickers.length - 3}</span>}
             </>
           ) : type === 'arrival' ? (
-            <span className="text-[10px] text-white/30 bg-white/5 px-2 py-0.5 rounded-lg">
+            <span className="text-[11px] text-white/30 bg-white/5 px-2 py-0.5 rounded-lg">
               Stickers assigned at check-in
             </span>
           ) : null}
 
           {type === 'pickup' && allStickered && (
-            <span className="ml-auto flex items-center gap-1 text-[10px] text-green-400 font-bold">
+            <span className="ml-auto flex items-center gap-1 text-[11px] text-green-400 font-bold">
               <CheckCircle2 size={11} /> Stickers confirmed
             </span>
           )}

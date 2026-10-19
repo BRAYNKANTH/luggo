@@ -260,7 +260,7 @@ export function StaffPickupConsole({
               setShowOverrideForm(!showOverrideForm)
               setShowDisputeForm(false)
             }}
-            className="text-[10px] font-black uppercase tracking-wider text-amber-400 hover:text-amber-300 flex items-center gap-1.5"
+            className="text-[11px] font-black uppercase tracking-wider text-amber-400 hover:text-amber-300 flex items-center gap-1.5"
           >
             🔑 Phone Dead / Lost QR Override
           </button>
@@ -272,7 +272,7 @@ export function StaffPickupConsole({
         <div className="bg-amber-950/20 border border-amber-500/20 rounded-2xl p-5 space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-amber-400">Lost QR / Dead Phone Supervisor Override</h3>
           <div className="space-y-1.5">
-            <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest pl-1">
+            <label className="block text-[11px] font-black text-white/50 uppercase tracking-widest pl-1">
               Select Supervisor
             </label>
             <select
@@ -288,7 +288,7 @@ export function StaffPickupConsole({
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest pl-1">
+            <label className="block text-[11px] font-black text-white/50 uppercase tracking-widest pl-1">
               Verification Details / Reason
             </label>
             <input
@@ -339,16 +339,16 @@ export function StaffPickupConsole({
                         {BAG_LABELS[bag.bag_type]}
                       </p>
                       {bag.seal_status === 'sealed' ? (
-                        <p className="text-[10px] text-brand-accent font-mono font-bold mt-0.5">
+                        <p className="text-[11px] text-brand-accent font-mono font-bold mt-0.5">
                           🔒 Seal #: {bag.seal_number || 'Missing'}
                         </p>
                       ) : (
-                        <p className="text-[10px] text-white/40 font-bold italic mt-0.5">
+                        <p className="text-[11px] text-white/40 font-bold italic mt-0.5">
                           Unsealable
                         </p>
                       )}
                       {isReleased && (
-                        <span className="text-[9px] font-black uppercase tracking-wider text-green-400 bg-green-400/10 px-2 py-0.5 rounded mt-1.5 inline-block">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-green-400 bg-green-400/10 px-2 py-0.5 rounded mt-1.5 inline-block">
                           Already Handed Over
                         </span>
                       )}
@@ -358,8 +358,8 @@ export function StaffPickupConsole({
                   {/* Seal condition selectors (Priority 11) */}
                   {!isReleased && (
                     <div className="flex flex-col gap-1 items-end">
-                      <span className="text-[9px] text-white/40 font-bold uppercase tracking-wider">Seal Status</span>
-                      <div className="flex gap-1 bg-black/35 p-1 rounded-2xl border border-white/10 text-[10px] font-black uppercase tracking-wider">
+                      <span className="text-[11px] text-white/40 font-bold uppercase tracking-wider">Seal Status</span>
+                      <div className="flex gap-1 bg-black/35 p-1 rounded-2xl border border-white/10 text-[11px] font-black uppercase tracking-wider">
                         <button
                           type="button"
                           onClick={() => handleConditionChange(bag.id, 'intact')}
@@ -403,7 +403,7 @@ export function StaffPickupConsole({
             <CheckCircle size={20} className="shrink-0" />
             <div>
               <p className="text-xs font-bold uppercase tracking-wider">✓ Verified via SMS OTP</p>
-              <p className="text-[10px] text-green-400/80 mt-0.5">
+              <p className="text-[11px] text-green-400/80 mt-0.5">
                 Customer phone OTP verification succeeded at {new Date(booking.pickup_otp_verified_at).toLocaleTimeString()}
               </p>
             </div>
@@ -413,7 +413,7 @@ export function StaffPickupConsole({
             <CheckCircle size={20} className="shrink-0" />
             <div>
               <p className="text-xs font-bold uppercase tracking-wider">✓ Supervisor Override Approved</p>
-              <p className="text-[10px] text-amber-400/80 mt-0.5">Physical ID checked & approved by supervisor</p>
+              <p className="text-[11px] text-amber-400/80 mt-0.5">Physical ID checked & approved by supervisor</p>
             </div>
           </div>
         ) : (
@@ -445,7 +445,7 @@ export function StaffPickupConsole({
                 <button
                   type="button"
                   onClick={handleSendOTP}
-                  className="text-[10px] font-black uppercase text-brand hover:underline"
+                  className="text-[11px] font-black uppercase text-brand hover:underline"
                 >
                   Resend Code
                 </button>
@@ -475,7 +475,7 @@ export function StaffPickupConsole({
             <button
               type="button"
               onClick={() => setShowDisputeForm(false)}
-              className="text-[10px] text-white/40 hover:text-white font-bold"
+              className="text-[11px] text-white/40 hover:text-white font-bold"
             >
               Cancel
             </button>
@@ -483,7 +483,7 @@ export function StaffPickupConsole({
 
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="space-y-1.5">
-              <label className="block text-[10px] text-white/50 uppercase tracking-widest">Incident Type</label>
+              <label className="block text-[11px] text-white/50 uppercase tracking-widest">Incident Type</label>
               <select
                 value={disputeType}
                 onChange={e => setDisputeType(e.target.value)}
@@ -496,7 +496,7 @@ export function StaffPickupConsole({
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="block text-[10px] text-white/50 uppercase tracking-widest">Affected Bag</label>
+              <label className="block text-[11px] text-white/50 uppercase tracking-widest">Affected Bag</label>
               <select
                 value={disputeBagId}
                 onChange={e => setDisputeBagId(e.target.value)}
@@ -513,7 +513,7 @@ export function StaffPickupConsole({
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-[10px] text-white/50 uppercase tracking-widest pl-1">Incident Report Notes</label>
+            <label className="block text-[11px] text-white/50 uppercase tracking-widest pl-1">Incident Report Notes</label>
             <textarea
               value={disputeNotes}
               onChange={e => setDisputeNotes(e.target.value)}
@@ -568,7 +568,7 @@ export function StaffPickupConsole({
           ) : (
             <div className="px-4 max-w-lg mx-auto">
               {(!booking.pickup_otp_verified_at && !booking.pickup_override_supervisor_id) ? (
-                <p className="text-center text-[10px] text-amber-400 font-extrabold uppercase tracking-wider mb-2">
+                <p className="text-center text-[11px] text-amber-400 font-extrabold uppercase tracking-wider mb-2">
                   ⚠️ Verification Required to Complete Release
                 </p>
               ) : null}

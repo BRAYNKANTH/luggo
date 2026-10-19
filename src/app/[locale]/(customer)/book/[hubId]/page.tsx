@@ -1,9 +1,13 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { BookingForm } from './BookingForm'
 import { getHubBagRates } from '@/lib/utils/hubPricing'
+import { BOOKINGS_PAUSED } from '@/lib/booking-pause'
+import { Link } from '@/navigation'
 
 type Hub = {
   id: string
@@ -15,7 +19,35 @@ type Hub = {
   active: boolean
 }
 
-export default async function BookPage({ params }: { params: { hubId: string } }) {
+export async function generateMetadata(props: { params: Promise<{ hubId: string; locale: string }> }): Promise<Metadata> {
+  const params = await props.params
+  const t = await getTranslations({ locale: params.locale, namespace: 'Meta' })
+  const supabase = await createClient()
+  const { data: hub } = await supabase
+    .from('hubs')
+    .select('name')
+    .eq('id', params.hubId)
+    .single() as { data: { name: string } | null }
+  return { title: hub ? t('bookHub', { name: hub.name }) : t('book') }
+}
+
+export default async function BookPage(props: { params: Promise<{ hubId: string }> }) {
+  const params = await props.params;
+  const t = await getTranslations('Booking')
+
+  if (BOOKINGS_PAUSED) {
+    const tPaused = await getTranslations('BookingPaused')
+    return (
+      <div className="max-w-xl mx-auto px-4 py-16 text-center">
+        <h1 className="text-2xl font-bold text-ocean-900">{tPaused('title')}</h1>
+        <p className="mt-3 text-gray-600">{tPaused('body')}</p>
+        <Link href="/hubs" className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-ocean-600 px-6 py-3 font-bold text-white">
+          {tPaused('browseHubs')}
+        </Link>
+      </div>
+    )
+  }
+
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -42,12 +74,12 @@ export default async function BookPage({ params }: { params: { hubId: string } }
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6">
       <PageHeader
-        title={`Book at ${hub.name}`}
+        title={t('pageTitle', { name: hub.name })}
         backHref={`/hubs/${hub.id}`}
         action={
           <div className="flex items-center gap-1.5 text-xs font-semibold text-brand">
             <ShieldCheck size={14} />
-            <span className="hidden sm:inline">Secure checkout</span>
+            <span className="hidden sm:inline">{t('secureCheckout')}</span>
           </div>
         }
       />

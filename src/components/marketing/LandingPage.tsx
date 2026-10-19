@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SocialLinks } from '@/components/shared/SocialLinks'
 import { GUARANTEE_LIMIT_LKR, GUARANTEE_LIMIT_LABEL } from '@/lib/utils/guarantee'
@@ -28,13 +28,13 @@ const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
 // ── Data ─────────────────────────────────────────────────────────────────────
 
 const CITY_LOCATIONS = [
-  { city: 'Colombo',         img: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80', desc: 'Near Colombo Fort, Pettah & Galle Face.' },
-  { city: 'Kandy',           img: 'https://images.unsplash.com/photo-1569384370146-66a8f9734e1e?w=600&q=80', desc: 'Temple of the Tooth & Kandy Lake.' },
-  { city: 'Galle',           img: 'https://images.unsplash.com/photo-1588598198321-9735fd5f2aad?w=600&q=80', desc: 'Galle Fort & southern coast.' },
-  { city: 'Ella',            img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80', desc: "Little Adam's Peak & Nine Arch Bridge." },
-  { city: 'Airport / BIA',   img: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&q=80', desc: 'Store bags arriving early or late.' },
-  { city: 'Negombo',         img: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=600&q=80', desc: 'Beach & lagoon without the luggage.' },
-]
+  { city: 'colombo', img: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80' },
+  { city: 'kandy',   img: 'https://images.unsplash.com/photo-1569384370146-66a8f9734e1e?w=600&q=80' },
+  { city: 'galle',   img: 'https://images.unsplash.com/photo-1588598198321-9735fd5f2aad?w=600&q=80' },
+  { city: 'ella',    img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80' },
+  { city: 'airport', img: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&q=80' },
+  { city: 'negombo', img: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=600&q=80' },
+] as const
 
 const HOW_IT_WORKS = [
   { step: '01', icon: MapPin,    grad: 'from-blue-500 to-brand' },
@@ -54,6 +54,7 @@ const FEATURES = [
 
 function NavBar() {
   const t = useTranslations('Nav')
+  const ts = useTranslations('Shell')
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
 
@@ -71,7 +72,7 @@ function NavBar() {
           <a href="#how-it-works" className="hover:text-brand transition-colors">{t('how')}</a>
           <a href="#locations" className="hover:text-brand transition-colors">{t('locations')}</a>
           <a href="#faq" className="hover:text-brand transition-colors">{t('faq')}</a>
-          <Link href="/about" className="hover:text-brand transition-colors">About</Link>
+          <Link href="/about" className="hover:text-brand transition-colors">{t('about')}</Link>
         </div>
         <div className="hidden md:flex items-center gap-2">
           <LanguageSwitcher />
@@ -81,7 +82,7 @@ function NavBar() {
         <button
           className="md:hidden p-2 rounded-lg"
           onClick={() => setOpen(!open)}
-          aria-label={open ? 'Close menu' : 'Open menu'}
+          aria-label={open ? ts('closeMenu') : ts('openMenu')}
           aria-expanded={open}
         >
           {open ? <X size={22} className="text-ocean-900" /> : <Menu size={22} className="text-ocean-900" />}
@@ -98,10 +99,10 @@ function NavBar() {
                 className="block text-base font-bold text-ocean-900 p-3 rounded-2xl hover:bg-gray-50">{t('locations')}</a>
               <a href="#faq" onClick={() => setOpen(false)}
                 className="block text-base font-bold text-ocean-900 p-3 rounded-2xl hover:bg-gray-50">{t('faq')}</a>
-              <Link href="/about" onClick={() => setOpen(false)} className="block text-base font-bold text-ocean-900 p-3 rounded-2xl hover:bg-gray-50">About</Link>
+              <Link href="/about" onClick={() => setOpen(false)} className="block text-base font-bold text-ocean-900 p-3 rounded-2xl hover:bg-gray-50">{t('about')}</Link>
               <div className="pt-4 border-t border-gray-100 flex flex-col gap-3 mt-4">
                 <div className="px-3 py-2 flex items-center justify-between bg-gray-50 rounded-2xl">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Language</span>
+                  <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">{ts('language')}</span>
                   <LanguageSwitcher />
                 </div>
                 <Link href="/login" onClick={() => setOpen(false)}
@@ -120,6 +121,7 @@ function NavBar() {
 // ── Hero App Preview Card ────────────────────────────────────────────────────
 
 function AppPreviewCard() {
+  const t = useTranslations('Preview')
   return (
     <div className="relative">
       <div className="absolute inset-0 bg-brand/20 rounded-3xl blur-2xl scale-110" />
@@ -130,24 +132,24 @@ function AppPreviewCard() {
               <Check size={13} className="text-white" strokeWidth={3} />
             </div>
             <div>
-              <p className="text-[11px] font-extrabold text-ocean-900 leading-none">Booking Confirmed!</p>
-              <p className="text-[9px] text-gray-400 mt-0.5">Colombo Fort Hub</p>
+              <p className="text-[11px] font-extrabold text-ocean-900 leading-none">{t('confirmed')}</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">{t('hub')}</p>
             </div>
-            <span className="ml-auto text-[9px] bg-emerald-50 text-emerald-600 font-bold px-2 py-0.5 rounded-full border border-emerald-100">Active</span>
+            <span className="ml-auto text-[11px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-100">{t('active')}</span>
           </div>
           <div className="grid grid-cols-2 gap-2 mb-3">
             <div className="bg-gray-50 rounded-xl p-2.5">
-              <p className="text-[9px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Drop-off</p>
-              <p className="text-[11px] font-bold text-ocean-900">Today, 2:00 PM</p>
+              <p className="text-[11px] text-gray-500 font-semibold uppercase tracking-wide mb-0.5">{t('dropOff')}</p>
+              <p className="text-[11px] font-bold text-ocean-900">{t('dropOffTime')}</p>
             </div>
             <div className="bg-gray-50 rounded-xl p-2.5">
-              <p className="text-[9px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Pick-up</p>
-              <p className="text-[11px] font-bold text-ocean-900">Tomorrow, 9 AM</p>
+              <p className="text-[11px] text-gray-500 font-semibold uppercase tracking-wide mb-0.5">{t('pickUp')}</p>
+              <p className="text-[11px] font-bold text-ocean-900">{t('pickUpTime')}</p>
             </div>
           </div>
           <div className="bg-gray-50 rounded-xl py-4 flex flex-col items-center gap-1.5">
             <QrCode size={28} className="text-ocean-900/30" />
-            <p className="text-[9px] text-gray-400 font-semibold">Show at hub counter</p>
+            <p className="text-[11px] text-gray-500 font-semibold">{t('showAtCounter')}</p>
           </div>
         </div>
         <div className="flex items-center gap-2.5 bg-ocean-900 rounded-2xl px-3 py-2.5">
@@ -155,8 +157,8 @@ function AppPreviewCard() {
             <Check size={11} className="text-white" strokeWidth={3} />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-white leading-none">Bags sealed & secured</p>
-            <p className="text-[9px] text-white/50 mt-0.5">Photo proof uploaded</p>
+            <p className="text-[11px] font-bold text-white leading-none">{t('sealed')}</p>
+            <p className="text-[11px] text-white/70 mt-0.5">{t('photoProof')}</p>
           </div>
         </div>
       </div>
@@ -168,7 +170,8 @@ function AppPreviewCard() {
 
 function HeroSection() {
   const t = useTranslations('Index')
-  const cities = ['Colombo', 'Kandy', 'Galle', 'Ella', 'Mirissa', 'Negombo']
+  const tc = useTranslations('Cities')
+  const cities = ['colombo', 'kandy', 'galle', 'ella', 'mirissa', 'negombo'].map(city => tc(`${city}.name`))
   const [index, setIndex] = useState(0)
 
   useEffect(() => {
@@ -185,7 +188,7 @@ function HeroSection() {
         <div className="absolute inset-0 bg-gradient-to-r from-ocean-900 via-ocean-900/40 to-transparent z-10" />
         <Image
           src="/images/marketing/srilanka-hero.png"
-          alt="Luggo Luggage Storage Sri Lanka"
+          alt=""
           fill
           className="object-cover opacity-80"
           priority
@@ -201,17 +204,18 @@ function HeroSection() {
               {t('vettedNetwork')}
             </motion.div>
 
-            <motion.h1 variants={fadeUp} className="text-[2.25rem] sm:text-6xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-5 min-h-[140px] sm:min-h-0">
+            <h1 className="text-[2.25rem] sm:text-6xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-5 min-h-[140px] sm:min-h-0">
               {t('titleBefore')}
               <span className="relative inline-block mx-2">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={index}
-                    initial={{ y: 20, opacity: 0, filter: 'blur(10px)' }}
+                    // First word renders visible on the server; later words animate in.
+                    initial={index === 0 ? false : { y: 20, opacity: 0, filter: 'blur(10px)' }}
                     animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
                     exit={{ y: -20, opacity: 0, filter: 'blur(10px)' }}
                     transition={{ duration: 0.5, ease: 'circOut' }}
-                    className="text-brand inline-block"
+                    className="text-ocean-300 inline-block"
                   >
                     {cities[index]}
                   </motion.span>
@@ -220,9 +224,9 @@ function HeroSection() {
               </span>
               <br className="hidden sm:block" />
               {t('titleAfter')}
-            </motion.h1>
+            </h1>
 
-            <motion.p variants={fadeUp} className="text-white/60 text-base sm:text-lg max-w-lg mx-auto lg:mx-0 mb-8 leading-relaxed">
+            <motion.p variants={fadeUp} className="text-white/80 text-base sm:text-lg max-w-lg mx-auto lg:mx-0 mb-8 leading-relaxed">
               {t('subtitle')}
             </motion.p>
 
@@ -238,7 +242,7 @@ function HeroSection() {
             </motion.div>
 
             <motion.div variants={fadeUp} className="hidden sm:flex flex-wrap gap-2.5 justify-center lg:justify-start opacity-70">
-              {['No account needed','Tamper-proof seals',`${GUARANTEE_LIMIT_LABEL} Protection`].map(chip => (
+              {[t('chips.noAccount'), t('chips.seals'), t('chips.protection', { amount: GUARANTEE_LIMIT_LABEL })].map(chip => (
                 <span key={chip} className="flex items-center gap-1.5 bg-white/5 border border-white/10 text-white text-xs font-bold px-4 py-2 rounded-full">
                   <Check size={12} className="text-emerald-400" strokeWidth={3} /> {chip}
                 </span>
@@ -252,7 +256,7 @@ function HeroSection() {
             <div className="absolute inset-0 rounded-[3rem] overflow-hidden border border-white/30 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] z-0">
                <Image
                  src="/images/marketing/srilanka-hero.png"
-                 alt="Explore Sri Lanka Hands-Free with Luggo Luggage Storage"
+                 alt=""
                  fill
                  className="object-cover scale-125 transition-transform duration-10000 ease-linear transform hover:scale-135"
                />
@@ -278,7 +282,7 @@ function HeroSection() {
           ].map(([v,l]) => (
             <div key={l} className="bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 text-center backdrop-blur-sm">
               <p className="text-2xl sm:text-3xl font-black text-white mb-1">{v}</p>
-              <p className="text-[10px] sm:text-xs font-bold text-white/40 uppercase tracking-widest">{l}</p>
+              <p className="text-[11px] sm:text-xs font-bold text-white/70 uppercase tracking-widest">{l}</p>
             </div>
           ))}
         </motion.div>
@@ -298,9 +302,9 @@ function SocialProofBand() {
           { icon: Shield,      text: t('vettedHub') },
           { icon: ShieldCheck, text: t('protection', { amount: GUARANTEE_LIMIT_LKR.toLocaleString('en-LK') }) },
           { icon: Lock,        text: t('seals') },
-          { icon: CreditCard,  text: 'PayHere Secure' },
+          { icon: CreditCard,  text: t('payhere') },
         ].map(({ icon: Icon, text }) => (
-          <div key={text} className="flex items-center gap-2.5 text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider">
+          <div key={text} className="flex items-center gap-2.5 text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wider">
             <Icon size={14} className="text-brand" />
             {text}
           </div>
@@ -312,10 +316,12 @@ function SocialProofBand() {
 
 // ── Scroll Arrow Button ───────────────────────────────────────────────────────
 
-function ScrollArrow({ dir, onClick, visible }: { dir: 'left' | 'right'; onClick: () => void; visible: boolean }) {
+function ScrollArrow({ dir, onClick, visible, label }: { dir: 'left' | 'right'; onClick: () => void; visible: boolean; label: string }) {
   if (!visible) return null
   return (
     <button
+      type="button"
+      aria-label={label}
       onClick={onClick}
       className={`absolute top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-200 rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 hover:shadow-xl active:scale-90 transition-all ${dir === 'left' ? 'left-2' : 'right-2'}`}
     >
@@ -353,8 +359,8 @@ function HowItWorksSection() {
           </motion.div>
 
           <motion.div variants={fadeUp} className="md:hidden relative">
-            <ScrollArrow dir="left"  onClick={() => scroll('left')}  visible={canLeft} />
-            <ScrollArrow dir="right" onClick={() => scroll('right')} visible={canRight} />
+            <ScrollArrow dir="left"  onClick={() => scroll('left')}  visible={canLeft} label={t('previousSteps')} />
+            <ScrollArrow dir="right" onClick={() => scroll('right')} visible={canRight} label={t('nextSteps')} />
             <div
               ref={scrollRef}
               onScroll={updateArrows}
@@ -364,7 +370,7 @@ function HowItWorksSection() {
                   <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${s.grad} flex items-center justify-center mb-5 shadow-lg shadow-brand/10`}>
                     <s.icon size={22} className="text-white" strokeWidth={2.5} />
                   </div>
-                  <span className="text-xs font-black text-gray-300 uppercase tracking-widest">{s.step}</span>
+                  <span className="text-xs font-black text-gray-500 uppercase tracking-widest">{s.step}</span>
                   <h3 className="font-bold text-ocean-900 text-lg mt-2 mb-2">{t(`step${i+1}`)}</h3>
                   <p className="text-gray-500 text-sm leading-relaxed">{t(`step${i+1}Desc`)}</p>
                 </div>
@@ -380,7 +386,7 @@ function HowItWorksSection() {
                 <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${s.grad} flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform`}>
                   <s.icon size={26} className="text-white" strokeWidth={2.5} />
                 </div>
-                <span className="text-xs font-black text-gray-200 uppercase tracking-widest">{s.step}</span>
+                <span className="text-xs font-black text-gray-500 uppercase tracking-widest">{s.step}</span>
                 <h3 className="font-bold text-ocean-900 text-xl mt-2 mb-3">{t(`step${i+1}`)}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{t(`step${i+1}Desc`)}</p>
               </motion.div>
@@ -416,7 +422,7 @@ function FeaturesSection() {
                 </div>
                 <div>
                   <h3 className="font-bold text-ocean-900 text-base mb-1.5">{t(`feature${i+1}`)}</h3>
-                  <p className="text-gray-500 text-xs leading-relaxed opacity-70">{t(`feature${i+1}Desc`, { amount: GUARANTEE_LIMIT_LKR.toLocaleString('en-LK') })}</p>
+                  <p className="text-gray-600 text-xs leading-relaxed">{t(`feature${i+1}Desc`, { amount: GUARANTEE_LIMIT_LKR.toLocaleString('en-LK') })}</p>
                 </div>
               </motion.div>
             ))}
@@ -430,33 +436,35 @@ function FeaturesSection() {
 // ── Reviews ──────────────────────────────────────────────────────────────────
 
 function PricingSection({ rates }: { rates: BagRates }) {
+  const t = useTranslations('Pricing')
+  const tBags = useTranslations('Bags')
   const bags = [
-    { e: '🎒', t: 'Small',   r: rates.small.hourlyRate,   popular: false },
-    { e: '🧳', t: 'Regular', r: rates.regular.hourlyRate, popular: true  },
-    { e: '🛄', t: 'Large',   r: rates.large.hourlyRate,   popular: false },
-  ]
+    { e: '🎒', key: 'small',   r: rates.small.hourlyRate,   popular: false },
+    { e: '🧳', key: 'regular', r: rates.regular.hourlyRate, popular: true  },
+    { e: '🛄', key: 'large',   r: rates.large.hourlyRate,   popular: false },
+  ] as const
   return (
     <section className="bg-ocean-900 py-20 px-4 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-96 h-96 bg-brand/10 rounded-full blur-[100px] -mr-48 -mt-48" />
       <div className="relative z-10 max-w-6xl mx-auto text-center">
         <motion.div initial="hidden" whileInView="show" viewport={{ once:true }} variants={stagger}>
-          <motion.span variants={fadeUp} className="text-brand font-bold text-xs uppercase tracking-widest block mb-2">Pricing</motion.span>
-          <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-black text-white mb-3">Simple, Hourly Rates</motion.h2>
-          <motion.p variants={fadeUp} className="text-white/40 text-sm mb-9">Rates shown are our lowest across all hubs — exact pricing is confirmed at checkout for your chosen hub.</motion.p>
+          <motion.span variants={fadeUp} className="text-brand-light font-bold text-xs uppercase tracking-widest block mb-2">{t('tag')}</motion.span>
+          <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-black text-white mb-3">{t('title')}</motion.h2>
+          <motion.p variants={fadeUp} className="text-white/70 text-sm mb-9">{t('note')}</motion.p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {bags.map(item => (
-              <motion.div key={item.t} variants={fadeUp}
+              <motion.div key={item.key} variants={fadeUp}
                 className={`relative bg-white/5 border backdrop-blur-sm rounded-3xl p-8 text-center transition-all hover:bg-white/10 ${item.popular ? 'border-brand shadow-2xl shadow-brand/20' : 'border-white/10'}`}>
                 {item.popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand text-white text-[10px] font-black uppercase px-4 py-1.5 rounded-full">Most Popular</span>
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand text-white text-[11px] font-black uppercase px-4 py-1.5 rounded-full">{t('popular')}</span>
                 )}
-                <span className="text-5xl block mb-6">{item.e}</span>
-                <h3 className="font-bold text-white text-xl mb-6">{item.t} Bag</h3>
-                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">From</p>
+                <span className="text-5xl block mb-6" aria-hidden="true">{item.e}</span>
+                <h3 className="font-bold text-white text-xl mb-6">{tBags(`${item.key}.bag`)}</h3>
+                <p className="text-[11px] font-bold text-white/70 uppercase tracking-widest mb-1">{t('from')}</p>
                 <div className="flex items-baseline justify-center gap-1.5">
                   <span className="text-3xl font-black text-white">LKR {item.r}</span>
-                  <span className="text-sm font-bold text-white/40">/ hr</span>
+                  <span className="text-sm font-bold text-white/70">{t('perHour')}</span>
                 </div>
               </motion.div>
             ))}
@@ -471,10 +479,11 @@ function PricingSection({ rates }: { rates: BagRates }) {
 
 function LocationsSection() {
   const nt = useTranslations('Nav')
+  const tc = useTranslations('Cities')
   return (
     <section id="locations" className="bg-white py-20 px-4">
       <div className="max-w-6xl mx-auto text-center mb-12">
-        <span className="text-brand font-bold text-xs uppercase tracking-widest block mb-2">Coverage</span>
+        <span className="text-brand font-bold text-xs uppercase tracking-widest block mb-2">{tc('tag')}</span>
         <h2 className="text-3xl sm:text-4xl font-black text-ocean-900">{nt('locations')}</h2>
       </div>
       <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -482,10 +491,11 @@ function LocationsSection() {
           <Link key={i} href="/hubs" className="group block text-center">
             <div className="relative aspect-square rounded-full overflow-hidden mb-4 border-2 border-gray-100 p-1 group-hover:border-brand transition-colors">
               <div className="relative w-full h-full rounded-full overflow-hidden">
-                <Image src={c.img} alt={`Luggage storage in ${c.city} - Luggo`} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
+                <Image src={c.img} alt="" fill sizes="(max-width: 768px) 50vw, 16vw" className="object-cover group-hover:scale-110 transition-transform duration-500" />
               </div>
             </div>
-            <p className="font-bold text-ocean-900 text-sm">{c.city}</p>
+            <p className="font-bold text-ocean-900 text-sm">{tc(`${c.city}.name`)}</p>
+            <p className="text-gray-600 text-xs mt-1">{tc(`${c.city}.desc`)}</p>
           </Link>
         ))}
       </div>
@@ -495,43 +505,27 @@ function LocationsSection() {
 
 // ── FAQ ───────────────────────────────────────────────────────────────────────
 
-const FAQS = [
-  {
-    q: 'How does it work?',
-    a: 'Find a hub on the map, book online in seconds, and drop your bags at the counter. Staff seal them with a tamper-proof tag and photograph the seal before you leave — you pick up whenever you\'re ready, up to closing time.',
-  },
-  {
-    q: "What if I'm running late to pick up my bags?",
-    a: "You get a 15-minute grace period after your booked pickup time at no extra charge. After that, storage continues billing in 30-minute blocks at your hub's rate, capped at the daily rate — so a short delay never costs more than a day would.",
-  },
-  {
-    q: "What's covered if something happens to my bags?",
-    a: `Every hub is vetted and your bags are sealed and photographed at drop-off. You can also opt in to Luggo Guarantee for LKR 150 per bag, with compensation up to ${GUARANTEE_LIMIT_LABEL} per booking for eligible accidental damage, loss, or theft while stored, subject to the Terms of Service.`,
-  },
-  {
-    q: 'Do I need to create an account or pay upfront?',
-    a: "No — you can book as a guest and pay by card online, or reserve now and pay cash at the counter when you drop off. An account just makes it faster to book again and manage extensions.",
-  },
-]
+const FAQ_KEYS = ['how', 'late', 'covered', 'account'] as const
 
 function FaqSection() {
   const nt = useTranslations('Nav')
+  const t = useTranslations('Faq')
   return (
     <section id="faq" className="bg-gray-50 py-20 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-12">
           <span className="text-brand font-bold text-xs uppercase tracking-widest block mb-2">{nt('faq')}</span>
-          <h2 className="text-3xl font-black text-ocean-900">Got Questions?</h2>
+          <h2 className="text-3xl font-black text-ocean-900">{t('title')}</h2>
         </div>
         <div className="space-y-3">
-          {FAQS.map(({ q, a }) => (
-            <details key={q} className="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+          {FAQ_KEYS.map((key) => (
+            <details key={key} className="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
               <summary className="flex items-center justify-between gap-4 p-6 cursor-pointer list-none font-bold text-ocean-900 text-sm sm:text-base">
-                {q}
-                <ChevronDown size={18} className="shrink-0 group-open:rotate-180 transition-transform" />
+                {t(`${key}.q`)}
+                <ChevronDown size={18} aria-hidden="true" className="shrink-0 group-open:rotate-180 transition-transform" />
               </summary>
-              <div className="px-6 pb-6 text-gray-500 text-sm leading-relaxed">
-                {a}
+              <div className="px-6 pb-6 text-gray-600 text-sm leading-relaxed">
+                {t(`${key}.a`, { amount: GUARANTEE_LIMIT_LABEL })}
               </div>
             </details>
           ))}
@@ -550,7 +544,7 @@ function FooterCta() {
       <div className="max-w-6xl mx-auto">
         <div className="bg-brand rounded-[40px] p-10 sm:p-20 text-center relative overflow-hidden shadow-2xl shadow-brand/30">
           <div className="relative z-10">
-            <h2 className="text-3xl sm:text-5xl font-black text-white mb-6">Explore Sri Lanka Hands-Free</h2>
+            <h2 className="text-3xl sm:text-5xl font-black text-white mb-6">{t('ctaTitle')}</h2>
             <Link href="/dashboard" className="inline-flex items-center gap-2 bg-white text-brand font-black px-10 py-5 rounded-2xl hover:scale-105 transition-transform shadow-xl">
               {t('findStorage')} <ArrowRight size={20} />
             </Link>
@@ -564,20 +558,23 @@ function FooterCta() {
 // ── Footer ────────────────────────────────────────────────────────────────────
 
 function Footer() {
+  const t = useTranslations('Footer')
+  // min-h-11 keeps every footer link a comfortable 44px tap target.
+  const linkClass = 'inline-flex items-center min-h-11 px-1 hover:text-white'
   return (
     <footer className="bg-ocean-900 text-white/75 py-20 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row items-center justify-between gap-10">
           <Logo size="md" />
-          <div className="flex flex-wrap justify-center gap-8 text-sm font-bold uppercase tracking-widest">
-            <a href="#how-it-works" className="hover:text-white">How</a>
-            <Link href="/about" className="hover:text-white">About</Link>
-            <a href="#locations" className="hover:text-white">Locations</a>
-            <Link href="/terms" className="hover:text-white">Terms</Link>
-            <Link href="/privacy" className="hover:text-white">Privacy</Link>
-          </div>
+          <nav aria-label={t('label')} className="flex flex-wrap justify-center gap-x-6 gap-y-1 text-sm font-bold uppercase tracking-widest">
+            <a href="#how-it-works" className={linkClass}>{t('how')}</a>
+            <Link href="/about" className={linkClass}>{t('about')}</Link>
+            <a href="#locations" className={linkClass}>{t('locations')}</a>
+            <Link href="/terms" className={linkClass}>{t('terms')}</Link>
+            <Link href="/privacy" className={linkClass}>{t('privacy')}</Link>
+          </nav>
           <div className="flex flex-col items-center gap-4 text-sm">
-            <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-white">{CONTACT_EMAIL}</a>
+            <a href={`mailto:${CONTACT_EMAIL}`} className={linkClass}>{CONTACT_EMAIL}</a>
             <SocialLinks />
             <p className="text-xs font-medium">&copy; 2026 Luggo Sri Lanka.</p>
           </div>
@@ -589,13 +586,28 @@ function Footer() {
 
 // ── Export ────────────────────────────────────────────────────────────────────
 
+const SPLASH_SEEN_KEY = 'luggo_splash_seen'
+
 export default function LandingPage({ rates = DEFAULT_BAG_RATES }: { rates?: BagRates }) {
+  const tShell = useTranslations('Shell')
   const [showSplash, setShowSplash] = useState(true)
+  const hideSplash = useCallback(() => {
+    setShowSplash(false)
+    try { sessionStorage.setItem(SPLASH_SEEN_KEY, '1') } catch {}
+  }, [])
+
+  // Once per browser session, and never for people who asked for reduced motion.
+  // Layout effect so returning visitors don't see the overlay painted first.
+  useLayoutEffect(() => {
+    let seen = false
+    try { seen = sessionStorage.getItem(SPLASH_SEEN_KEY) === '1' } catch {}
+    if (seen || window.matchMedia('(prefers-reduced-motion: reduce)').matches) setShowSplash(false)
+  }, [])
 
   return (
     <div className="min-h-screen bg-white relative">
       <AnimatePresence>
-        {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
+        {showSplash && <SplashScreen onComplete={hideSplash} skipLabel={tShell('skip')} />}
       </AnimatePresence>
       <NavBar />
       <HeroSection />

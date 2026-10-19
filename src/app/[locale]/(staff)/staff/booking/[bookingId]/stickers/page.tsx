@@ -11,11 +11,12 @@ export const metadata: Metadata = { title: 'Stickers — Staff' }
 
 type Bag = { id: string; bag_type: BagType; sticker_number: string | null }
 
-export default async function StaffStickersPage({
-  params,
-}: {
-  params: { bookingId: string }
-}) {
+export default async function StaffStickersPage(
+  props: {
+    params: Promise<{ bookingId: string }>
+  }
+) {
+  const params = await props.params;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/staff/login')

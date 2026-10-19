@@ -8,11 +8,17 @@ import { CONTACT_EMAIL, SOCIAL_LINKS } from '@/lib/public-company'
 import { siteUrl } from '@/lib/site-url'
 import { DEFAULT_BAG_RATES, type BagRates } from '@/lib/utils/pricing'
 
-export async function generateMetadata({
-  params: { locale },
-}: {
-  params: { locale: string }
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ locale: string }>
+  }
+): Promise<Metadata> {
+  const params = await props.params;
+
+  const {
+    locale
+  } = params;
+
   const canonicalPath = locale === 'en' ? '/' : `/${locale}`
 
   return {
@@ -27,11 +33,17 @@ export async function generateMetadata({
   }
 }
 
-export default async function RootPage({
-  params: { locale },
-}: {
-  params: { locale: string }
-}) {
+export default async function RootPage(
+  props: {
+    params: Promise<{ locale: string }>
+  }
+) {
+  const params = await props.params;
+
+  const {
+    locale
+  } = params;
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 

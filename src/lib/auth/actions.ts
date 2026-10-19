@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import {
@@ -11,10 +12,25 @@ import {
   type SignUpInput,
   type UpdateProfileInput,
 } from '@/lib/validators/auth'
+import { normalizePhone } from '@/lib/validators/phone'
+import { clearRateLimit, hitRateLimit } from '@/lib/security/rateLimit'
 import { type UserRole } from '@/types/database'
 
 // Supabase partial-select results don't infer well — use this cast helper
 type RoleRow = { role: UserRole }
+
+const SIGN_IN_WINDOW_MS = 15 * 60_000
+
+// Supabase's own per-IP limits see Vercel's IP for server-side sign-ins, so
+// throttle per account and per client IP here. Returns an error message when blocked.
+async function checkSignInRateLimit(email: string): Promise<string | null> {
+  const ip = (await headers()).get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const byIp = await hitRateLimit(`sign-in:ip:${ip}`, 30, SIGN_IN_WINDOW_MS)
+  const byEmail = await hitRateLimit(`sign-in:email:${email.trim().toLowerCase()}`, 5, SIGN_IN_WINDOW_MS)
+  if (byIp.allowed && byEmail.allowed) return null
+  const minutes = Math.ceil(Math.max(byIp.retryAfterMs, byEmail.retryAfterMs) / 60_000)
+  return `Too many sign-in attempts. Please try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`
+}
 
 // ─────────────────────────────────────────────
 // CUSTOMER SIGN UP
@@ -39,17 +55,7 @@ export async function signUpCustomer(
 
   if (error) return { error: error.message }
 
-  // The DB trigger creates the base profile; patch phone if provided
-  if (parsed.data.phone) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from('users') as any)
-        .update({ phone: parsed.data.phone })
-        .eq('id', user.id)
-    }
-  }
-
+  // Phone is not saved here: it must be verified by SMS from the profile page.
   redirect('/profile?welcome=1')
 }
 
@@ -64,11 +70,15 @@ export async function signInCustomer(
     return { error: parsed.error.issues[0].message }
   }
 
+  const limited = await checkSignInRateLimit(parsed.data.email)
+  if (limited) return { error: limited }
+
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({
     email: parsed.data.email,
     password: parsed.data.password,
   })
+  if (!error) await clearRateLimit(`sign-in:email:${parsed.data.email.trim().toLowerCase()}`)
 
   if (error) {
     if (error.message.includes('Invalid login credentials')) {
@@ -91,11 +101,15 @@ export async function signInStaff(
     return { error: parsed.error.issues[0].message }
   }
 
+  const limited = await checkSignInRateLimit(parsed.data.email)
+  if (limited) return { error: limited }
+
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({
     email: parsed.data.email,
     password: parsed.data.password,
   })
+  if (!error) await clearRateLimit(`sign-in:email:${parsed.data.email.trim().toLowerCase()}`)
 
   if (error) {
     if (error.message.includes('Invalid login credentials')) {
@@ -133,11 +147,15 @@ export async function signInAdmin(
     return { error: parsed.error.issues[0].message }
   }
 
+  const limited = await checkSignInRateLimit(parsed.data.email)
+  if (limited) return { error: limited }
+
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({
     email: parsed.data.email,
     password: parsed.data.password,
   })
+  if (!error) await clearRateLimit(`sign-in:email:${parsed.data.email.trim().toLowerCase()}`)
 
   if (error) {
     if (error.message.includes('Invalid login credentials')) {
@@ -190,7 +208,7 @@ export async function signOutAdmin(): Promise<void> {
 // ─────────────────────────────────────────────
 export async function updateProfile(
   data: UpdateProfileInput
-): Promise<{ error?: string; success?: boolean }> {
+): Promise<{ error?: string; success?: boolean; needsPhoneVerification?: boolean }> {
   const parsed = updateProfileSchema.safeParse(data)
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message }
@@ -200,16 +218,35 @@ export async function updateProfile(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated.' }
 
+  const { data: current } = await supabase
+    .from('users')
+    .select('phone')
+    .eq('id', user.id)
+    .single() as { data: { phone: string | null } | null; error: unknown }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase.from('users') as any)
     .update({
       name: parsed.data.name,
-      phone: parsed.data.phone || null,
       nic_passport: parsed.data.nic_passport || null,
     })
     .eq('id', user.id)
 
   if (error) return { error: error.message }
+
+  // A phone number signs its owner in by SMS, so a new one is only saved after
+  // /api/auth/phone/verify proves ownership. Removing your own number is harmless.
+  const newPhone = parsed.data.phone ? normalizePhone(parsed.data.phone) : null
+  const currentPhone = current?.phone ? normalizePhone(current.phone) : null
+  if (newPhone !== currentPhone) {
+    if (newPhone) return { success: true, needsPhoneVerification: true }
+    const { error: clearError } = await createServiceClient()
+      .from('users' as never)
+      .update({ phone: null })
+      .eq('id', user.id)
+    if (clearError) return { error: 'Failed to remove phone number.' }
+  }
+
   return { success: true }
 }
 

@@ -179,11 +179,11 @@ export function BagRegistrationForm({ bookingId, initialBags, slotNumber, rates 
             <MapPin size={22} className="stroke-[2.5]" />
           </div>
           <div>
-            <p className="text-[10px] text-amber-400 font-black uppercase tracking-widest">Allocated Room Location</p>
+            <p className="text-[11px] text-amber-400 font-black uppercase tracking-widest">Allocated Room Location</p>
             <p className="text-xl font-extrabold text-white tracking-wide">Storage Slot #{slotNumber}</p>
           </div>
         </div>
-        <span className="text-[10px] font-black uppercase tracking-widest bg-amber-400/20 text-amber-300 px-3 py-1 rounded-full border border-amber-400/20">
+        <span className="text-[11px] font-black uppercase tracking-widest bg-amber-400/20 text-amber-300 px-3 py-1 rounded-full border border-amber-400/20">
           Reserved Slot
         </span>
       </div>
@@ -201,7 +201,7 @@ export function BagRegistrationForm({ bookingId, initialBags, slotNumber, rates 
           <p className="text-white/70 text-xs">
             Bags were modified. Collect **LKR {pendingDifference.toLocaleString()}** in cash from the customer to pay the price difference.
           </p>
-          <p className="text-[10px] text-amber-400/60 font-semibold italic">
+          <p className="text-[11px] text-amber-400/60 font-semibold italic">
             * Clicking the confirmation button below will record the paid difference payment and proceed with registration.
           </p>
         </div>
@@ -218,7 +218,7 @@ export function BagRegistrationForm({ bookingId, initialBags, slotNumber, rates 
                 <button
                   type="button"
                   onClick={() => setBags(bags.filter((_, i) => i !== index))}
-                  className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 transition-colors"
+                  className="flex items-center gap-1 text-[11px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 transition-colors"
                 >
                   <Trash2 size={12} /> Remove
                 </button>
@@ -228,7 +228,7 @@ export function BagRegistrationForm({ bookingId, initialBags, slotNumber, rates 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Bag Size Dropdown */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/50">Bag Size</label>
+                <label className="text-[11px] font-black uppercase tracking-widest text-white/50">Bag Size</label>
                 <select
                   value={bag.bag_type}
                   onChange={(e) => updateBagField(index, 'bag_type', e.target.value as BagType)}
@@ -263,7 +263,7 @@ export function BagRegistrationForm({ bookingId, initialBags, slotNumber, rates 
               {/* Seal Number or Notes */}
               {bag.seal_status === 'sealed' ? (
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-white/50">Physical Security Seal #</label>
+                  <label className="text-[11px] font-black uppercase tracking-widest text-white/50">Physical Security Seal #</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -284,7 +284,7 @@ export function BagRegistrationForm({ bookingId, initialBags, slotNumber, rates 
                 </div>
               ) : (
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-white/50">Unsealable Reason / Notes</label>
+                  <label className="text-[11px] font-black uppercase tracking-widest text-white/50">Unsealable Reason / Notes</label>
                   <input
                     type="text"
                     required={bag.seal_status === 'seal_not_applicable'}

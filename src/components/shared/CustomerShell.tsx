@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { usePathname } from '@/navigation'
 import { Sidebar } from '@/components/shared/Sidebar'
 import { BottomNav } from '@/components/shared/BottomNav'
@@ -16,6 +17,7 @@ export function CustomerShell({
   activeCount?: number
   isLoggedIn?: boolean
 }) {
+  const t = useTranslations('Shell')
   const pathname = usePathname()
 
   if (AUTH_PATHS.includes(pathname)) {
@@ -24,7 +26,7 @@ export function CustomerShell({
 
   return (
     <div className="flex h-[100dvh] overflow-hidden bg-gray-50">
-      <a href="#main-content" className="skip-link">Skip to content</a>
+      <a href="#main-content" className="skip-link">{t('skipToContent')}</a>
       {/* Sidebar — desktop only */}
       <Sidebar isLoggedIn={isLoggedIn} />
 

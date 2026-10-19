@@ -7,15 +7,19 @@ import { formatDateSLT, formatInSLT } from '@/lib/utils/timezone'
 import { BAG_LABELS, calculateBagPriceForHours } from '@/lib/utils/pricing'
 import { getHubBagRates } from '@/lib/utils/hubPricing'
 import { type BagType } from '@/types/database'
+import { titleMetadata } from '@/lib/i18n/metadata'
+
+export const generateMetadata = titleMetadata('receipt')
 
 type Bag = { id: string; bag_type: BagType; sticker_number: string | null; seal_number: string | null }
 type Payment = { id: string; amount: number; status: string; type: string; gateway_ref: string | null; created_at: string }
 
-export default async function BookingReceiptPage({
-  params,
-}: {
-  params: { bookingId: string }
-}) {
+export default async function BookingReceiptPage(
+  props: {
+    params: Promise<{ bookingId: string }>
+  }
+) {
+  const params = await props.params;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -88,7 +92,7 @@ export default async function BookingReceiptPage({
     <div className="min-h-screen bg-gray-50">
       {/* Print-friendly header */}
       <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between print:hidden">
-        <Link href={`/booking/${params.bookingId}`} className="flex items-center gap-1 text-gray-400 hover:text-gray-700 text-sm">
+        <Link href={`/booking/${params.bookingId}`} className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-sm">
           <ArrowLeft size={16} /> Back
         </Link>
         <button
@@ -130,7 +134,7 @@ export default async function BookingReceiptPage({
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900 text-sm">{booking.hubs?.name}</p>
-                    <p className="text-xs text-gray-400">{booking.hubs?.address}</p>
+                    <p className="text-xs text-gray-500">{booking.hubs?.address}</p>
                   </div>
                 </div>
                 {booking.slot_number && (
@@ -146,12 +150,12 @@ export default async function BookingReceiptPage({
                 </div>
                 <div className="grid grid-cols-2 gap-4 flex-1">
                   <div>
-                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Drop-off</p>
+                    <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wide">Drop-off</p>
                     <p className="text-sm font-semibold text-gray-900">{formatDateSLT(start)}</p>
                     <p className="text-xs text-gray-500">{formatInSLT(start, { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Pick-up</p>
+                    <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wide">Pick-up</p>
                     <p className="text-sm font-semibold text-gray-900">{formatDateSLT(end)}</p>
                     <p className="text-xs text-gray-500">{formatInSLT(end, { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
                   </div>
@@ -171,22 +175,22 @@ export default async function BookingReceiptPage({
             {/* Line items */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <Package size={13} className="text-gray-400" />
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Bags</p>
+                <Package size={13} className="text-gray-500" />
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Bags</p>
               </div>
               <div className="space-y-2">
                 {lineItems.map((item, i) => (
                   <div key={i} className="flex items-start justify-between text-sm py-1 border-b border-gray-50 last:border-0">
                     <div>
                       <p className="font-medium text-gray-800">{item.label}</p>
-                      <p className="text-xs text-gray-400 flex flex-wrap items-center gap-1.5 mt-0.5">
+                      <p className="text-xs text-gray-500 flex flex-wrap items-center gap-1.5 mt-0.5">
                         <span>LKR {item.rate.toLocaleString()} × {hours}h</span>
                         {item.seal ? (
-                          <span className="font-mono font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">
+                          <span className="font-mono font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded text-[11px]">
                             🔒 Seal: {item.seal}
                           </span>
                         ) : (
-                          <span className="text-[10px] text-gray-400 font-semibold italic">
+                          <span className="text-[11px] text-gray-500 font-semibold italic">
                             Unsealable
                           </span>
                         )}
@@ -236,8 +240,8 @@ export default async function BookingReceiptPage({
                 <div className="border-t border-dashed border-gray-100" />
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <CreditCard size={13} className="text-gray-400" />
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Payment history</p>
+                    <CreditCard size={13} className="text-gray-500" />
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Payment history</p>
                   </div>
                   <div className="space-y-1.5">
                     {payments.map((p) => (
@@ -245,13 +249,13 @@ export default async function BookingReceiptPage({
                         <div>
                           <span className="text-gray-600 capitalize font-medium">{p.type.replace('_', ' ')}</span>
                           {p.status === 'pending' && (
-                            <span className="ml-1 text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-1 py-0.5 rounded">
+                            <span className="ml-1 text-[11px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-1 py-0.5 rounded">
                               Pending Cash
                             </span>
                           )}
-                          <span className="text-gray-400 ml-2">· {formatInSLT(p.created_at, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                          <span className="text-gray-500 ml-2">· {formatInSLT(p.created_at, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                         </div>
-                        <span className={`font-semibold ${p.status === 'pending' ? 'text-gray-400 line-through' : 'text-gray-700'}`}>LKR {p.amount.toLocaleString()}</span>
+                        <span className={`font-semibold ${p.status === 'pending' ? 'text-gray-500 line-through' : 'text-gray-700'}`}>LKR {p.amount.toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
@@ -262,7 +266,7 @@ export default async function BookingReceiptPage({
 
           {/* Footer */}
           <div className="bg-gray-50 px-6 py-4 text-center border-t border-gray-100">
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-500">
               Thank you for choosing Luggo · luggo.lk
             </p>
             <p className="text-xs text-gray-300 mt-0.5">

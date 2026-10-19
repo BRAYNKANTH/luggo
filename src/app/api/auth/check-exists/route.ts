@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   const phone = rawPhone ? normalizePhone(rawPhone) : null
   if (rawPhone && !phone) return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 })
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-  if (!hitRateLimit(`check-exists:${ip}`, 30, 60_000).allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  if (!(await hitRateLimit(`check-exists:${ip}`, 30, 60_000)).allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   const supabase = createServiceClient()
   let exists = false
 

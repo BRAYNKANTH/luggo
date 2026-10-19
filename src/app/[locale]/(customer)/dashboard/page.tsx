@@ -2,6 +2,9 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { DashboardClient, type HubCard, type ActiveBooking } from './DashboardClient'
 import { BAG_RATES } from '@/lib/utils/pricing'
+import { titleMetadata } from '@/lib/i18n/metadata'
+
+export const generateMetadata = titleMetadata('dashboard')
 
 type RawHub = {
   id: string

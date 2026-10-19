@@ -1,6 +1,7 @@
 import { GUARANTEE_LIMIT_LABEL } from '@/lib/utils/guarantee'
 import Image from 'next/image'
 import { notFound, redirect } from 'next/navigation'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { Link } from '@/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { BookingQR } from '@/components/customer/BookingQR'
@@ -8,6 +9,7 @@ import { BookingStatusBadge } from '@/components/customer/BookingStatusBadge'
 import { RealtimeRefresher } from '@/components/shared/RealtimeRefresher'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { Button } from '@/components/ui/Button'
+import { buttonClass } from '@/components/ui/buttonStyles'
 import { ExtendBookingCTA } from '@/components/customer/ExtendBookingCTA'
 import { cancelBooking } from '@/lib/auth/actions'
 import {
@@ -17,10 +19,13 @@ import {
 import { BookingProgressTracker } from '@/components/customer/BookingProgressTracker'
 import { formatDateSLT, formatDateTimeSLT } from '@/lib/utils/timezone'
 import { type BookingStatus, type BagType } from '@/types/database'
-import { BAG_LABELS, calculateLateFee } from '@/lib/utils/pricing'
+import { calculateLateFee } from '@/lib/utils/pricing'
 import { getHubBagRates } from '@/lib/utils/hubPricing'
 import { EarlyCheckinPayButton } from '@/components/customer/EarlyCheckinPayButton'
 import { BookingPaymentRetryButton } from '@/components/customer/BookingPaymentRetryButton'
+import { titleMetadata } from '@/lib/i18n/metadata'
+
+export const generateMetadata = titleMetadata('booking')
 
 type BookingDetail = {
   id: string
@@ -45,13 +50,17 @@ type BookingDetail = {
 const CANCELLABLE: BookingStatus[] = ['pending_payment', 'confirmed']
 const EXTEND_ELIGIBLE: BookingStatus[] = ['confirmed', 'arrived', 'sealing_in_progress', 'sealed_waiting_user_confirmation', 'active_storage', 'overstayed']
 
-export default async function BookingDetailPage({
-  params,
-  searchParams,
-}: {
-  params: { bookingId: string }
-  searchParams: { payment?: string; sealed?: string; pickup?: string; ext?: string; pickup_error?: string }
-}) {
+export default async function BookingDetailPage(
+  props: {
+    params: Promise<{ bookingId: string }>
+    searchParams: Promise<{ payment?: string; sealed?: string; pickup?: string; ext?: string; pickup_error?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  const t = await getTranslations('BookingDetail')
+  const tBags = await getTranslations('Bags')
+  const locale = await getLocale()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -128,8 +137,8 @@ export default async function BookingDetailPage({
       <RealtimeRefresher bookingId={booking.id} />
 
       <PageHeader
-        title={booking.hubs?.name ?? 'Booking'}
-        subtitle={`#${booking.id.slice(0, 8).toUpperCase()} · ${formatDateSLT(start)}`}
+        title={booking.hubs?.name ?? t('booking')}
+        subtitle={`#${booking.id.slice(0, 8).toUpperCase()} · ${formatDateSLT(start, locale)}`}
         backHref="/bookings"
         action={<BookingStatusBadge status={booking.status} />}
       />
@@ -141,8 +150,8 @@ export default async function BookingDetailPage({
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
             <AlertTriangle size={18} className="text-amber-600 shrink-0" />
             <div>
-              <p className="font-semibold text-amber-900 text-sm">💵 Cash Payment Pending at Hub</p>
-              <p className="text-xs text-amber-700 mt-0.5">Please pay <strong>LKR {booking.total_price.toLocaleString()}</strong> in cash to the staff at the counter during drop-off.</p>
+              <p className="font-semibold text-amber-900 text-sm">💵 {t('cashPendingTitle')}</p>
+              <p className="text-xs text-amber-800 mt-0.5">{t.rich('cashPendingBody', { amount: booking.total_price.toLocaleString(), strong: (chunks) => <strong>{chunks}</strong> })}</p>
             </div>
           </div>
         )}
@@ -151,8 +160,8 @@ export default async function BookingDetailPage({
             <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
               <CheckCircle size={18} className="text-green-600 shrink-0" />
               <div>
-                <p className="font-semibold text-green-900 text-sm">Payment confirmed!</p>
-                <p className="text-xs text-green-700 mt-0.5">Your booking is secured. We&apos;ll see you at the hub.</p>
+                <p className="font-semibold text-green-900 text-sm">{t('paymentConfirmed')}</p>
+                <p className="text-xs text-green-800 mt-0.5">{t('paymentConfirmedBody')}</p>
               </div>
             </div>
             <script dangerouslySetInnerHTML={{
@@ -167,9 +176,9 @@ export default async function BookingDetailPage({
             <div className="flex items-start gap-3">
               <AlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-amber-950 text-sm">⚠️ Payment Pending / Declined</p>
-                <p className="text-xs text-amber-700 mt-1 leading-normal">
-                  Your payment was not completed or was declined by the bank. Please try paying again to confirm your luggage storage reservation.
+                <p className="font-bold text-amber-950 text-sm">⚠️ {t('paymentPendingTitle')}</p>
+                <p className="text-xs text-amber-800 mt-1 leading-normal">
+                  {t('paymentPendingBody')}
                 </p>
               </div>
             </div>
@@ -183,9 +192,9 @@ export default async function BookingDetailPage({
             <div className="text-center pt-1">
               <Link
                 href={`/book/${booking.hub_id}`}
-                className="text-xs font-bold text-amber-700 hover:text-amber-800 underline"
+                className="inline-flex min-h-11 items-center text-xs font-bold text-amber-800 hover:text-amber-900 underline"
               >
-                ← Back to Edit Booking Details
+                ← {t('editBooking')}
               </Link>
             </div>
           </div>
@@ -194,8 +203,8 @@ export default async function BookingDetailPage({
           <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
             <CheckCircle size={18} className="text-green-600 shrink-0" />
             <div>
-              <p className="font-semibold text-green-900 text-sm">Booking extended!</p>
-              <p className="text-xs text-green-700 mt-0.5">Your new pickup time is shown below.</p>
+              <p className="font-semibold text-green-900 text-sm">{t('extended')}</p>
+              <p className="text-xs text-green-800 mt-0.5">{t('extendedBody')}</p>
             </div>
           </div>
         )}
@@ -203,8 +212,8 @@ export default async function BookingDetailPage({
           <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
             <CheckCircle size={18} className="text-green-600 shrink-0" />
             <div>
-              <p className="font-semibold text-green-900 text-sm">Late fee paid!</p>
-              <p className="text-xs text-green-700 mt-0.5">Head to the hub counter to collect your bags.</p>
+              <p className="font-semibold text-green-900 text-sm">{t('lateFeePaid')}</p>
+              <p className="text-xs text-green-800 mt-0.5">{t('lateFeePaidBody')}</p>
             </div>
           </div>
         )}
@@ -212,8 +221,8 @@ export default async function BookingDetailPage({
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
             <AlertTriangle size={18} className="text-amber-600 shrink-0" />
             <div>
-              <p className="font-semibold text-amber-900 text-sm">Payment not completed</p>
-              <p className="text-xs text-amber-700 mt-0.5">Your booking is held for 30 minutes.</p>
+              <p className="font-semibold text-amber-900 text-sm">{t('paymentCancelled')}</p>
+              <p className="text-xs text-amber-800 mt-0.5">{t('paymentCancelledBody')}</p>
             </div>
           </div>
         )}
@@ -224,12 +233,12 @@ export default async function BookingDetailPage({
             <div className="flex items-start gap-3">
               <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-amber-900 text-sm">Action required</p>
-                <p className="text-xs text-amber-700 mt-0.5 leading-tight">Staff have sealed your bags. Please review the photo and confirm.</p>
+                <p className="font-semibold text-amber-900 text-sm">{t('actionRequired')}</p>
+                <p className="text-xs text-amber-800 mt-0.5 leading-tight">{t('reviewSealBody')}</p>
               </div>
             </div>
-            <Link href={`/booking/${booking.id}/confirm-seal`}>
-              <Button fullWidth size="sm">Review & Confirm Seal</Button>
+            <Link href={`/booking/${booking.id}/confirm-seal`} className={buttonClass({ fullWidth: true, size: 'sm' })}>
+              {t('reviewSeal')}
             </Link>
           </div>
         )}
@@ -240,12 +249,12 @@ export default async function BookingDetailPage({
             <div className="flex items-start gap-3">
               <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-amber-900 text-sm">Early drop-off payment required</p>
-                <p className="text-xs text-amber-700 mt-0.5 leading-tight">
-                  You are {booking.early_checkin_minutes} minutes early. To keep your original pickup time, please pay LKR {booking.early_checkin_fee}.
+                <p className="font-semibold text-amber-900 text-sm">{t('earlyPayTitle')}</p>
+                <p className="text-xs text-amber-800 mt-0.5 leading-tight">
+                  {t('earlyPayBody', { minutes: booking.early_checkin_minutes ?? 0, fee: booking.early_checkin_fee })}
                 </p>
-                <p className="text-[10px] text-amber-600/80 leading-normal italic mt-1.5">
-                  * Early fee is calculated from the time Luggo staff accepts your luggage.
+                <p className="text-[11px] text-amber-800 leading-normal italic mt-1.5">
+                  * {t('earlyPayNote')}
                 </p>
               </div>
             </div>
@@ -258,9 +267,9 @@ export default async function BookingDetailPage({
           <div className="bg-emerald-50 border border-emerald-100 rounded-xl md:rounded-2xl p-4 flex items-start gap-3 shadow-sm">
             <CheckCircle size={18} className="text-emerald-600 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-emerald-900 text-sm">Free early check-in applied</p>
-              <p className="text-xs text-emerald-700 mt-0.5">
-                You are slightly early. Your early check-in is free, and your pickup time remains unchanged.
+              <p className="font-semibold text-emerald-900 text-sm">{t('freeEarlyTitle')}</p>
+              <p className="text-xs text-emerald-800 mt-0.5">
+                {t('freeEarlyBody')}
               </p>
             </div>
           </div>
@@ -271,9 +280,9 @@ export default async function BookingDetailPage({
           <div className="bg-brand/5 border border-brand/20 rounded-xl md:rounded-2xl p-4 flex items-start gap-3 shadow-sm">
             <Clock size={18} className="text-brand shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-ocean-900 text-sm">Booking shifted earlier</p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                You shifted your booking window earlier. Your new pickup time is {formatDateTimeSLT(new Date(booking.end_time))}.
+              <p className="font-semibold text-ocean-900 text-sm">{t('shiftedTitle')}</p>
+              <p className="text-xs text-gray-600 mt-0.5">
+                {t('shiftedBody', { time: formatDateTimeSLT(new Date(booking.end_time), locale) })}
               </p>
             </div>
           </div>
@@ -284,32 +293,21 @@ export default async function BookingDetailPage({
           <div className="bg-emerald-50 border border-emerald-100 rounded-xl md:rounded-2xl p-4 flex items-start gap-3 shadow-sm">
             <CheckCircle size={18} className="text-emerald-600 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-emerald-900 text-sm">Early check-in fee paid</p>
-              <p className="text-xs text-emerald-700 mt-0.5">
-                You checked in {booking.early_checkin_minutes} minutes early. Paid LKR {booking.early_checkin_fee} to keep your original pickup time.
+              <p className="font-semibold text-emerald-900 text-sm">{t('earlyPaidTitle')}</p>
+              <p className="text-xs text-emerald-800 mt-0.5">
+                {t('earlyPaidBody', { minutes: booking.early_checkin_minutes ?? 0, fee: booking.early_checkin_fee })}
               </p>
             </div>
           </div>
         )}
 
-        {/* ── Cash Payment Pending Warning Banner ── */}
-        {isCashPaymentPending && booking.status === 'confirmed' && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl md:rounded-2xl p-4 flex items-start gap-3 shadow-sm">
-            <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-semibold text-amber-900 text-sm leading-tight">Cash Payment Pending at Hub</p>
-              <p className="text-xs text-amber-700 mt-0.5 leading-tight">
-                Please pay LKR {booking.total_price.toLocaleString()} in cash to the staff at the counter during drop-off.
-              </p>
-            </div>
-          </div>
-        )}
+
         {searchParams.pickup_error && (
           <div className="bg-red-50 border border-red-200 rounded-xl md:rounded-2xl p-4 flex items-start gap-3">
             <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-red-700 text-sm leading-tight">Pickup request failed</p>
-              <p className="text-xs text-red-500 mt-0.5">{decodeURIComponent(searchParams.pickup_error)}</p>
+              <p className="font-semibold text-red-800 text-sm leading-tight">{t('pickupFailed')}</p>
+              <p className="text-xs text-red-700 mt-0.5">{decodeURIComponent(searchParams.pickup_error)}</p>
             </div>
           </div>
         )}
@@ -320,19 +318,19 @@ export default async function BookingDetailPage({
             <div className="flex items-start gap-3">
               <AlertTriangle size={20} className="text-red-500 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-red-950 text-sm">⚠️ Late Overstay Fee Required</p>
-                <p className="text-xs text-red-700 mt-1 leading-normal">
-                  Your storage has exceeded the booked pick-up time. A late fee must be paid before you can request bag pickup.
+                <p className="font-bold text-red-950 text-sm">⚠️ {t('lateFeeTitle')}</p>
+                <p className="text-xs text-red-800 mt-1 leading-normal">
+                  {t('lateFeeBody')}
                 </p>
                 
                 {/* Pricing Calculation breakdown table */}
                 <div className="bg-white/60 p-3.5 rounded-xl border border-red-100 text-xs space-y-1.5 mt-3 text-red-900">
                   <div className="flex justify-between">
-                    <span>Overstay Duration:</span>
-                    <span className="font-bold">{overdueHours} hour{overdueHours !== 1 ? 's' : ''} ({overdueHalfHours} half-hour blocks)</span>
+                    <span>{t('overstayDuration')}</span>
+                    <span className="font-bold">{t('overstayValue', { hours: overdueHours, blocks: overdueHalfHours })}</span>
                   </div>
                   <div className="flex justify-between border-t border-red-100/50 pt-1.5 mt-1.5 font-bold">
-                    <span>Total Late Fee Payable:</span>
+                    <span>{t('lateFeeTotal')}</span>
                     <span className="text-red-600">LKR {lateFeeAmount.toLocaleString()}</span>
                   </div>
                 </div>
@@ -341,10 +339,8 @@ export default async function BookingDetailPage({
             
             {/* Pay Online Button */}
             <div className="pt-1">
-              <Link href={`/pickup/${booking.id}`}>
-                <Button fullWidth className="bg-red-600 hover:bg-red-500 text-white border-none font-bold">
-                  💳 Pay Late Fee Online & Request Pickup
-                </Button>
+              <Link href={`/pickup/${booking.id}`} className={buttonClass({ variant: 'danger', fullWidth: true })}>
+                💳 {t('payLateFee')}
               </Link>
             </div>
           </div>
@@ -355,8 +351,8 @@ export default async function BookingDetailPage({
           <div className="bg-brand/5 border border-brand/20 rounded-xl md:rounded-2xl p-4 flex items-center gap-3">
             <div className="w-5 h-5 border-2 border-brand/30 border-t-brand rounded-full animate-spin shrink-0" />
             <div>
-              <p className="font-semibold text-ocean-900 text-sm leading-tight">Staff are retrieving your bags</p>
-              <p className="text-xs text-gray-500 mt-0.5">Please show your QR code at the counter.</p>
+              <p className="font-semibold text-ocean-900 text-sm leading-tight">{t('retrieving')}</p>
+              <p className="text-xs text-gray-600 mt-0.5">{t('retrievingBody')}</p>
             </div>
           </div>
         )}
@@ -372,10 +368,10 @@ export default async function BookingDetailPage({
             </div>
             <div>
               <p className="font-black text-emerald-900 text-sm tracking-tight">
-                🛡️ Luggage Protection Active
+                🛡️ {t('protectionTitle')}
               </p>
-              <p className="text-xs text-emerald-700 font-semibold mt-0.5 leading-relaxed">
-                Your bags are protected by Luggo Guarantee with comprehensive coverage up to <span className="font-extrabold text-emerald-800">{GUARANTEE_LIMIT_LABEL}</span> against loss, damage, or theft.
+              <p className="text-xs text-emerald-800 font-semibold mt-0.5 leading-relaxed">
+                {t.rich('protectionBody', { amount: GUARANTEE_LIMIT_LABEL, strong: (chunks) => <span className="font-extrabold">{chunks}</span> })}
               </p>
             </div>
           </div>
@@ -386,12 +382,12 @@ export default async function BookingDetailPage({
           <div className="bg-white rounded-3xl border border-gray-100/80 shadow-premium p-6 flex flex-col items-center gap-4 animate-pop-in">
             <div className="flex items-center gap-2 self-start pb-2 border-b border-gray-100 w-full">
               <QrCode size={16} className="text-brand" />
-              <span className="text-sm font-extrabold text-gray-800 uppercase tracking-wider">Your Entry QR</span>
+              <span className="text-sm font-extrabold text-gray-800 uppercase tracking-wider">{t('qrTitle')}</span>
             </div>
             <div className="scale-75 md:scale-100 -my-4 md:my-0 p-4 bg-gradient-to-tr from-brand/5 to-ocean-50/20 rounded-3xl border border-brand/10 shadow-inner animate-pulse-glow">
               <BookingQR qrCode={booking.qr_code} bookingId={booking.id} />
             </div>
-            <p className="text-[10px] md:text-xs text-gray-400 font-bold uppercase tracking-wider text-center">Show this at the hub desk for drop-off and collection</p>
+            <p className="text-xs text-gray-600 font-bold uppercase tracking-wider text-center">{t('qrHint')}</p>
           </div>
         )}
 
@@ -401,10 +397,10 @@ export default async function BookingDetailPage({
             <div className="flex items-center justify-between pb-2 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <ShieldCheck size={16} className="text-emerald-600" />
-                <span className="text-sm font-extrabold text-gray-800 uppercase tracking-wider">Storage Seal Proof</span>
+                <span className="text-sm font-extrabold text-gray-800 uppercase tracking-wider">{t('sealProof')}</span>
               </div>
               <span className="badge-success">
-                Sealed & Secure
+                {t('sealed')}
               </span>
             </div>
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-gray-150 bg-gray-50 flex items-center justify-center shadow-inner group">
@@ -413,12 +409,12 @@ export default async function BookingDetailPage({
                 unoptimized
                 sizes="(max-width: 768px) 100vw, 768px"
                 src={signedSealPhotoUrl}
-                alt="Luggage storage seal proof"
+                alt={t('sealPhotoAlt')}
                 className="object-cover w-full h-full group-hover:scale-[1.02] transition-transform duration-500"
               />
             </div>
-            <p className="text-[10px] md:text-xs text-gray-400 font-bold uppercase tracking-wider text-center">
-              This photo confirms that your luggage zip ties/locks are sealed and secure in our hub.
+            <p className="text-xs text-gray-600 font-bold uppercase tracking-wider text-center">
+              {t('sealPhotoHint')}
             </p>
           </div>
         )}
@@ -432,16 +428,16 @@ export default async function BookingDetailPage({
                 <MapPin size={16} />
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-gray-400 font-medium">Hub</p>
+                <p className="text-xs text-gray-500 font-medium">{t('hub')}</p>
                 <p className="text-sm font-semibold text-gray-900 truncate">{booking.hubs?.name}</p>
                 <p className="text-xs text-gray-500 truncate">{booking.hubs?.address}</p>
               </div>
             </div>
             {booking.slot_number && (
               <div className="text-right shrink-0">
-                <p className="text-[10px] text-gray-400 font-black uppercase tracking-wider">Storage Slot</p>
+                <p className="text-[11px] text-gray-500 font-black uppercase tracking-wider">{t('slot')}</p>
                 <p className="text-sm font-black text-brand bg-brand/10 border border-brand/20 px-3 py-1 rounded-xl">
-                  Slot #{booking.slot_number}
+                  #{booking.slot_number}
                 </p>
               </div>
             )}
@@ -454,12 +450,12 @@ export default async function BookingDetailPage({
             </div>
             <div className="flex-1 grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-gray-400 font-medium">Drop-off</p>
-                <p className="text-sm font-semibold text-gray-900">{formatDateTimeSLT(start)}</p>
+                <p className="text-xs text-gray-500 font-medium">{t('dropOff')}</p>
+                <p className="text-sm font-semibold text-gray-900">{formatDateTimeSLT(start, locale)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 font-medium">Pick-up</p>
-                <p className="text-sm font-semibold text-gray-900">{formatDateTimeSLT(end)}</p>
+                <p className="text-xs text-gray-500 font-medium">{t('pickUp')}</p>
+                <p className="text-sm font-semibold text-gray-900">{formatDateTimeSLT(end, locale)}</p>
               </div>
             </div>
           </div>
@@ -470,18 +466,18 @@ export default async function BookingDetailPage({
               <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center text-brand shrink-0">
                 <Package size={16} />
               </div>
-              <p className="text-sm font-semibold text-gray-700">Bags ({booking.booking_bags.length})</p>
+              <p className="text-sm font-semibold text-gray-700">{t('bags', { count: booking.booking_bags.length })}</p>
             </div>
             <div className="space-y-2 pl-12">
               {booking.booking_bags.map((bag) => (
                 <div key={bag.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0 text-sm text-gray-700">
-                  <span>{BAG_LABELS[bag.bag_type]}</span>
+                  <span>{tBags(`${bag.bag_type}.label`)}</span>
                   {bag.seal_number ? (
-                    <span className="font-mono font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg text-xs">
-                      🔒 Seal: {bag.seal_number}
+                    <span className="font-mono font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-lg text-xs">
+                      🔒 {t('seal', { number: bag.seal_number })}
                     </span>
                   ) : (
-                    <span className="text-xs text-gray-400 font-semibold italic">Unsealable</span>
+                    <span className="text-xs text-gray-500 font-semibold italic">{t('unsealed')}</span>
                   )}
                 </div>
               ))}
@@ -495,18 +491,18 @@ export default async function BookingDetailPage({
             </div>
             <div className="flex-1 flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-400 font-medium">
-                  {isCashPaymentPending ? 'Amount payable at counter' : 'Total paid'}
+                <p className="text-xs text-gray-500 font-medium">
+                  {isCashPaymentPending ? t('payableAtCounter') : t('totalPaid')}
                 </p>
                 <p className="text-sm font-bold text-gray-900">LKR {booking.total_price.toLocaleString()}</p>
               </div>
               {isCashPaymentPending ? (
-                <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-full">
-                  Pay at Hub (Cash)
+                <span className="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-full">
+                  {t('payAtHub')}
                 </span>
               ) : (
-                <span className="text-xs font-semibold text-green-700 bg-green-50 border border-green-100 px-2.5 py-1 rounded-full">
-                  Paid
+                <span className="text-xs font-semibold text-green-800 bg-green-50 border border-green-100 px-2.5 py-1 rounded-full">
+                  {t('paid')}
                 </span>
               )}
             </div>
@@ -515,11 +511,9 @@ export default async function BookingDetailPage({
 
         {/* ── Pickup CTA ── */}
         {showPickupCTA && (
-          <Link href={`/pickup/${booking.id}`}>
-            <Button fullWidth size="lg" className="mt-2">
-              <ShoppingBag size={18} />
-              Request Pickup
-            </Button>
+          <Link href={`/pickup/${booking.id}`} className={buttonClass({ fullWidth: true, size: 'lg', className: 'mt-2' })}>
+            <ShoppingBag size={18} aria-hidden="true" />
+            {t('requestPickup')}
           </Link>
         )}
 
@@ -532,9 +526,9 @@ export default async function BookingDetailPage({
         {['completed', 'active_storage', 'pickup_requested'].includes(booking.status) && (
           <Link
             href={`/booking/${booking.id}/receipt`}
-            className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-500 border border-gray-200 py-3 rounded-2xl hover:bg-gray-50 transition-colors"
+            className="flex min-h-11 items-center justify-center gap-2 text-sm font-semibold text-gray-700 border border-gray-200 py-3 rounded-2xl hover:bg-gray-50 transition-colors"
           >
-            🧾 View receipt
+            🧾 {t('viewReceipt')}
           </Link>
         )}
 
@@ -543,11 +537,11 @@ export default async function BookingDetailPage({
           <div className="pt-2">
             <form action={cancelBooking.bind(null, booking.id)}>
               <Button variant="danger" fullWidth type="submit">
-                Cancel Booking
+                {t('cancel')}
               </Button>
             </form>
-            <p className="text-[10px] md:text-xs text-gray-400 text-center mt-2">
-              Full refund within 3–5 business days before check-in
+            <p className="text-xs text-gray-600 text-center mt-2">
+              {t('refundNote')}
             </p>
           </div>
         )}
@@ -562,11 +556,9 @@ export default async function BookingDetailPage({
                  </div>
                )}
                {showPickupCTA && (
-                 <Link href={`/pickup/${booking.id}`} className="flex-1">
-                   <Button fullWidth size="lg">
-                     <ShoppingBag size={18} />
-                     Request Pickup
-                   </Button>
+                 <Link href={`/pickup/${booking.id}`} className={buttonClass({ fullWidth: true, size: 'lg', className: 'flex-1' })}>
+                   <ShoppingBag size={18} aria-hidden="true" />
+                   {t('requestPickup')}
                  </Link>
                )}
             </div>

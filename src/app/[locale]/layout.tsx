@@ -4,6 +4,7 @@ import { MotionConfig } from '@/components/shared/MotionProvider'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { siteUrl } from '@/lib/site-url'
+import { BookingPausedBanner } from '@/components/shared/BookingPausedBanner'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -62,13 +63,22 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 }
 
-export default async function RootLayout({
-  children,
-  params: { locale }
-}: {
-  children: React.ReactNode
-  params: { locale: string }
-}) {
+export default async function RootLayout(
+  props: {
+    children: React.ReactNode
+    params: Promise<{ locale: string }>
+  }
+) {
+  const params = await props.params;
+
+  const {
+    locale
+  } = params;
+
+  const {
+    children
+  } = props;
+
   const messages = await getMessages()
 
   return (
@@ -80,7 +90,8 @@ export default async function RootLayout({
       </head>
 
       <body suppressHydrationWarning>
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages} timeZone="Asia/Colombo">
+          <BookingPausedBanner />
           <MotionConfig>{children}</MotionConfig>
         </NextIntlClientProvider>
       </body>

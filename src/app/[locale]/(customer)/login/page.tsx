@@ -3,10 +3,12 @@
 import { OtpInput } from '@/components/ui/OtpInput'
 
 import { Suspense, useState, useEffect, useId } from 'react'
+import { useTranslations } from 'next-intl'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from '@/navigation'
 import { useSearchParams } from 'next/navigation'
 import { Logo } from '@/components/ui/Logo'
+import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher'
 import { createClient } from '@/lib/supabase/client'
 import { Mail, Smartphone, ArrowRight, ChevronLeft, RefreshCw } from 'lucide-react'
 
@@ -27,20 +29,28 @@ function formatPhone(raw: string): string {
 function isEmail(v: string)  { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) }
 function isPhone(v: string)  { return v.replace(/\D/g, '').length >= 9 }
 
-// ── OTP boxes ─────────────────────────────────────────────────
+const headingClass = 'text-white font-extrabold text-xl mb-1'
+const backClass = 'flex items-center gap-1 min-h-11 text-white/70 hover:text-white text-sm font-bold'
+const primaryClass = 'w-full flex items-center justify-center gap-2 bg-brand text-white font-bold py-4 rounded-2xl hover:bg-brand/90 disabled:opacity-40 transition-all'
+
+// ── Text field ────────────────────────────────────────────────
 function Field({ label, id, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   const generatedId = useId()
   const inputId = id ?? generatedId
   return (
     <div>
-      <label htmlFor={inputId} className="block text-xs font-bold text-white/60 mb-1.5 uppercase tracking-wider">{label}</label>
+      <label htmlFor={inputId} className="block text-xs font-bold text-white/70 mb-1.5 uppercase tracking-wider">{label}</label>
       <input
         {...props}
         id={inputId}
-        className="w-full bg-white/10 border border-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3.5 text-sm font-medium focus:outline-none focus:border-brand/60 focus:bg-white/15 transition-all"
+        className="w-full bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-2xl px-4 py-3.5 text-sm font-medium focus:outline-none focus:border-brand-light focus:bg-white/15 transition-all"
       />
     </div>
   )
+}
+
+function ErrorText({ children }: { children: React.ReactNode }) {
+  return <p role="alert" className="text-red-300 text-sm font-medium">{children}</p>
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -53,6 +63,7 @@ export default function LoginPage() {
 }
 
 function LoginContent() {
+  const t = useTranslations('Login')
   const searchParams = useSearchParams()
   const returnTo = searchParams.get('returnTo') || '/'
   const supabase = createClient()
@@ -60,24 +71,25 @@ function LoginContent() {
 
   return (
     <div className="min-h-screen bg-ocean-900 flex flex-col">
-      <div className="px-4 pt-safe py-4">
-        <Link href="/" className="flex items-center gap-1.5 text-white/50 hover:text-white text-sm font-bold transition-colors w-fit">
-          <ChevronLeft size={18} /> Home
+      <div className="px-4 pt-safe py-3 flex items-center justify-between gap-3">
+        <Link href="/" className="flex items-center gap-1.5 min-h-11 text-white/70 hover:text-white text-sm font-bold transition-colors w-fit">
+          <ChevronLeft size={18} /> {t('home')}
         </Link>
+        <LanguageSwitcher />
       </div>
 
-      <div className="flex-1 flex flex-col justify-center px-6 pb-16 max-w-sm mx-auto w-full">
+      <main className="flex-1 flex flex-col justify-center px-6 pb-16 max-w-sm mx-auto w-full">
         <Logo variant="white" size="lg" className="mb-8" />
 
         {/* Tab switcher */}
         <div className="flex bg-white/10 rounded-2xl p-1 mb-8">
-          {(['signin','signup'] as Tab[]).map(t => (
-            <button key={t} type="button" aria-pressed={tab === t} onClick={() => setTab(t)}
-              className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${
-                tab === t ? 'bg-white text-ocean-900 shadow-sm' : 'text-white/50 hover:text-white/80'
+          {(['signin','signup'] as Tab[]).map(value => (
+            <button key={value} type="button" aria-pressed={tab === value} onClick={() => setTab(value)}
+              className={`flex-1 min-h-11 py-2.5 text-sm font-bold rounded-xl transition-all ${
+                tab === value ? 'bg-white text-ocean-900 shadow-sm' : 'text-white/70 hover:text-white'
               }`}
             >
-              {t === 'signin' ? 'Sign in' : 'Create account'}
+              {value === 'signin' ? t('signIn') : t('createAccount')}
             </button>
           ))}
         </div>
@@ -90,11 +102,12 @@ function LoginContent() {
         </AnimatePresence>
 
         <p className="text-center text-xs text-white/70 mt-8">
-          By continuing you agree to our{' '}
-          <Link href="/terms" className="underline hover:text-white/60">Terms</Link>{' '}and{' '}
-          <Link href="/privacy" className="underline hover:text-white/60">Privacy Policy</Link>.
+          {t.rich('agree', {
+            terms: (chunks) => <Link href="/terms" className="underline hover:text-white">{chunks}</Link>,
+            privacy: (chunks) => <Link href="/privacy" className="underline hover:text-white">{chunks}</Link>,
+          })}
         </p>
-      </div>
+      </main>
     </div>
   )
 }
@@ -102,8 +115,8 @@ function LoginContent() {
 // ═══════════════════════════════════════════════════════════════
 // SIGN IN — identifier → OTP
 // ═══════════════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════════════
 function SignInFlow({ supabase, returnTo }: { supabase: ReturnType<typeof createClient>, returnTo: string }) {
+  const t = useTranslations('Login')
   const [step, setStep]           = useState<SignInStep>('identifier')
   const [identifier, setIdentifier] = useState('')
   const [method, setMethod]       = useState<Method>('email')
@@ -114,8 +127,8 @@ function SignInFlow({ supabase, returnTo }: { supabase: ReturnType<typeof create
 
   useEffect(() => {
     if (countdown <= 0) return
-    const t = setTimeout(() => setCountdown(c => c - 1), 1000)
-    return () => clearTimeout(t)
+    const timer = setTimeout(() => setCountdown(c => c - 1), 1000)
+    return () => clearTimeout(timer)
   }, [countdown])
 
   const detectedMethod: Method = isEmail(identifier) ? 'email' : 'phone'
@@ -130,7 +143,7 @@ function SignInFlow({ supabase, returnTo }: { supabase: ReturnType<typeof create
         email: identifier.trim(), options: { shouldCreateUser: false },
       })
       setLoading(false)
-      if (e) { setError(e.message?.toLowerCase().includes('user') ? 'No account found. Please create an account first.' : e.message); return }
+      if (e) { setError(e.message?.toLowerCase().includes('user') ? t('noAccount') : e.message); return }
     } else {
       const res = await fetch('/api/auth/phone/send', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -138,7 +151,7 @@ function SignInFlow({ supabase, returnTo }: { supabase: ReturnType<typeof create
       })
       const data = await res.json()
       setLoading(false)
-      if (!res.ok) { setError(data.error ?? 'Failed to send SMS.'); return }
+      if (!res.ok) { setError(data.error ?? t('smsFailed')); return }
     }
     setStep('otp'); setCountdown(60)
   }
@@ -152,7 +165,7 @@ function SignInFlow({ supabase, returnTo }: { supabase: ReturnType<typeof create
         email: identifier.trim(), token: otp, type: 'email',
       })
       setLoading(false)
-      if (e) { setError('Incorrect or expired code.'); setOtp(''); return }
+      if (e) { setError(t('badCode')); setOtp(''); return }
       window.location.href = returnTo
     } else {
       const res = await fetch('/api/auth/phone/verify', {
@@ -161,7 +174,7 @@ function SignInFlow({ supabase, returnTo }: { supabase: ReturnType<typeof create
       })
       const data = await res.json()
       setLoading(false)
-      if (!res.ok) { setError(data.error ?? 'Incorrect or expired code.'); setOtp(''); return }
+      if (!res.ok) { setError(data.error ?? t('badCode')); setOtp(''); return }
       window.location.href = returnTo
     }
   }
@@ -173,18 +186,17 @@ function SignInFlow({ supabase, returnTo }: { supabase: ReturnType<typeof create
       {step === 'identifier' ? (
         <div className="space-y-4">
           <div>
-            <p className="text-white font-extrabold text-xl mb-1">Welcome back</p>
-            <p className="text-white/50 text-sm">Enter your email or phone number.</p>
+            <h1 className={headingClass}>{t('welcomeBack')}</h1>
+            <p className="text-white/70 text-sm">{t('welcomeBackDesc')}</p>
           </div>
-          <Field label="Email or phone" type="text" autoComplete="email"
-            placeholder="you@email.com or 071 234 5678"
+          <Field label={t('emailOrPhone')} type="text" autoComplete="email"
+            placeholder={t('emailOrPhonePlaceholder')}
             value={identifier} onChange={e => setIdentifier(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && canSend && send()}
           />
-          {error && <p className="text-red-400 text-sm font-medium">{error}</p>}
-          <button onClick={send} disabled={!canSend || loading}
-            className="w-full flex items-center justify-center gap-2 bg-brand text-white font-bold py-4 rounded-2xl hover:bg-brand/90 disabled:opacity-40 transition-all">
-            {loading ? 'Sending…' : <><span>Send code</span><ArrowRight size={18}/></>}
+          {error && <ErrorText>{error}</ErrorText>}
+          <button type="button" onClick={send} disabled={!canSend || loading} className={primaryClass}>
+            {loading ? t('sending') : <><span>{t('sendCode')}</span><ArrowRight size={18}/></>}
           </button>
         </div>
       ) : (
@@ -205,8 +217,8 @@ function SignInFlow({ supabase, returnTo }: { supabase: ReturnType<typeof create
 // ═══════════════════════════════════════════════════════════════
 // SIGN UP — details → method → OTP → done
 // ═══════════════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════════════
 function SignUpFlow({ supabase, returnTo }: { supabase: ReturnType<typeof createClient>, returnTo: string }) {
+  const t = useTranslations('Login')
   const [step, setStep]       = useState<SignUpStep>('details')
   const [name, setName]       = useState('')
   const [email, setEmail]     = useState('')
@@ -220,8 +232,8 @@ function SignUpFlow({ supabase, returnTo }: { supabase: ReturnType<typeof create
 
   useEffect(() => {
     if (countdown <= 0) return
-    const t = setTimeout(() => setCountdown(c => c - 1), 1000)
-    return () => clearTimeout(t)
+    const timer = setTimeout(() => setCountdown(c => c - 1), 1000)
+    return () => clearTimeout(timer)
   }, [countdown])
 
   const detailsValid = name.trim().length >= 2 && isEmail(email) && isPhone(phone) && nic.trim().length >= 5
@@ -235,7 +247,7 @@ function SignUpFlow({ supabase, returnTo }: { supabase: ReturnType<typeof create
     const data = await res.json()
     setLoading(false)
     if (!data.canProceed) {
-      setError('We could not create an account with those details. Please sign in or try different details.')
+      setError(t('cannotCreate'))
       return
     }
     setStep('method')
@@ -258,7 +270,7 @@ function SignUpFlow({ supabase, returnTo }: { supabase: ReturnType<typeof create
       })
       const data = await res.json()
       setLoading(false)
-      if (!res.ok) { setError(data.error ?? 'Failed to send SMS.'); return }
+      if (!res.ok) { setError(data.error ?? t('smsFailed')); return }
     }
     setStep('otp'); setCountdown(60)
   }
@@ -272,7 +284,7 @@ function SignUpFlow({ supabase, returnTo }: { supabase: ReturnType<typeof create
         email: email.trim(), token: otp, type: 'email',
       })
       setLoading(false)
-      if (e) { setError('Incorrect or expired code.'); setOtp(''); return }
+      if (e) { setError(t('badCode')); setOtp(''); return }
       window.location.href = returnTo
     } else {
       const res = await fetch('/api/auth/phone/verify', {
@@ -281,7 +293,7 @@ function SignUpFlow({ supabase, returnTo }: { supabase: ReturnType<typeof create
       })
       const data = await res.json()
       setLoading(false)
-      if (!res.ok) { setError(data.error ?? 'Incorrect or expired code.'); setOtp(''); return }
+      if (!res.ok) { setError(data.error ?? t('badCode')); setOtp(''); return }
       window.location.href = returnTo
     }
   }
@@ -291,58 +303,57 @@ function SignUpFlow({ supabase, returnTo }: { supabase: ReturnType<typeof create
       {step === 'details' && (
         <div className="space-y-4">
           <div>
-            <p className="text-white font-extrabold text-xl mb-1">Create your account</p>
-            <p className="text-white/50 text-sm">Fill in your details to get started.</p>
+            <h1 className={headingClass}>{t('createTitle')}</h1>
+            <p className="text-white/70 text-sm">{t('createDesc')}</p>
           </div>
-          <Field label="Full name" type="text" autoComplete="name" placeholder="Amal Perera"
+          <Field label={t('fullName')} type="text" autoComplete="name" placeholder={t('fullNamePlaceholder')}
             value={name} onChange={e => setName(e.target.value)} />
-          <Field label="Email address" type="email" autoComplete="email" placeholder="you@email.com"
+          <Field label={t('email')} type="email" autoComplete="email" placeholder="you@email.com"
             value={email} onChange={e => setEmail(e.target.value)} />
-          <Field label="Phone number" type="tel" autoComplete="tel" placeholder="071 234 5678"
+          <Field label={t('phone')} type="tel" autoComplete="tel" placeholder="071 234 5678"
             value={phone} onChange={e => setPhone(e.target.value)} />
-          <Field label="NIC / Passport" type="text" placeholder="987654321V"
+          <Field label={t('nic')} type="text" placeholder="987654321V"
             value={nic} onChange={e => setNic(e.target.value)} />
-          {error && <p className="text-red-400 text-sm font-medium">{error}</p>}
-          <button onClick={checkAndContinue} disabled={!detailsValid || loading}
-            className="w-full flex items-center justify-center gap-2 bg-brand text-white font-bold py-4 rounded-2xl hover:bg-brand/90 disabled:opacity-40 transition-all">
-            {loading ? 'Checking…' : <><span>Continue</span><ArrowRight size={18}/></>}
+          {error && <ErrorText>{error}</ErrorText>}
+          <button type="button" onClick={checkAndContinue} disabled={!detailsValid || loading} className={primaryClass}>
+            {loading ? t('checking') : <><span>{t('continue')}</span><ArrowRight size={18}/></>}
           </button>
         </div>
       )}
 
       {step === 'method' && (
         <div className="space-y-4">
-          <button onClick={() => setStep('details')} className="flex items-center gap-1 text-white/50 hover:text-white text-sm font-bold mb-2">
-            <ChevronLeft size={16}/> Back
+          <button type="button" onClick={() => setStep('details')} className={`${backClass} mb-2`}>
+            <ChevronLeft size={16}/> {t('back')}
           </button>
           <div>
-            <p className="text-white font-extrabold text-xl mb-1">Verify your account</p>
-            <p className="text-white/50 text-sm">How would you like to receive your verification code?</p>
+            <h1 className={headingClass}>{t('verifyTitle')}</h1>
+            <p className="text-white/70 text-sm">{t('verifyDesc')}</p>
           </div>
-          <button onClick={() => send('email')} disabled={loading}
+          <button type="button" onClick={() => send('email')} disabled={loading}
             className="w-full flex items-center gap-4 bg-white/10 hover:bg-white/15 border border-white/10 hover:border-brand/40 rounded-2xl p-4 text-left transition-all disabled:opacity-50">
             <div className="h-11 w-11 rounded-xl bg-brand/20 flex items-center justify-center shrink-0">
-              <Mail size={20} className="text-brand" />
+              <Mail size={20} className="text-brand-light" />
             </div>
-            <div>
-              <p className="text-white font-bold text-sm">Via Email</p>
-              <p className="text-white/40 text-xs mt-0.5 truncate">{email}</p>
+            <div className="min-w-0">
+              <p className="text-white font-bold text-sm">{t('viaEmail')}</p>
+              <p className="text-white/70 text-xs mt-0.5 truncate">{email}</p>
             </div>
-            <ArrowRight size={16} className="text-white/30 ml-auto" />
+            <ArrowRight size={16} className="text-white/50 ml-auto" />
           </button>
-          <button onClick={() => send('phone')} disabled={loading}
+          <button type="button" onClick={() => send('phone')} disabled={loading}
             className="w-full flex items-center gap-4 bg-white/10 hover:bg-white/15 border border-white/10 hover:border-brand/40 rounded-2xl p-4 text-left transition-all disabled:opacity-50">
             <div className="h-11 w-11 rounded-xl bg-brand/20 flex items-center justify-center shrink-0">
-              <Smartphone size={20} className="text-brand" />
+              <Smartphone size={20} className="text-brand-light" />
             </div>
             <div>
-              <p className="text-white font-bold text-sm">Via SMS</p>
-              <p className="text-white/40 text-xs mt-0.5">{formatPhone(phone)}</p>
+              <p className="text-white font-bold text-sm">{t('viaSms')}</p>
+              <p className="text-white/70 text-xs mt-0.5">{formatPhone(phone)}</p>
             </div>
-            <ArrowRight size={16} className="text-white/30 ml-auto" />
+            <ArrowRight size={16} className="text-white/50 ml-auto" />
           </button>
-          {loading && <p className="text-white/50 text-sm text-center">Sending code…</p>}
-          {error && <p className="text-red-400 text-sm font-medium">{error}</p>}
+          {loading && <p role="status" className="text-white/70 text-sm text-center">{t('sending')}</p>}
+          {error && <ErrorText>{error}</ErrorText>}
         </div>
       )}
 
@@ -369,28 +380,28 @@ function OtpStep({ method, identifier, otp, setOtp, loading, error, countdown, o
   loading: boolean; error: string|null; countdown: number
   onVerify: ()=>void; onBack: ()=>void; onResend: ()=>void
 }) {
+  const t = useTranslations('Login')
   return (
     <div className="text-center space-y-6">
-      <button onClick={onBack} className="flex items-center gap-1 text-white/50 hover:text-white text-sm font-bold mx-auto">
-        <ChevronLeft size={16}/> Back
+      <button type="button" onClick={onBack} className={`${backClass} mx-auto`}>
+        <ChevronLeft size={16}/> {t('back')}
       </button>
       <div className="h-16 w-16 rounded-3xl bg-brand/20 flex items-center justify-center mx-auto">
-        {method === 'email' ? <Mail size={28} className="text-brand"/> : <Smartphone size={28} className="text-brand"/>}
+        {method === 'email' ? <Mail size={28} className="text-brand-light"/> : <Smartphone size={28} className="text-brand-light"/>}
       </div>
       <div>
-        <p className="text-white font-extrabold text-xl">Enter your code</p>
-        <p className="text-white/50 text-sm mt-1">Sent to <span className="text-white font-bold">{identifier}</span></p>
+        <h1 className={headingClass}>{t('enterCode')}</h1>
+        <p className="text-white/70 text-sm mt-1">{t.rich('sentTo', { target: () => <span className="text-white font-bold">{identifier}</span> })}</p>
       </div>
-      <OtpInput dark value={otp} onChange={setOtp} />
-      {error && <p className="text-red-400 text-sm font-medium">{error}</p>}
-      <button onClick={onVerify} disabled={otp.length < OTP_LENGTH || loading}
-        className="w-full flex items-center justify-center gap-2 bg-brand text-white font-bold py-4 rounded-2xl hover:bg-brand/90 disabled:opacity-40 transition-all">
-        {loading ? 'Verifying…' : 'Verify code'}
+      <OtpInput dark value={otp} onChange={setOtp} label={t('codeLabel')} hint={t('codeHint')} />
+      {error && <ErrorText>{error}</ErrorText>}
+      <button type="button" onClick={onVerify} disabled={otp.length < OTP_LENGTH || loading} className={primaryClass}>
+        {loading ? t('verifying') : t('verifyCode')}
       </button>
-      <button onClick={onResend} disabled={countdown > 0 || loading}
-        className="flex items-center justify-center gap-1.5 mx-auto text-sm font-bold text-white/40 hover:text-white/70 disabled:opacity-40 transition-colors">
+      <button type="button" onClick={onResend} disabled={countdown > 0 || loading}
+        className="flex items-center justify-center gap-1.5 mx-auto min-h-11 px-3 text-sm font-bold text-white/70 hover:text-white disabled:opacity-50 transition-colors">
         <RefreshCw size={13}/>
-        {countdown > 0 ? `Resend in ${countdown}s` : 'Resend code'}
+        {countdown > 0 ? t('resendIn', { seconds: countdown }) : t('resend')}
       </button>
     </div>
   )

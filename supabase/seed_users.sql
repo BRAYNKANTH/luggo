@@ -1,8 +1,8 @@
 -- LUGGO TEST ACCOUNTS SEED
 -- ============================================================
 -- Instructions: Run this in your Supabase SQL Editor.
--- 1. Master Admin (admin@luggo.lk / password123)
--- 2. Hub Staff (staff@luggo.lk / password123) -> Linked to BIA
+-- 1. Master Admin (admin@luggo.lk, random password: use password recovery)
+-- 2. Hub Staff (staff@luggo.lk, random password: use password recovery) -> Linked to BIA
 -- ============================================================
 
 DO $$
@@ -20,7 +20,7 @@ BEGIN
     VALUES (
         admin_id,
         'admin@luggo.lk',
-        crypt('password123', gen_salt('bf')),
+        crypt(gen_random_uuid()::text, gen_salt('bf')), -- random: set a real password via reset email
         now(),
         '{"provider":"email","providers":["email"]}',
         '{"name":"Master Admin"}',
@@ -40,7 +40,7 @@ BEGIN
     VALUES (
         staff_id,
         'staff@luggo.lk',
-        crypt('password123', gen_salt('bf')),
+        crypt(gen_random_uuid()::text, gen_salt('bf')), -- random: set a real password via reset email
         now(),
         '{"provider":"email","providers":["email"]}',
         '{"name":"Hub Staff"}',

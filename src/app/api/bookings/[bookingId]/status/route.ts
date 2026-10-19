@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-export async function GET(
-  _req: Request,
-  { params }: { params: { bookingId: string } }
-) {
+export async function GET(_req: Request, props: { params: Promise<{ bookingId: string }> }) {
+  const params = await props.params;
   const supabase = await createClient()
   const {
     data: { user },

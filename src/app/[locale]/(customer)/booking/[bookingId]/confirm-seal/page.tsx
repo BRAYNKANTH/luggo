@@ -7,14 +7,18 @@ import { Logo } from '@/components/ui/Logo'
 import { SealConfirmForm } from '@/components/customer/SealConfirmForm'
 import { BAG_LABELS } from '@/lib/utils/pricing'
 import { type BagType } from '@/types/database'
+import { titleMetadata } from '@/lib/i18n/metadata'
+
+export const generateMetadata = titleMetadata('confirmSeal')
 
 type Bag = { id: string; bag_type: BagType; sticker_number: string | null; hub_alias: string | null; seal_status: string; seal_number: string | null }
 
-export default async function ConfirmSealPage({
-  params,
-}: {
-  params: { bookingId: string }
-}) {
+export default async function ConfirmSealPage(
+  props: {
+    params: Promise<{ bookingId: string }>
+  }
+) {
+  const params = await props.params;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -73,7 +77,7 @@ export default async function ConfirmSealPage({
         <div className="flex items-center gap-3 px-4 py-3">
           <Link
             href={`/booking/${params.bookingId}`}
-            className="text-gray-400 hover:text-ocean-900 transition-colors"
+            className="text-gray-500 hover:text-ocean-900 transition-colors"
           >
             <ChevronLeft size={20} />
           </Link>
@@ -113,7 +117,7 @@ export default async function ConfirmSealPage({
                 <div key={bag.id} className="py-4 first:pt-0 last:pb-0 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-[10px] font-black uppercase text-brand tracking-wider">Bag #{i + 1}</p>
+                      <p className="text-[11px] font-black uppercase text-brand tracking-wider">Bag #{i + 1}</p>
                       <p className="text-sm font-bold text-gray-900">{BAG_LABELS[bag.bag_type]}</p>
                       {isSealed && (
                         <p className="text-xs font-semibold text-amber-600 mt-0.5">🔒 Seal: {bag.seal_number || 'Pending'}</p>
@@ -124,7 +128,7 @@ export default async function ConfirmSealPage({
                         {bag.hub_alias ?? booking.hubs?.alias}-{bag.sticker_number}
                       </span>
                     ) : (
-                      <span className="text-xs text-gray-400 font-bold">No sticker</span>
+                      <span className="text-xs text-gray-500 font-bold">No sticker</span>
                     )}
                   </div>
                   {isSealed && photoUrl && (
@@ -141,7 +145,7 @@ export default async function ConfirmSealPage({
                   )}
                   {isSealed && !photoUrl && (
                     <div className="h-28 rounded-2xl flex items-center justify-center bg-gray-50 border border-dashed border-gray-200">
-                      <p className="text-xs text-gray-400 italic">No seal photo uploaded</p>
+                      <p className="text-xs text-gray-500 italic">No seal photo uploaded</p>
                     </div>
                   )}
                 </div>

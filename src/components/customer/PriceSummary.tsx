@@ -31,7 +31,7 @@ export function PriceSummary({ bags, startTime, endTime, className, lateFee = 0,
   if (bagLines.length === 0 || hours <= 0) {
     return (
       <div className={cn('bg-white p-8 rounded-[3rem] border border-gray-100 text-center shadow-sm', className)}>
-        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest italic">Awaiting Selection to Calculate Quote</p>
+        <p className="text-[11px] text-gray-500 font-black uppercase tracking-widest italic">Awaiting Selection to Calculate Quote</p>
       </div>
     )
   }
@@ -49,7 +49,7 @@ export function PriceSummary({ bags, startTime, endTime, className, lateFee = 0,
          </div>
          <div className="bg-white/5 px-4 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
             <Clock size={12} className="text-brand-light" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-white/70">{hours} HRS Storage</span>
+            <span className="text-[11px] font-black uppercase tracking-widest text-white/70">{hours} HRS Storage</span>
          </div>
       </div>
 
@@ -80,7 +80,7 @@ export function PriceSummary({ bags, startTime, endTime, className, lateFee = 0,
 
         <div className="pt-8 mt-4 border-t border-white/10 flex justify-between items-end">
            <div className="space-y-1">
-              <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.3em] leading-none">Guaranteed Total</p>
+              <p className="text-[11px] text-white/30 font-black uppercase tracking-[0.3em] leading-none">Guaranteed Total</p>
               <p className="text-xs text-brand-light font-black uppercase tracking-widest">Post-Tax Inclusion</p>
            </div>
            <div className="text-right">
@@ -93,12 +93,12 @@ export function PriceSummary({ bags, startTime, endTime, className, lateFee = 0,
       </div>
 
       <div className="pt-6 relative z-10 flex items-center justify-center gap-4 border-t border-white/5">
-         <div className="flex items-center gap-2 text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">
+         <div className="flex items-center gap-2 text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">
             <ShieldCheck size={12} className="text-brand/50" />
             End-to-End Encrypted
          </div>
          <div className="w-1 h-1 bg-white/10 rounded-full" />
-         <div className="flex items-center gap-2 text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">
+         <div className="flex items-center gap-2 text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">
             <Tag size={12} className="text-brand/50" />
             Voucher Eligible
          </div>

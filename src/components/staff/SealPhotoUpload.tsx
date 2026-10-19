@@ -178,7 +178,7 @@ export function SealPhotoUpload({ bookingId, bags }: SealPhotoUploadProps) {
             <div key={bag.id} className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4 relative">
               <div className="flex justify-between items-start">
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-brand-light">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-brand-light">
                     Bag #{i + 1}
                   </span>
                   <p className="font-bold text-sm text-white">
@@ -196,7 +196,7 @@ export function SealPhotoUpload({ bookingId, bags }: SealPhotoUploadProps) {
                 </div>
 
                 {isSealed && photoPath && (
-                  <span className="flex items-center gap-1 text-[10px] font-black uppercase text-green-400 bg-green-400/10 px-2 py-1 rounded-lg">
+                  <span className="flex items-center gap-1 text-[11px] font-black uppercase text-green-400 bg-green-400/10 px-2 py-1 rounded-lg">
                     <CheckCircle size={12} /> Uploaded
                   </span>
                 )}
@@ -234,7 +234,7 @@ export function SealPhotoUpload({ bookingId, bags }: SealPhotoUploadProps) {
                         <button
                           type="button"
                           onClick={() => handlePickPhoto(bag.id)}
-                          className="text-[10px] text-brand hover:underline font-extrabold"
+                          className="text-[11px] text-brand hover:underline font-extrabold"
                         >
                           Retake photo
                         </button>
@@ -280,7 +280,7 @@ export function SealPhotoUpload({ bookingId, bags }: SealPhotoUploadProps) {
           {loading ? <Spinner size="sm" /> : '✓ Finalize Check-In & Move to Storage'}
         </Button>
         {!allUploaded && (
-          <p className="text-center text-[10px] text-white/30 font-bold uppercase tracking-wider mt-2.5">
+          <p className="text-center text-[11px] text-white/30 font-bold uppercase tracking-wider mt-2.5">
             * All physical zip-locks must be photographed before checkout complete
           </p>
         )}

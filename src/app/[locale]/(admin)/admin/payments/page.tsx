@@ -17,11 +17,12 @@ const STATUS_COLOUR: Record<string, string> = {
   refunded: 'bg-gray-100 text-gray-500',
 }
 
-export default async function AdminPaymentsPage({
-  searchParams,
-}: {
-  searchParams: { type?: string; status?: string; page?: string }
-}) {
+export default async function AdminPaymentsPage(
+  props: {
+    searchParams: Promise<{ type?: string; status?: string; page?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/admin/login')
@@ -77,7 +78,7 @@ export default async function AdminPaymentsPage({
     <AdminShell userName={profile?.name ?? '—'} userRole={profile?.role ?? 'admin'}>
       <div className="px-6 py-8 max-w-6xl mx-auto">
         <h1 className="text-2xl font-extrabold text-ocean-900 mb-1">Payments</h1>
-        <p className="text-sm text-gray-400 mb-6">{count ?? 0} total</p>
+        <p className="text-sm text-gray-500 mb-6">{count ?? 0} total</p>
 
         {/* Filters */}
         <div className="flex flex-wrap gap-2 mb-6">
@@ -115,24 +116,24 @@ export default async function AdminPaymentsPage({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-50 bg-gray-50/50">
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Date</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Customer</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Hub</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Type</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Status</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Ref</th>
-                  <th className="text-right px-5 py-3 text-xs font-semibold text-gray-400">Amount</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Date</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Customer</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Hub</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Type</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Status</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Ref</th>
+                  <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500">Amount</th>
                 </tr>
               </thead>
               <tbody>
                 {payments?.map((p) => (
                   <tr key={p.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
-                    <td className="px-5 py-3 text-xs text-gray-400">
+                    <td className="px-5 py-3 text-xs text-gray-500">
                       {format(new Date(p.created_at), 'dd MMM yy, h:mm a')}
                     </td>
                     <td className="px-5 py-3">
                       <p className="font-medium text-ocean-900">{p.bookings?.users?.name ?? '—'}</p>
-                      <p className="text-xs text-gray-400">{p.bookings?.users?.email}</p>
+                      <p className="text-xs text-gray-500">{p.bookings?.users?.email}</p>
                     </td>
                     <td className="px-5 py-3 text-gray-500 text-xs">{p.bookings?.hubs?.name ?? '—'}</td>
                     <td className="px-5 py-3">
@@ -147,7 +148,7 @@ export default async function AdminPaymentsPage({
                         {p.status}
                       </span>
                     </td>
-                    <td className="px-5 py-3 font-mono text-xs text-gray-400">
+                    <td className="px-5 py-3 font-mono text-xs text-gray-500">
                       {p.gateway_ref ?? '—'}
                     </td>
                     <td className="px-5 py-3 text-right font-bold text-ocean-900">
@@ -157,7 +158,7 @@ export default async function AdminPaymentsPage({
                 ))}
                 {!payments?.length && (
                   <tr>
-                    <td colSpan={7} className="px-5 py-10 text-center text-gray-400 text-sm">
+                    <td colSpan={7} className="px-5 py-10 text-center text-gray-500 text-sm">
                       No payments found.
                     </td>
                   </tr>
@@ -168,7 +169,7 @@ export default async function AdminPaymentsPage({
 
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-5 py-3 border-t border-gray-50">
-              <p className="text-xs text-gray-400">Page {page} of {totalPages}</p>
+              <p className="text-xs text-gray-500">Page {page} of {totalPages}</p>
               <div className="flex gap-2">
                 {page > 1 && (
                   <Link href={buildUrl({ page: String(page - 1) })} className="text-xs px-3 py-1.5 rounded-xl border border-gray-200 hover:bg-gray-50">

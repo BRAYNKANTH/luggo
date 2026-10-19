@@ -50,7 +50,7 @@ export function UserRoleSelector({ userId, currentRole, disabled = false }: Prop
         disabled={disabled || isPending}
         className={`text-xs font-semibold px-2 py-1.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-brand/30 bg-white ${
           disabled
-            ? 'border-gray-100 text-gray-400 bg-gray-50/50 cursor-not-allowed'
+            ? 'border-gray-100 text-gray-500 bg-gray-50/50 cursor-not-allowed'
             : 'border-gray-200 text-ocean-900 hover:border-gray-300'
         }`}
       >
@@ -61,7 +61,7 @@ export function UserRoleSelector({ userId, currentRole, disabled = false }: Prop
         ))}
       </select>
       {error && (
-        <span className="text-[10px] text-red-500 font-medium flex items-center gap-1">
+        <span className="text-[11px] text-red-500 font-medium flex items-center gap-1">
           <AlertCircle size={10} /> {error}
         </span>
       )}

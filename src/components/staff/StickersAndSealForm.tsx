@@ -100,7 +100,7 @@ export function StickersAndSealForm({ bookingId, bags, hubAlias }: Props) {
                     <p className="text-sm font-semibold text-white">
                       {BAG_LABELS[bag.bag_type]}
                     </p>
-                    <p className="text-[10px] text-white/40">Apply sticker & unique zipper seal</p>
+                    <p className="text-[11px] text-white/40">Apply sticker & unique zipper seal</p>
                   </div>
                 </div>
 
@@ -130,7 +130,7 @@ export function StickersAndSealForm({ bookingId, bags, hubAlias }: Props) {
                                focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent"
                   />
                   {sealVal && (
-                    <span className="absolute right-3 top-3.5 text-[10px] text-emerald-400 font-bold uppercase flex items-center gap-1">
+                    <span className="absolute right-3 top-3.5 text-[11px] text-emerald-400 font-bold uppercase flex items-center gap-1">
                       ✓ Scanned
                     </span>
                   )}
@@ -151,7 +151,7 @@ export function StickersAndSealForm({ bookingId, bags, hubAlias }: Props) {
 
       {/* Checklist instructions */}
       <div className="bg-white/5 rounded-2xl p-4 space-y-2 text-xs text-white/60">
-        <p className="font-bold text-white/80 uppercase tracking-widest text-[10px] mb-2">Checklist before proceeding</p>
+        <p className="font-bold text-white/80 uppercase tracking-widest text-[11px] mb-2">Checklist before proceeding</p>
         {[
           'Pre-assigned sticker is firmly pasted on each bag.',
           'Unique physical security seal is locked on zippers.',

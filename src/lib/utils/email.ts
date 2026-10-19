@@ -1,11 +1,12 @@
-'use server'
-
 /**
  * Gmail SMTP email utility via Nodemailer.
  *
  * Env vars required:
  *   EMAIL_USER  — Gmail address (e.g. brayn.kanth5@gmail.com)
  *   EMAIL_PASS  — Gmail App Password (16-char, spaces OK)
+ *
+ * Server-only helper. Do NOT add 'use server': that would expose sendEmail as a
+ * public server action anyone could call to send mail from the Luggo account.
  */
 
 import nodemailer from 'nodemailer'
@@ -40,10 +41,20 @@ export async function sendEmail(options: {
       html: options.html,
       text: options.text,
     })
-    console.log('Email sent to', options.to)
+    console.log('Email sent:', options.subject)
   } catch (err) {
     console.error('Email send error:', err)
   }
+}
+
+// Customer-controlled values (names, hub text) must never be interpreted as HTML.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 // ---------------------------------------------------------------------------
@@ -142,8 +153,8 @@ export async function sendBookingConfirmedEmail(
           <tr>
             <td style="padding: 10px 0; color: #6b7280; font-weight: 500; border-bottom: 1px solid #f3f4f6; vertical-align: top;">Location</td>
             <td style="padding: 10px 0 10px 16px; font-weight: 700; color: #111827; border-bottom: 1px solid #f3f4f6; text-align: right;">
-              ${hubName}<br/>
-              <span style="font-weight: 400; color: #9ca3af; font-size: 12px;">${details.address}</span>
+              ${escapeHtml(hubName)}<br/>
+              <span style="font-weight: 400; color: #9ca3af; font-size: 12px;">${escapeHtml(details.address)}</span>
             </td>
           </tr>` : ''}
         ${details.startTime ? `
@@ -173,8 +184,8 @@ export async function sendBookingConfirmedEmail(
   ` : ''
 
   const contentHtml = `
-    <p style="margin-top: 0;">Hi <strong>${name}</strong>,</p>
-    <p>Your luggage storage space at <strong>${hubName}</strong> has been successfully booked and secured. We look forward to welcoming you.</p>
+    <p style="margin-top: 0;">Hi <strong>${escapeHtml(name)}</strong>,</p>
+    <p>Your luggage storage space at <strong>${escapeHtml(hubName)}</strong> has been successfully booked and secured. We look forward to welcoming you.</p>
     ${detailsHtml}
     ${qrHtml}
     <div style="background-color: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 14px; margin: 18px 0; font-size: 13px; color: #0369a1; text-align: center; font-weight: 500;">
@@ -205,8 +216,8 @@ export async function sendPickupRequestedEmail(
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
   
   const contentHtml = `
-    <p style="margin-top: 0;">Hi <strong>${name}</strong>,</p>
-    <p>We have successfully received your pickup request for your luggage at <strong>${hubName}</strong>.</p>
+    <p style="margin-top: 0;">Hi <strong>${escapeHtml(name)}</strong>,</p>
+    <p>We have successfully received your pickup request for your luggage at <strong>${escapeHtml(hubName)}</strong>.</p>
     <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; margin: 20px 0; text-align: center;">
       <p style="margin: 0; color: #111827; font-weight: 700; font-size: 15px;">🎒 Preparing Your Bags</p>
       <p style="margin: 6px 0 0 0; color: #6b7280; font-size: 13px;">Our hub staff are preparing your luggage for retrieval. Please present your entry QR code at the counter desk.</p>
@@ -237,14 +248,14 @@ export async function sendLateFeeReceiptEmail(
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
   const contentHtml = `
-    <p style="margin-top: 0;">Hi <strong>${name}</strong>,</p>
-    <p>This email confirms that we have received your late storage fee payment for your booking at <strong>${hubName}</strong>.</p>
+    <p style="margin-top: 0;">Hi <strong>${escapeHtml(name)}</strong>,</p>
+    <p>This email confirms that we have received your late storage fee payment for your booking at <strong>${escapeHtml(hubName)}</strong>.</p>
     
     <div style="background-color: #f9fafb; border: 1px solid #f3f4f6; border-radius: 16px; padding: 20px; margin: 20px 0;">
       <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
         <tr>
           <td style="padding: 10px 0; color: #6b7280; font-weight: 500; border-bottom: 1px solid #f3f4f6;">Location</td>
-          <td style="padding: 10px 0 10px 16px; font-weight: 700; color: #111827; border-bottom: 1px solid #f3f4f6; text-align: right;">${hubName}</td>
+          <td style="padding: 10px 0 10px 16px; font-weight: 700; color: #111827; border-bottom: 1px solid #f3f4f6; text-align: right;">${escapeHtml(hubName)}</td>
         </tr>
         <tr>
           <td style="padding: 10px 0; color: #6b7280; font-weight: 500; border-bottom: 1px solid #f3f4f6;">Payment Type</td>
@@ -283,8 +294,8 @@ export async function sendOverstayedAlertEmail(
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
   
   const contentHtml = `
-    <p style="margin-top: 0;">Hi <strong>${name}</strong>,</p>
-    <p>Your luggage storage at <strong>${hubName}</strong> has passed its scheduled check-out time.</p>
+    <p style="margin-top: 0;">Hi <strong>${escapeHtml(name)}</strong>,</p>
+    <p>Your luggage storage at <strong>${escapeHtml(hubName)}</strong> has passed its scheduled check-out time.</p>
     <div style="background-color: #fef2f2; border: 1px solid #fca5a5; border-radius: 16px; padding: 20px; margin: 20px 0; text-align: center;">
       <p style="margin: 0; color: #b91c1c; font-weight: 700; font-size: 15px;">⚠️ Storage Period Ended</p>
       <p style="margin: 6px 0 0 0; color: #7f1d1d; font-size: 13px;">Late storage fees are now accruing. Please collect your bags as soon as possible to avoid further charges.</p>
@@ -317,8 +328,8 @@ export async function sendPickupReminderEmail(
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
   const contentHtml = `
-    <p style="margin-top: 0;">Hi <strong>${name}</strong>,</p>
-    <p>This is a friendly reminder that your luggage storage at <strong>${hubName}</strong> ends at <strong>${endFormatted}</strong> (in approximately <strong>${minutesLeft} minutes</strong>).</p>
+    <p style="margin-top: 0;">Hi <strong>${escapeHtml(name)}</strong>,</p>
+    <p>This is a friendly reminder that your luggage storage at <strong>${escapeHtml(hubName)}</strong> ends at <strong>${endFormatted}</strong> (in approximately <strong>${minutesLeft} minutes</strong>).</p>
     <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 16px; padding: 20px; margin: 20px 0; text-align: center;">
       <p style="margin: 0; color: #b45309; font-weight: 700; font-size: 15px;">⏰ Pickup Reminder</p>
       <p style="margin: 6px 0 0 0; color: #78350f; font-size: 13px;">Please make your way to the hub counter to collect your bags on time and prevent any overstay charges.</p>

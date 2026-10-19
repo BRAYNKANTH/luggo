@@ -1,34 +1,10 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
-import { createServiceClient } from '@/lib/supabase/service'
-import { type ComplaintStatus, type UserRole } from '@/types/database'
+import { type BookingStatus, type ComplaintStatus, type UserRole } from '@/types/database'
 import { uuidSchema, capacitySchema } from '@/lib/validators/common'
+import { requireAdmin } from '@/lib/admin/guard'
 import { z } from 'zod'
-
-// ---------------------------------------------------------------------------
-// Guard: caller must be an admin role
-// ---------------------------------------------------------------------------
-export async function requireAdmin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { supabase: null, error: 'Not authenticated' }
-
-  const { data } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single() as { data: { role: UserRole } | null; error: unknown }
-
-  const adminRoles: UserRole[] = ['support_admin', 'ops_admin', 'master_admin']
-  if (!data || !adminRoles.includes(data.role)) {
-    return { supabase: null, error: 'Forbidden' }
-  }
-
-  const svc = createServiceClient()
-  return { supabase, svc, userId: user.id, role: data.role, error: null }
-}
 
 // ---------------------------------------------------------------------------
 // Complaints
@@ -249,12 +225,20 @@ export async function deleteNearbyPlace(placeId: string): Promise<{ error?: stri
 // ---------------------------------------------------------------------------
 // Bookings — admin override
 // ---------------------------------------------------------------------------
+const BOOKING_STATUSES: BookingStatus[] = [
+  'pending_payment', 'confirmed', 'early_checkin_pending_payment', 'arrived', 'identity_verified',
+  'sealing_in_progress', 'sealed_waiting_user_confirmation', 'active_storage', 'pickup_requested',
+  'overstayed', 'late_fee_pending', 'ready_for_release', 'completed', 'cancelled', 'expired',
+  'disputed', 'exception_hold',
+]
+
 export async function adminUpdateBookingStatus(
   bookingId: string,
   status: string
 ): Promise<{ error?: string }> {
   const validId = uuidSchema.safeParse(bookingId)
   if (!validId.success) return { error: validId.error.issues[0].message }
+  if (!BOOKING_STATUSES.includes(status as BookingStatus)) return { error: 'Invalid status' }
 
   const { svc, userId, role, error: authError } = await requireAdmin()
   if (authError || !svc) return { error: authError ?? 'Auth error' }
@@ -488,6 +472,10 @@ export async function updateUserRole(
 ): Promise<{ error?: string; success?: boolean }> {
   const { svc, userId, role: adminRole, error: authError } = await requireAdmin()
   if (authError || !svc) return { error: authError ?? 'Auth error' }
+  if (adminRole !== 'master_admin') return { error: 'Only a master admin can change user roles.' }
+
+  const validId = uuidSchema.safeParse(targetUserId)
+  if (!validId.success) return { error: validId.error.issues[0].message }
 
   // Prevent self-demotion/self-modification
   if (targetUserId === userId) {
@@ -506,6 +494,15 @@ export async function updateUserRole(
 
   if (updateError) {
     return { error: updateError.message }
+  }
+
+  // A demoted staff member must lose hub access immediately, not just the staff UI.
+  if (newRole !== 'hub_staff') {
+    const { error: staffError } = await svc
+      .from('hub_staff' as never)
+      .update({ active: false })
+      .eq('user_id', targetUserId)
+    if (staffError) return { error: 'Role updated, but failed to remove hub access. Deactivate it from the Staff page.' }
   }
 
   // Audit log

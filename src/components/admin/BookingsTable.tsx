@@ -12,8 +12,8 @@ const STATUS_COLOUR: Record<string, string> = {
   active_storage:                   'bg-brand/10 text-brand',
   pickup_requested:                 'bg-cyan-100 text-cyan-700',
   completed:                        'bg-green-100 text-green-700',
-  cancelled:                        'bg-gray-100 text-gray-400',
-  expired:                          'bg-gray-100 text-gray-400',
+  cancelled:                        'bg-gray-100 text-gray-500',
+  expired:                          'bg-gray-100 text-gray-500',
   overstayed:                       'bg-red-100 text-red-600',
   disputed:                         'bg-orange-100 text-orange-600',
 }
@@ -56,12 +56,12 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
               key={b.id}
               className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50"
             >
-              <td className="px-5 py-3 font-mono text-xs text-gray-400">
+              <td className="px-5 py-3 font-mono text-xs text-gray-500">
                 <Link href={`/admin/bookings/${b.id}`} aria-label={`View booking ${b.id.slice(0, 8).toUpperCase()}`} className="inline-flex min-h-11 items-center text-ocean-600 underline underline-offset-4">#{b.id.slice(0, 8).toUpperCase()}</Link>
               </td>
               <td className="px-5 py-3">
                 <p className="font-medium text-ocean-900">{b.users?.name ?? '—'}</p>
-                <p className="text-xs text-gray-400">{b.users?.email}</p>
+                <p className="text-xs text-gray-500">{b.users?.email}</p>
               </td>
               <td className="px-5 py-3 text-gray-600">{b.hubs?.name ?? '—'}</td>
               <td className="px-5 py-3">
@@ -74,7 +74,7 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
               </td>
               <td className="px-5 py-3 text-xs text-gray-500">
                 <p>{formatDateTimeSLT(b.start_time)}</p>
-                <p className="text-gray-400">→ {formatDateTimeSLT(b.end_time)}</p>
+                <p className="text-gray-500">→ {formatDateTimeSLT(b.end_time)}</p>
               </td>
               <td className="px-5 py-3 text-right font-semibold text-ocean-900">
                 LKR {b.total_price.toLocaleString()}
@@ -83,7 +83,7 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
           ))}
           {!bookings?.length && (
             <tr>
-              <td colSpan={7} className="px-5 py-10 text-center text-gray-400 text-sm">
+              <td colSpan={7} className="px-5 py-10 text-center text-gray-500 text-sm">
                 No bookings found.
               </td>
             </tr>

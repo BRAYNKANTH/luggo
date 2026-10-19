@@ -9,11 +9,12 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Seal Bags — Staff' }
 
-export default async function StaffSealPage({
-  params,
-}: {
-  params: { bookingId: string }
-}) {
+export default async function StaffSealPage(
+  props: {
+    params: Promise<{ bookingId: string }>
+  }
+) {
+  const params = await props.params;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/staff/login')

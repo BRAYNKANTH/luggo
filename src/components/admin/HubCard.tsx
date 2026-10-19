@@ -62,7 +62,7 @@ export function HubCard({ hub, bags }: HubCardProps) {
             </span>
           </div>
 
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400 mb-4">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-4">
             <span className="flex items-center gap-1">
               <MapPin size={11} />
               {hub.address} ({hub.location})
@@ -76,7 +76,7 @@ export function HubCard({ hub, bags }: HubCardProps) {
               Capacity {hub.capacity} bags
             </span>
             {hub.latitude != null && hub.longitude != null && (
-              <span className="flex items-center gap-1 font-mono text-[10px]">
+              <span className="flex items-center gap-1 font-mono text-[11px]">
                 <Globe size={11} />
                 {hub.latitude.toFixed(4)}, {hub.longitude.toFixed(4)}
               </span>
@@ -107,14 +107,14 @@ export function HubCard({ hub, bags }: HubCardProps) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsEditing(true)}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-ocean-900 hover:bg-gray-100 transition-colors"
+              className="p-1.5 rounded-lg text-gray-500 hover:text-ocean-900 hover:bg-gray-100 transition-colors"
               title="Edit Hub Details"
             >
               <Edit2 size={14} />
             </button>
             <HubToggle hubId={hub.id} initialActive={hub.active} />
           </div>
-          <span className="text-[10px] uppercase font-bold text-gray-400">
+          <span className="text-[11px] uppercase font-bold text-gray-500">
             {hub.active ? 'Active' : 'Inactive'}
           </span>
         </div>
@@ -122,7 +122,7 @@ export function HubCard({ hub, bags }: HubCardProps) {
 
       {/* Image upload */}
       <div className="border-t border-gray-50 mt-4 pt-4">
-        <p className="text-[10px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">Hub Photo</p>
+        <p className="text-[11px] font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Hub Photo</p>
         <HubImageUpload
           hubId={hub.id}
           hubName={hub.name}

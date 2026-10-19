@@ -421,6 +421,8 @@ begin
   values (p_actor_id, p_actor_role, p_action, p_entity, p_entity_id, p_metadata);
 end;
 $$;
+revoke all on function public.write_audit_log(uuid, user_role, text, text, uuid, jsonb) from public, anon, authenticated;
+grant execute on function public.write_audit_log(uuid, user_role, text, text, uuid, jsonb) to service_role;
 
 -- =============================================================
 -- HELPER: calculate late fee for a booking
@@ -614,7 +616,8 @@ create policy "users: update own row" on public.users
   for update using (id = auth.uid()) with check (id = auth.uid());
 
 revoke update on public.users from authenticated;
-grant update (name, phone, nic_passport) on public.users to authenticated;
+-- phone is set only by the service role after SMS verification.
+grant update (name, nic_passport) on public.users to authenticated;
 
 create policy "users: admins see all" on public.users
   for select using (public.is_admin());
@@ -692,8 +695,9 @@ create policy "bookings: admins full access" on public.bookings
 -- ----------------------------
 -- booking_bags RLS
 -- ----------------------------
-create policy "booking_bags: via own booking" on public.booking_bags
-  for all using (
+-- Read-only for customers: bags are written by the booking RPC and staff actions.
+create policy "booking_bags: owner read" on public.booking_bags
+  for select using (
     exists (
       select 1 from public.bookings b
       where b.id = booking_id and b.user_id = auth.uid()
@@ -776,6 +780,9 @@ create policy "seal_proofs: owner confirm" on public.seal_proofs
       where b.id = booking_id and b.user_id = auth.uid()
     )
   );
+
+revoke update on public.seal_proofs from authenticated;
+grant update (confirmed_by_user_at) on public.seal_proofs to authenticated;
 
 -- ----------------------------
 -- payments RLS

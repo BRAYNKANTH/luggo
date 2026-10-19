@@ -57,13 +57,13 @@ export default async function AdminStickersPage() {
         <div className="flex items-start justify-between mb-8">
           <div>
             <h1 className="text-2xl font-extrabold text-ocean-900 mb-1">Sticker Batches</h1>
-            <p className="text-sm text-gray-400">{batches?.length ?? 0} batches registered</p>
+            <p className="text-sm text-gray-500">{batches?.length ?? 0} batches registered</p>
           </div>
           <StickerBatchForm hubs={hubs ?? []} />
         </div>
 
         {Object.entries(batchesByHub).length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 px-5 py-12 text-center text-gray-400 text-sm">
+          <div className="bg-white rounded-2xl border border-gray-100 px-5 py-12 text-center text-gray-500 text-sm">
             No sticker batches yet. Add one above.
           </div>
         ) : (
@@ -75,10 +75,10 @@ export default async function AdminStickersPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-50 bg-gray-50/50">
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Prefix</th>
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Range</th>
-                        <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400">Count</th>
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Created</th>
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Prefix</th>
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Range</th>
+                        <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500">Count</th>
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Created</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -98,7 +98,7 @@ export default async function AdminStickersPage() {
                               {b.to_number - b.from_number + 1}
                             </span>
                           </td>
-                          <td className="px-5 py-3 text-xs text-gray-400">
+                          <td className="px-5 py-3 text-xs text-gray-500">
                             {format(new Date(b.created_at), 'dd MMM yyyy')}
                           </td>
                         </tr>

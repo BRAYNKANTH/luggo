@@ -74,7 +74,7 @@ export function LiveStorageCountdown({ endTime, status }: Props) {
         <Clock size={20} className="shrink-0 text-brand-light animate-spin-slow" />
       )}
       <div>
-        <p className="text-[10px] text-white/40 uppercase tracking-widest font-black">Storage Timer</p>
+        <p className="text-[11px] text-white/40 uppercase tracking-widest font-black">Storage Timer</p>
         <p className="font-mono text-sm font-extrabold tracking-wider mt-0.5">{timeLeft}</p>
       </div>
     </div>

@@ -24,7 +24,7 @@ export function PickupRequest({ bookingId, lateFee }: PickupRequestProps) {
       <div className="space-y-6">
         <div className="text-center space-y-2">
            <h3 className="text-xl font-black text-ocean-900 tracking-tight">Ready for Collection?</h3>
-           <p className="text-xs text-gray-400 font-bold uppercase tracking-widest leading-none">Standard storage session complete</p>
+           <p className="text-xs text-gray-500 font-bold uppercase tracking-widest leading-none">Standard storage session complete</p>
         </div>
         
         <form action={requestPickupAction.bind(null, bookingId)}>
@@ -44,7 +44,7 @@ export function PickupRequest({ bookingId, lateFee }: PickupRequestProps) {
           </Button>
         </form>
         
-        <div className="flex items-center justify-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 py-2.5 rounded-2xl border border-emerald-100">
+        <div className="flex items-center justify-center gap-2 text-[11px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 py-2.5 rounded-2xl border border-emerald-100">
            <ShieldCheck size={14} /> Full Security Clearance Granted
         </div>
       </div>
@@ -102,7 +102,7 @@ export function PickupRequest({ bookingId, lateFee }: PickupRequestProps) {
             <div className="w-8 h-8 rounded-full bg-white border border-gray-100 flex items-center justify-center text-brand">
                <ShieldCheck size={16} />
             </div>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none">Secure PayHere Gateway</p>
+            <p className="text-[11px] text-gray-500 font-bold uppercase tracking-widest leading-none">Secure PayHere Gateway</p>
          </div>
          <ArrowRight size={14} className="text-gray-300 group-hover:translate-x-1 transition-transform" />
       </div>

@@ -21,17 +21,25 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
   }
 })
 
+// Never hard-code seed passwords: this script runs against whatever project
+// .env.local points at, and a committed password is a known admin login.
+const seedPassword = process.env.SEED_USER_PASSWORD
+if (!seedPassword || seedPassword.length < 16) {
+  console.error('Set SEED_USER_PASSWORD (16+ characters) before running this script.')
+  process.exit(1)
+}
+
 async function seedUsers() {
   const testUsers = [
     {
       email: 'admin@luggo.lk',
-      password: 'password123',
+      password: seedPassword,
       name: 'Master Admin',
       role: 'master_admin'
     },
     {
       email: 'staff@luggo.lk',
-      password: 'password123',
+      password: seedPassword,
       name: 'Hub Staff',
       role: 'hub_staff',
       hubAlias: 'BIA'
@@ -52,7 +60,7 @@ async function seedUsers() {
     const existingAuth = authUsers.find(user => user.email?.toLowerCase() === u.email.toLowerCase())
 
     if (existingAuth) {
-      console.log(`   User already exists in Auth. Updating password to "${u.password}"...`)
+      console.log(`   User already exists in Auth. Updating password from SEED_USER_PASSWORD...`)
       const { error: resetError } = await supabase.auth.admin.updateUserById(existingAuth.id, {
         password: u.password
       })

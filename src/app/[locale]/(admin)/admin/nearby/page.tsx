@@ -72,7 +72,7 @@ export default async function AdminNearbyPage() {
         <div className="flex items-start justify-between mb-8">
           <div>
             <h1 className="text-2xl font-extrabold text-ocean-900 mb-1">Nearby Places</h1>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-500">
               {places?.length ?? 0} places across {Object.keys(byHub).length} hubs
             </p>
           </div>
@@ -82,7 +82,7 @@ export default async function AdminNearbyPage() {
         {Object.keys(byHub).length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 px-5 py-16 text-center">
             <MapPinned size={32} className="text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400 text-sm">No nearby places yet.</p>
+            <p className="text-gray-500 text-sm">No nearby places yet.</p>
             <p className="text-gray-300 text-xs mt-1">Use &quot;Add place&quot; above to get started.</p>
           </div>
         ) : (
@@ -92,7 +92,7 @@ export default async function AdminNearbyPage() {
                 <h2 className="font-bold text-ocean-900 text-sm mb-3 flex items-center gap-2">
                   <MapPinned size={14} className="text-brand" />
                   {hubName}
-                  <span className="text-xs font-normal text-gray-400">
+                  <span className="text-xs font-normal text-gray-500">
                     ({hubPlaces.length})
                   </span>
                 </h2>
@@ -101,11 +101,11 @@ export default async function AdminNearbyPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-50 bg-gray-50/50">
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Place</th>
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Category</th>
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Description</th>
-                        <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400">Distance</th>
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400">Maps</th>
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Place</th>
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Category</th>
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Description</th>
+                        <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500">Distance</th>
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500">Maps</th>
                         <th className="px-3 py-3" />
                       </tr>
                     </thead>
@@ -120,7 +120,7 @@ export default async function AdminNearbyPage() {
                               {CAT_EMOJI[place.category] ?? '📍'} {place.category}
                             </span>
                           </td>
-                          <td className="px-5 py-3 text-xs text-gray-400 max-w-[200px] truncate">
+                          <td className="px-5 py-3 text-xs text-gray-500 max-w-[200px] truncate">
                             {place.description ?? <span className="text-gray-200">—</span>}
                           </td>
                           <td className="px-5 py-3 text-center text-xs font-semibold text-gray-600">

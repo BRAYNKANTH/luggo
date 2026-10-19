@@ -53,7 +53,7 @@ export function StaffForm({ hubs }: Props) {
         {/* Name (only needed for new accounts) */}
         <div>
           <label className="block text-xs font-semibold text-gray-500 mb-1.5">
-            Full name <span className="text-gray-400 font-normal">(required for new accounts)</span>
+            Full name <span className="text-gray-500 font-normal">(required for new accounts)</span>
           </label>
           <input
             type="text"

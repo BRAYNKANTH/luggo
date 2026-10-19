@@ -26,7 +26,7 @@ BEGIN
   VALUES (
       new_admin_id,
       'admin@luggo.lk',
-      crypt('password123', gen_salt('bf')),
+      crypt(gen_random_uuid()::text, gen_salt('bf')), -- random: set a real password via reset email
       now(),
       '{"provider":"email","providers":["email"]}',
       '{"name":"Master Admin"}',
@@ -50,7 +50,7 @@ BEGIN
   VALUES (
       new_staff_id,
       'staff@luggo.lk',
-      crypt('password123', gen_salt('bf')),
+      crypt(gen_random_uuid()::text, gen_salt('bf')), -- random: set a real password via reset email
       now(),
       '{"provider":"email","providers":["email"]}',
       '{"name":"Hub Staff"}',

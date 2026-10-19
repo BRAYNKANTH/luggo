@@ -3,6 +3,7 @@
 import { OtpInput } from '@/components/ui/OtpInput'
 
 import { useState, useRef, useEffect, useId } from 'react'
+import { useFormatter, useTranslations } from 'next-intl'
 import { useRouter } from '@/navigation'
 import { Link } from '@/navigation'
 import { motion } from 'framer-motion'
@@ -13,7 +14,7 @@ import {
   CreditCard
 } from 'lucide-react'
 import { Spinner } from '@/components/ui/Spinner'
-import { addHours, startOfHour, format } from 'date-fns'
+import { addHours, startOfHour } from 'date-fns'
 import { Button } from '@/components/ui/Button'
 import { type BagCounts } from '@/components/customer/BagSelector'
 import { type PayhereFormData } from '@/lib/utils/payhere'
@@ -50,18 +51,8 @@ interface BookingFormProps {
 const EMPTY_BAGS: BagCounts = { small: 0, regular: 0, large: 0 }
 const OTP_LENGTH = 6
 const BAG_EMOJIS: Record<BagType, string> = { small: '🎒', regular: '🧳', large: '🛄' }
-
-const LOCAL_BAG_LABELS: Record<BagType, string> = {
-  small: 'Small',
-  regular: 'Regular',
-  large: 'Large',
-}
-
-const LOCAL_BAG_DESC: Record<BagType, string> = {
-  small: 'Backpack, handbag, laptop bag, or briefcases',
-  regular: 'Cabin luggage, standard carry-on suitcase, or duffel bag',
-  large: 'Large check-in suitcase, backpacker pack, golf clubs, or oversized gear',
-}
+const BAG_TYPES: BagType[] = ['small', 'regular', 'large']
+const PROHIBITED_ITEMS = ['illegal', 'weapons', 'hazardous', 'perishable', 'smelly', 'liquids', 'animals', 'valuables', 'fragile', 'restricted'] as const
 
 // Pricing rates imported dynamically from '@/lib/utils/pricing'
 
@@ -152,7 +143,7 @@ function FieldInput({ label, icon: Icon, id, ...props }: React.InputHTMLAttribut
   const inputId = id ?? generatedId
   return (
     <div className="space-y-1">
-      <label htmlFor={inputId} className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+      <label htmlFor={inputId} className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 uppercase tracking-wider pl-1">
         {Icon && <Icon size={12} className="text-brand" />}
         {label}
       </label>
@@ -170,6 +161,11 @@ function FieldInput({ label, icon: Icon, id, ...props }: React.InputHTMLAttribut
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
+  const t = useTranslations('Booking')
+  const tBags = useTranslations('Bags')
+  const formatter = useFormatter()
+  // The date/time inputs are in device-local time, so the summary must use the same zone.
+  const formatWhen = (date: Date) => formatter.dateTime(date, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })
   const router = useRouter()
   const payhereFormRef = useRef<HTMLFormElement>(null)
   const [payhereData, setPayhereData] = useState<PayhereFormData | null>(null)
@@ -255,6 +251,14 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
 
   const hours = calculateBillableHours(startDate, endDate)
   const totalPrice = computeTotal(bags, startDate, endDate, rates)
+
+  // What still blocks checkout, shown next to the button instead of a silent disabled state.
+  const missingSteps = [
+    !timesValid && t('missing.times'),
+    totalBags === 0 && t('missing.bags'),
+    !isLoggedIn && phoneVerificationStatus !== 'verified' && t('missing.phone'),
+    (!noIllegalItems || !termsAccepted) && t('missing.declarations'),
+  ].filter(Boolean) as string[]
 
 
 
@@ -419,7 +423,7 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error ?? 'Failed to create booking. Please try again.')
+        setError(data.error ?? t('errors.createFailed'))
         setLoading(false)
         return
       }
@@ -429,7 +433,7 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
         setPayhereData(data.payhere)
       }
     } catch {
-      setError('Network error. Please check your connection.')
+      setError(t('errors.network'))
       setLoading(false)
     }
   }
@@ -452,7 +456,7 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
   // OTP Send
   async function handleSendPhoneOtp() {
     if (!isValidSriLankanPhone(phone)) {
-      setError('Please enter a valid Sri Lankan phone number (e.g. 07XXXXXXXX).')
+      setError(t('errors.phoneInvalid'))
       return
     }
     setError(null)
@@ -468,7 +472,7 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
       setLoading(false)
       if (!res.ok) {
         setPhoneVerificationStatus('error')
-        setError(data.error ?? 'Failed to send SMS.')
+        setError(data.error ?? t('errors.smsFailed'))
         return
       }
       setPhoneVerificationStatus('otp_sent')
@@ -476,7 +480,7 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
     } catch {
       setLoading(false)
       setPhoneVerificationStatus('error')
-      setError('Failed to send code. Please check your connection.')
+      setError(t('errors.codeNetwork'))
     }
   }
 
@@ -513,7 +517,7 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
       setLoading(false)
       if (!res.ok) {
         setPhoneVerificationStatus('error')
-        setError(data.error ?? 'Incorrect or expired code.')
+        setError(data.error ?? t('errors.badCode'))
         setOtpValue('')
         return
       }
@@ -523,56 +527,56 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
     } catch {
       setLoading(false)
       setPhoneVerificationStatus('error')
-      setError('Verification failed. Please check your connection.')
+      setError(t('errors.verifyNetwork'))
     }
   }
 
   function handlePayClick() {
     setError(null)
     if (!timesValid) {
-      setError('Please select valid drop-off and pick-up times within operating hours.')
+      setError(t('errors.times'))
       document.getElementById('section-times')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
     if (totalBags === 0) {
-      setError('Please add at least one bag.')
+      setError(t('errors.bags'))
       document.getElementById('section-bags')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
     if (!isLoggedIn) {
       if (name.trim().length < 2) {
-        setError('Please enter your full name (minimum 2 characters).')
+        setError(t('errors.name'))
         document.getElementById('section-details')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         return
       }
       if (!isEmail(email)) {
-        setError('Please enter a valid email address.')
+        setError(t('errors.email'))
         document.getElementById('section-details')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         return
       }
       if (!isValidSriLankanPhone(phone)) {
-        setError('Please enter a valid Sri Lankan phone number (e.g. +94 77 123 4567).')
+        setError(t('errors.phoneInvalid'))
         document.getElementById('section-details')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         return
       }
       if (phoneVerificationStatus !== 'verified') {
-        setError('Please verify your phone number with the SMS OTP code.')
+        setError(t('errors.phoneUnverified'))
         document.getElementById('section-details')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         return
       }
       if (idNumber.trim() && !isValidId(idType, idNumber)) {
-        setError(`Please enter a valid ${idType} number.`)
+        setError(t('errors.id', { type: idType === 'NIC' ? t('nic') : t('passport') }))
         document.getElementById('section-details')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         return
       }
     }
     if (!noIllegalItems) {
-      setError('Please confirm the prohibited items declaration.')
+      setError(t('errors.prohibited'))
       document.getElementById('section-declarations')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
     if (!termsAccepted) {
-      setError('Please accept the Terms of Service and Privacy Policy.')
+      setError(t('errors.terms'))
       document.getElementById('section-declarations')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
@@ -584,7 +588,7 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
   const summaryBlock = (
     <div className="space-y-4">
       <div className="hidden lg:block">
-        <h3 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-widest opacity-50">Booking Summary</h3>
+        <h2 className="text-sm font-bold text-gray-600 mb-3 uppercase tracking-widest">{t('summary')}</h2>
       </div>
       
       {/* Hub info */}
@@ -593,52 +597,52 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
           <Package size={20} />
         </div>
         <div className="min-w-0">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Hub Location</p>
+          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest leading-none mb-1">{t('hubLocation')}</p>
           <p className="text-sm font-bold text-gray-900 truncate">{hub.name}</p>
         </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50 overflow-hidden">
         {/* Time Window */}
-        <div className={`flex items-center gap-4 p-4 transition-opacity ${timesValid ? 'opacity-100' : 'opacity-30'}`}>
+        <div className="flex items-center gap-4 p-4">
           <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center shrink-0">
-            <CalendarDays size={18} className="text-gray-400" />
+            <CalendarDays size={18} className="text-gray-500" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Time Window</p>
+            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest leading-none mb-1">{t('timeWindow')}</p>
             {timesValid ? (
               <>
                 <p className="text-sm font-bold text-gray-900">
-                  {startDate && format(startDate, 'dd MMM, HH:mm')} → {endDate && format(endDate, 'dd MMM, HH:mm')}
+                  {startDate && formatWhen(startDate)} → {endDate && formatWhen(endDate)}
                 </p>
-                <p className="text-[10px] text-brand font-black mt-1 uppercase tracking-wider">
-                  {hours} hr{hours !== 1 ? 's' : ''} storage duration
+                <p className="text-[11px] text-brand font-black mt-1 uppercase tracking-wider">
+                  {t('durationHours', { count: hours })}
                 </p>
               </>
             ) : (
-              <p className="text-xs font-semibold text-gray-300 italic">Select times to proceed</p>
+              <p className="text-xs font-semibold text-gray-500">{t('selectTimes')}</p>
             )}
           </div>
         </div>
 
         {/* Bags */}
-        <div className={`p-4 transition-opacity ${totalBags > 0 ? 'opacity-100' : 'opacity-30'}`}>
+        <div className="p-4">
           <div className="flex items-center gap-4 mb-3">
             <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center shrink-0">
-              <Shield size={18} className="text-gray-400" />
+              <Shield size={18} className="text-gray-500" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Items</p>
-              <p className="text-sm font-bold text-gray-900">
-                {totalBags > 0 ? `${totalBags} Item${totalBags > 1 ? 's' : ''}` : 'No items added'}
+              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest leading-none mb-1">{t('items')}</p>
+              <p className={`text-sm font-bold ${totalBags > 0 ? 'text-gray-900' : 'text-gray-500'}`}>
+                {totalBags > 0 ? t('itemCount', { count: totalBags }) : t('noItems')}
               </p>
             </div>
           </div>
           {totalBags > 0 && (
             <div className="flex flex-wrap gap-1.5 pl-14">
               {(Object.entries(bags) as [BagType, number][]).filter(([, q]) => q > 0).map(([type, qty]) => (
-                <span key={type} className="text-[10px] bg-brand/5 text-brand font-bold px-2.5 py-1 rounded-lg border border-brand/10">
-                  {BAG_EMOJIS[type]} {qty}× {LOCAL_BAG_LABELS[type]}
+                <span key={type} className="text-[11px] bg-brand/5 text-brand font-bold px-2.5 py-1 rounded-lg border border-brand/10">
+                  {BAG_EMOJIS[type]} {qty}× {tBags(`${type}.name`)}
                 </span>
               ))}
             </div>
@@ -648,17 +652,17 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
         {/* Price Breakdown */}
         {totalPrice > 0 && (
           <div className="p-4 bg-gray-50/50">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 opacity-60">Price Breakdown</p>
+            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-3">{t('priceBreakdown')}</p>
             {(Object.entries(bags) as [BagType, number][]).filter(([, q]) => q > 0).map(([type, qty]) => {
               const singleBagPrice = calculateBagPriceForHours(type, hours, rates)
               const isCapped = (hours * rates[type].hourlyRate) > rates[type].dailyCap
               return (
                 <div key={type} className="flex justify-between items-center text-xs mb-1.5">
                   <span className="text-gray-500 font-medium flex items-center gap-1.5">
-                    {qty}× {LOCAL_BAG_LABELS[type]} ({hours}h)
+                    {qty}× {tBags(`${type}.name`)} ({t('hoursShort', { count: hours })})
                     {isCapped && (
-                      <span className="text-[8px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
-                        Cap Applied
+                      <span className="text-[11px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
+                        {t('capApplied')}
                       </span>
                     )}
                   </span>
@@ -668,12 +672,12 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
             })}
             <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-end">
               <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Total Amount</p>
+                <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest leading-none mb-1">{t('totalAmount')}</p>
                 <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">LKR {totalPrice.toLocaleString()}</p>
               </div>
-              <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-100 uppercase tracking-widest">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-100 uppercase tracking-widest">
                 <ShieldCheck size={11} strokeWidth={3} />
-                Secure
+                {t('secure')}
               </div>
             </div>
           </div>
@@ -683,18 +687,18 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
       {/* Guest Summary */}
       {!isLoggedIn && (name || phone || email || idNumber) && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Booking Guest</p>
-          {name && <p className="text-xs font-bold text-gray-700">Name: <span className="text-gray-900 font-semibold">{name}</span></p>}
-          {phone && <p className="text-xs font-bold text-gray-700">Phone: <span className="text-gray-900 font-semibold font-mono">{formatPhone(phone)}</span></p>}
-          {email && <p className="text-xs font-bold text-gray-700">Email: <span className="text-gray-900 font-semibold">{email}</span></p>}
-          {idNumber && <p className="text-xs font-bold text-gray-700">ID: <span className="text-gray-900 font-semibold font-mono">{idType} ({maskIdNumber(idNumber)})</span></p>}
+          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest leading-none mb-1">{t('guest')}</p>
+          {name && <p className="text-xs font-bold text-gray-700">{t('guestName')}: <span className="text-gray-900 font-semibold">{name}</span></p>}
+          {phone && <p className="text-xs font-bold text-gray-700">{t('guestPhone')}: <span className="text-gray-900 font-semibold font-mono">{formatPhone(phone)}</span></p>}
+          {email && <p className="text-xs font-bold text-gray-700">{t('guestEmail')}: <span className="text-gray-900 font-semibold">{email}</span></p>}
+          {idNumber && <p className="text-xs font-bold text-gray-700">{t('guestId')}: <span className="text-gray-900 font-semibold font-mono">{idType === 'NIC' ? t('nic') : t('passport')} ({maskIdNumber(idNumber)})</span></p>}
         </div>
       )}
 
       {/* Secure Payment Note */}
       {paymentMethod === 'pay_online' && (
-        <p className="text-[10px] text-center text-gray-400 font-medium">
-          🔒 Secure payment. Booking confirmation will be sent after payment.
+        <p className="text-[11px] text-center text-gray-500 font-medium">
+          🔒 {t('securePaymentNote')}
         </p>
       )}
     </div>
@@ -706,55 +710,48 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
         {/* Left Column: Form Content */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-6">
           <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-black text-gray-900 mb-1 tracking-tight">Book your storage</h2>
-              <p className="text-sm text-gray-400">Choose your time, luggage items, and payment method</p>
-            </div>
-
-                    {/* Hub Card */}
-                    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-brand/10 rounded-2xl flex items-center justify-center shrink-0 text-brand">
-                          <Package size={24} />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-black text-gray-900 leading-tight">{hub.name}</h3>
-                          <p className="text-xs text-gray-400 font-semibold mt-0.5">{hub.address}</p>
-                        </div>
+                    {/* Hub card — the page heading already names the hub, so show where and when. */}
+                    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 flex items-start gap-3">
+                      <div className="w-11 h-11 bg-brand/10 rounded-2xl flex items-center justify-center shrink-0 text-brand">
+                        <Package size={22} />
                       </div>
-                      <div className="mt-4 pt-3 border-t border-gray-50 flex flex-wrap gap-x-6 gap-y-2 justify-between items-center">
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500">
+                      <div className="min-w-0 space-y-1">
+                        <p className="text-sm text-gray-700 font-semibold">{hub.address}</p>
+                        <p className="flex items-center gap-1.5 text-xs font-bold text-gray-600">
                           <Clock size={14} className="text-brand" />
-                          <span>Operating hours: {hub.open_time.slice(0, 5)} – {hub.close_time.slice(0, 5)}</span>
-                        </div>
-                        <p className="text-[10px] font-black text-brand uppercase tracking-widest bg-brand/5 px-2.5 py-1 rounded-lg border border-brand/10">Luggo Hub</p>
+                          {t('operatingHours', { open: hub.open_time.slice(0, 5), close: hub.close_time.slice(0, 5) })}
+                        </p>
                       </div>
                     </div>
 
                     {/* Time selection */}
                     <div id="section-times" className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
-                      <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 pl-1">Storage Times</h3>
+                      <h2 className="text-xs font-black uppercase tracking-widest text-gray-600 pl-1">{t('storageTimes')}</h2>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {/* Drop-off Date/Time */}
                         <div className="space-y-3">
                           <div className="flex justify-between items-center pr-1">
-                            <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">
-                              <CalendarDays size={14} className="text-brand" /> Drop-off
-                            </label>
-                            <span className="text-[9px] font-extrabold text-gray-400 bg-gray-100/80 px-2 py-0.5 rounded-full uppercase">
-                              Open {hub.open_time.slice(0, 5)} - {hub.close_time.slice(0, 5)}
+                            <p id="dropoff-label" className="flex items-center gap-2 text-[11px] font-bold text-gray-600 uppercase tracking-widest pl-1">
+                              <CalendarDays size={14} className="text-brand" /> {t('dropOff')}
+                            </p>
+                            <span className="text-[11px] font-extrabold text-gray-600 bg-gray-100/80 px-2 py-0.5 rounded-full uppercase">
+                              {t('openShort', { open: hub.open_time.slice(0, 5), close: hub.close_time.slice(0, 5) })}
                             </span>
                           </div>
                           <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
+                            <label htmlFor="dropoff-date" className="sr-only">{t('dropOffDate')}</label>
                             <input
+                              id="dropoff-date"
                               type="date"
                               min={minDatetime.split('T')[0]}
                               value={dropOffDate}
                               onChange={e => handleDropOffChange(e.target.value, dropOffTime)}
                               className="w-full px-3 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all shadow-inner"
                             />
+                            <label htmlFor="dropoff-time" className="sr-only">{t('dropOffTime')}</label>
                             <input
+                              id="dropoff-time"
                               type="time"
                               min={getMinDropOffTime()}
                               max={hub.close_time.slice(0, 5)}
@@ -768,22 +765,26 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                         {/* Pick-up Date/Time */}
                         <div className="space-y-3">
                           <div className="flex justify-between items-center pr-1">
-                            <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">
-                              <Clock size={14} className="text-brand" /> Pick-up
-                            </label>
-                            <span className="text-[9px] font-extrabold text-gray-400 bg-gray-100/80 px-2 py-0.5 rounded-full uppercase">
-                              Open {hub.open_time.slice(0, 5)} - {hub.close_time.slice(0, 5)}
+                            <p className="flex items-center gap-2 text-[11px] font-bold text-gray-600 uppercase tracking-widest pl-1">
+                              <Clock size={14} className="text-brand" /> {t('pickUp')}
+                            </p>
+                            <span className="text-[11px] font-extrabold text-gray-600 bg-gray-100/80 px-2 py-0.5 rounded-full uppercase">
+                              {t('openShort', { open: hub.open_time.slice(0, 5), close: hub.close_time.slice(0, 5) })}
                             </span>
                           </div>
                           <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
+                            <label htmlFor="pickup-date" className="sr-only">{t('pickUpDate')}</label>
                             <input
+                              id="pickup-date"
                               type="date"
                               min={dropOffDate || minDatetime.split('T')[0]}
                               value={pickUpDate}
                               onChange={e => handlePickUpChange(e.target.value, pickUpTime)}
                               className="w-full px-3 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all shadow-inner"
                             />
+                            <label htmlFor="pickup-time" className="sr-only">{t('pickUpTime')}</label>
                             <input
+                              id="pickup-time"
                               type="time"
                               min={getMinPickUpTime()}
                               max={hub.close_time.slice(0, 5)}
@@ -800,7 +801,7 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                         <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-2xl py-2.5 px-4">
                           <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
                           <p className="text-xs font-bold text-emerald-700">
-                            Storage duration: <span className="font-extrabold">{hours} hour{hours !== 1 ? 's' : ''}</span>
+                            {t.rich('storageDuration', { count: hours, strong: (chunks) => <span className="font-extrabold">{chunks}</span> })}
                           </p>
                         </div>
                       ) : (
@@ -808,7 +809,7 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                           <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-2xl py-2.5 px-4">
                             <AlertCircle size={14} className="text-amber-500 shrink-0" />
                             <p className="text-xs font-bold text-amber-700">
-                              {!isFutureStart ? 'Drop-off time must be in the future.' : !timesWithinOperating ? 'Selected times must be within hub operating hours.' : 'Pick-up time must be after drop-off time.'}
+                              {!isFutureStart ? t('timeErrors.past') : !timesWithinOperating ? t('timeErrors.hours') : t('timeErrors.order')}
                             </p>
                           </div>
                         )
@@ -817,9 +818,9 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
 
                     {/* Bag selection */}
                     <div id="section-bags" className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
-                      <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 pl-1">Luggage Items</h3>
+                      <h2 className="text-xs font-black uppercase tracking-widest text-gray-600 pl-1">{t('luggageItems')}</h2>
                       <div className="space-y-3.5">
-                        {(Object.keys(LOCAL_BAG_LABELS) as BagType[]).map((type) => {
+                        {BAG_TYPES.map((type) => {
                           const qty = bags[type]
                           const isActive = qty > 0
                           return (
@@ -838,21 +839,18 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
 
                               {/* Info */}
                               <div className="flex-1 min-w-[120px]">
-                                <p className="font-bold text-gray-900 text-base">{LOCAL_BAG_LABELS[type]}</p>
-                                <p className="text-xs font-bold text-gray-400 mt-0.5 line-clamp-1">{LOCAL_BAG_DESC[type]}</p>
-                                <div className="flex items-center gap-1.5 mt-2">
-                                  <span className="text-[10px] uppercase font-black text-brand tracking-widest">Rate</span>
-                                  <p className="text-xs font-black text-brand tabular-nums font-mono">
-                                    LKR {rates[type].hourlyRate.toLocaleString()}/hr (Max LKR {rates[type].dailyCap.toLocaleString()}/day)
-                                  </p>
-                                </div>
+                                <p className="font-bold text-gray-900 text-base">{tBags(`${type}.name`)}</p>
+                                <p className="text-xs font-semibold text-gray-600 mt-0.5">{tBags(`${type}.desc`)}</p>
+                                <p className="text-xs font-black text-brand tabular-nums mt-2">
+                                  {t('rate', { hourly: rates[type].hourlyRate.toLocaleString(), cap: rates[type].dailyCap.toLocaleString() })}
+                                </p>
                               </div>
 
                               {/* Counter */}
                               <div className="flex items-center gap-2 shrink-0 ml-auto bg-gray-100/50 p-2 rounded-2xl">
                                 <button
                                   type="button"
-                                  aria-label={`Remove ${type} bag`}
+                                  aria-label={t('removeBag', { bag: tBags(`${type}.name`) })}
                                   onClick={() => bags[type] > 0 && setBags({ ...bags, [type]: bags[type] - 1 })}
                                   disabled={bags[type] === 0}
                                   className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all active:scale-90 shadow-sm ${
@@ -861,12 +859,12 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                                 >
                                   <Minus size={18} strokeWidth={3} />
                                 </button>
-                                <span className="w-6 text-center font-black text-gray-900 text-xl tabular-nums font-mono">
+                                <span aria-live="polite" className="w-6 text-center font-black text-gray-900 text-xl tabular-nums font-mono">
                                   {bags[type]}
                                 </span>
                                 <button
                                   type="button"
-                                  aria-label={`Add ${type} bag`}
+                                  aria-label={t('addBag', { bag: tBags(`${type}.name`) })}
                                   onClick={() => totalBags < 10 && setBags({ ...bags, [type]: bags[type] + 1 })}
                                   disabled={totalBags >= 10}
                                   className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-lg ${
@@ -883,7 +881,7 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
 
                       {totalBags >= 10 && (
                         <p className="text-center text-xs text-amber-600 font-bold bg-amber-50 border border-amber-100 rounded-2xl py-3 px-4 flex items-center justify-center gap-2">
-                          <AlertCircle size={14} /> Maximum 10 bags per booking
+                          <AlertCircle size={14} /> {t('maxBags')}
                         </p>
                       )}
                     </div>
@@ -895,55 +893,57 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                             <User size={20} />
                           </div>
                           <div>
-                            <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Customer Details</p>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Required for luggage drop-off</p>
+                            <h2 className="text-sm font-black text-gray-900 uppercase tracking-tight">{t('customerDetails')}</h2>
+                            <p className="text-xs font-semibold text-gray-600 mt-0.5">{t('customerDetailsDesc')}</p>
                           </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                          <FieldInput label="Full name" icon={User} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. John Doe" />
-                          <FieldInput label="Email address" icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="e.g. john@example.com" />
-                          
+                          <FieldInput label={t('fullName')} icon={User} autoComplete="name" value={name} onChange={e => setName(e.target.value)} placeholder={t('fullNamePlaceholder')} />
+                          <FieldInput label={t('email')} icon={Mail} type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('emailPlaceholder')} />
+
                           <div className="space-y-1">
-                            <label className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+                            <label htmlFor="id-type" className="flex items-center gap-1.5 text-[11px] font-bold text-gray-600 uppercase tracking-wider pl-1">
                               <Shield size={12} className="text-brand" />
-                              ID type
+                              {t('idType')}
                             </label>
                             <select
+                              id="id-type"
                               value={idType}
                               onChange={e => setIdType(e.target.value as 'NIC' | 'Passport')}
                               className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-white transition-all"
                             >
-                              <option value="NIC">NIC</option>
-                              <option value="Passport">Passport</option>
+                              <option value="NIC">{t('nic')}</option>
+                              <option value="Passport">{t('passport')}</option>
                             </select>
                           </div>
 
                           <div className="space-y-1">
                             <FieldInput
-                              label="NIC / Passport number (Optional)"
+                              label={t('idNumber')}
                               icon={Fingerprint}
                               value={idNumber}
                               onChange={e => setIdNumber(e.target.value)}
-                              placeholder={idType === 'NIC' ? 'e.g. 981234567V or 199812345678' : 'e.g. N1234567'}
+                              placeholder={idType === 'NIC' ? '981234567V / 199812345678' : 'N1234567'}
                             />
-                            <p className="text-[10px] text-gray-400 font-semibold pl-1 leading-relaxed">
-                              💡 This will be checked against your physical ID at drop-off. If left blank, you can present it directly at the hub counter.
+                            <p className="text-xs text-gray-600 font-medium pl-1 leading-relaxed">
+                              {t('idHint')}
                             </p>
                           </div>
 
                           <div className="sm:col-span-2 space-y-1">
                             <FieldInput
-                              label="Phone number (SMS OTP verification)"
+                              label={t('phone')}
                               icon={Smartphone}
                               type="tel"
+                              autoComplete="tel"
                               value={phone}
                               onChange={e => handlePhoneChange(e.target.value)}
-                              placeholder="e.g. +94 77 123 4567"
+                              placeholder="+94 77 123 4567"
                               disabled={phoneVerificationStatus === 'verified'}
                             />
-                            <p className="text-[10px] text-gray-400 font-semibold pl-1 leading-relaxed">
-                              🔒 A 6-digit SMS code will be sent to verify your phone number.
+                            <p className="text-xs text-gray-600 font-medium pl-1 leading-relaxed">
+                              {phoneVerificationStatus === 'verified' ? `✓ ${t('phoneVerified')}` : t('phoneHint')}
                             </p>
                           </div>
                         </div>
@@ -951,7 +951,7 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                         {phoneVerificationStatus === 'not_verified' && phone.trim().length >= 9 && (
                           <div className="flex justify-center pt-2">
                             <Button onClick={handleSendPhoneOtp} className="px-6 py-2.5 rounded-xl font-bold">
-                              Send Verification Code
+                              {t('sendCode')}
                             </Button>
                           </div>
                         )}
@@ -959,13 +959,13 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                         {phoneVerificationStatus === 'otp_sending' && (
                           <div className="flex items-center justify-center gap-2 py-4">
                             <Spinner className="text-brand" />
-                            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Sending OTP...</p>
+                            <p role="status" className="text-xs text-gray-600 font-bold uppercase tracking-wider">{t('sendingCode')}</p>
                           </div>
                         )}
 
                         {(phoneVerificationStatus === 'otp_sent' || phoneVerificationStatus === 'otp_verifying') && (
                           <div className="space-y-4">
-                            <OtpInput value={otpValue} onChange={v => {
+                            <OtpInput label={t('codeLabel')} hint={t('codeHint')} value={otpValue} onChange={v => {
                               setOtpValue(v)
                               if (v.length === OTP_LENGTH) {
                                   setTimeout(handleVerifyPhoneOtp, 100)
@@ -979,7 +979,7 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                                 disabled={otpValue.length < OTP_LENGTH}
                                 className="px-6 py-2 rounded-xl font-bold"
                               >
-                                Verify Phone
+                                {t('verifyPhone')}
                               </Button>
                             </div>
                           </div>
@@ -993,14 +993,15 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                           <CreditCard size={20} />
                         </div>
                         <div>
-                          <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Payment Method</p>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Select how you want to pay</p>
+                          <h2 className="text-sm font-black text-gray-900 uppercase tracking-tight">{t('paymentMethod')}</h2>
+                          <p className="text-xs font-semibold text-gray-600 mt-0.5">{t('paymentMethodDesc')}</p>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <button
                           type="button"
+                          aria-pressed={paymentMethod === 'pay_online'}
                           onClick={() => setPaymentMethod('pay_online')}
                           className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-start text-left gap-1 ${
                             paymentMethod === 'pay_online'
@@ -1009,15 +1010,16 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                           }`}
                         >
                           <p className="font-bold text-sm flex items-center gap-1.5">
-                            💳 Pay Online (Card / Wallet)
+                            💳 {t('payOnline')}
                           </p>
-                          <p className="text-[10px] opacity-70 leading-normal mt-1">
-                            Pay securely online using credit/debit card, Genie, or mobile wallets via PayHere.
+                          <p className="text-xs text-gray-600 leading-normal mt-1">
+                            {t('payOnlineDesc')}
                           </p>
                         </button>
 
                         <button
                           type="button"
+                          aria-pressed={paymentMethod === 'pay_at_hub'}
                           onClick={() => setPaymentMethod('pay_at_hub')}
                           className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-start text-left gap-1 ${
                             paymentMethod === 'pay_at_hub'
@@ -1026,10 +1028,10 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                           }`}
                         >
                           <p className="font-bold text-sm flex items-center gap-1.5">
-                            💵 Pay at Hub (Cash on Arrival)
+                            💵 {t('payAtHub')}
                           </p>
-                          <p className="text-[10px] opacity-70 leading-normal mt-1">
-                            Reserve online now, and pay in cash directly to our counter staff when you walk in to drop off your bags.
+                          <p className="text-xs text-gray-600 leading-normal mt-1">
+                            {t('payAtHubDesc')}
                           </p>
                         </button>
                       </div>
@@ -1056,10 +1058,10 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                         </div>
                         <div className="flex-1">
                           <p className="text-sm font-bold text-gray-900 leading-snug">
-                            I confirm my luggage does not contain prohibited, illegal, hazardous, perishable, or restricted items.
+                            {t('declareProhibited')}
                           </p>
-                          <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                            ⚠️ Luggo may refuse storage if luggage appears unsafe, leaking, damaged, suspicious, or against storage rules.
+                          <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                            ⚠️ {t('mayRefuse')}
                           </p>
                         </div>
                       </label>
@@ -1086,10 +1088,13 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                         </div>
                         <div className="flex-1">
                           <p className="text-sm font-bold text-gray-900 leading-snug">
-                            I agree to the <Link href="/terms" target="_blank" className="text-brand hover:underline">Terms of Service</Link> and <Link href="/privacy" target="_blank" className="text-brand hover:underline">Privacy Policy</Link>.
+                            {t.rich('agreeTerms', {
+                              terms: (chunks) => <Link href="/terms" target="_blank" className="text-brand underline">{chunks}</Link>,
+                              privacy: (chunks) => <Link href="/privacy" target="_blank" className="text-brand underline">{chunks}</Link>,
+                            })}
                           </p>
-                          <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                            💡 These terms are governed by the Consumer Affairs Authority Act of Sri Lanka and local laws.
+                          <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                            {t('governingLaw')}
                           </p>
                         </div>
                       </label>
@@ -1097,31 +1102,25 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
                       <div className="border-t border-gray-50 pt-3">
                         <button
                           type="button"
+                          aria-expanded={isProhibitedExpanded}
+                          aria-controls="prohibited-items"
                           onClick={() => setIsProhibitedExpanded(!isProhibitedExpanded)}
-                          className="text-xs text-brand font-black hover:underline tracking-tight flex items-center gap-1"
+                          className="min-h-11 text-sm text-brand font-bold hover:underline tracking-tight flex items-center gap-1"
                         >
-                          {isProhibitedExpanded ? 'Hide prohibited items' : 'View prohibited items'}
+                          {isProhibitedExpanded ? t('hideProhibited') : t('viewProhibited')}
                         </button>
                         
                         {isProhibitedExpanded && (
                           <motion.div
+                            id="prohibited-items"
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
                             className="mt-3 bg-red-50/50 border border-red-100/50 rounded-2xl p-4 text-xs text-red-900/80 space-y-1.5"
                           >
-                            <p className="font-bold text-red-950 uppercase tracking-widest text-[9px] mb-1 pl-1">Prohibited Items List</p>
+                            <p className="font-bold text-red-950 uppercase tracking-widest text-[11px] mb-1 pl-1">{t('prohibitedTitle')}</p>
                             <ul className="list-disc pl-4 space-y-1">
-                              <li>Illegal items</li>
-                              <li>Weapons</li>
-                              <li>Hazardous or flammable items</li>
-                              <li>Perishable food</li>
-                              <li>Strong-smelling items</li>
-                              <li>Leaking liquids</li>
-                              <li>Live animals</li>
-                              <li>Cash, jewellery, or high-value items</li>
-                              <li>Fragile items stored at customer’s own risk</li>
-                              <li>Any item restricted by law or hub policy</li>
+                              {PROHIBITED_ITEMS.map(item => <li key={item}>{t(`prohibited.${item}`)}</li>)}
                             </ul>
                           </motion.div>
                         )}
@@ -1138,26 +1137,28 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
         </div>
       </div>
 
-      {/* Error display */}
-      {error && (
-        <div role="alert" className="mt-8 flex items-start gap-4 bg-red-50 border border-red-100 rounded-3xl p-5 shadow-sm max-w-2xl mx-auto lg:mx-0">
-          <AlertCircle size={20} className="text-red-500 shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm font-black text-red-900 uppercase tracking-widest mb-1">Attention Required</p>
-            <p className="text-sm text-red-700 font-bold">{error}</p>
-          </div>
-        </div>
-      )}
-
       {/* ── Fixed bottom action bar ── */}
-      <div className="fixed bottom-0 left-0 md:left-56 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-5 pb-safe z-[200] shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
+      <div className="fixed bottom-0 left-0 md:left-56 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-4 pb-safe z-[200] shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
+        {/* Errors and missing steps sit right above the button, where the user is looking. */}
+        <div className="max-w-5xl mx-auto mb-3 empty:hidden">
+          {error ? (
+            <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-2xl px-3 py-2.5">
+              <AlertCircle size={16} className="text-red-600 shrink-0 mt-0.5" />
+              <p className="text-sm text-red-800 font-semibold">{error}</p>
+            </div>
+          ) : missingSteps.length > 0 ? (
+            <p className="text-xs text-gray-600 font-medium">
+              <span className="font-bold text-gray-800">{t('toContinue')}</span> {missingSteps.join(' · ')}
+            </p>
+          ) : null}
+        </div>
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
 
           {/* Live price pill (Mobile only) */}
           {totalBags > 0 && totalPrice > 0 && (
             <div className="lg:hidden sm:flex-1 min-w-0 bg-gray-50 rounded-2xl px-4 py-2 border border-gray-100 shadow-inner">
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">
-                {totalBags} item{totalBags > 1 ? 's' : ''} · {hours}h
+              <p className="text-[11px] text-gray-500 font-bold uppercase tracking-widest mb-0.5">
+                {t('itemCount', { count: totalBags })} · {t('hoursShort', { count: hours })}
               </p>
               <p className="text-lg font-black text-gray-900 tracking-tight tabular-nums">
                 LKR {totalPrice.toLocaleString()}
@@ -1171,9 +1172,9 @@ export function BookingForm({ hub, initialProfile, rates }: BookingFormProps) {
               onClick={handlePayClick}
               loading={loading}
               className="w-full min-h-14 py-3 h-auto rounded-2xl font-black text-base shadow-xl shadow-brand/20 transition-all active:scale-95 tracking-tight"
-              disabled={!timesValid || totalBags === 0}
             >
-              {paymentMethod === 'pay_at_hub' ? 'Reserve ? Pay at hub' : (totalPrice > 0 ? `Pay LKR ${totalPrice.toLocaleString()} Online` : 'Confirm & Proceed')}
+              {/* Never disabled: a click explains what is missing and scrolls to it. */}
+              {paymentMethod === 'pay_at_hub' ? t('reservePayAtHub') : (totalPrice > 0 ? t('payOnlineAmount', { amount: totalPrice.toLocaleString() }) : t('continue'))}
             </Button>
           </div>
         </div>

@@ -47,7 +47,7 @@ export default async function WalkInBookingPage() {
 
       <div className="px-4 py-5 space-y-4 max-w-2xl mx-auto">
         <div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-brand-light">New Walk-In customer</span>
+          <span className="text-[11px] font-black uppercase tracking-widest text-brand-light">New Walk-In customer</span>
           <h1 className="text-2xl font-extrabold mb-1 tracking-tight">Create Walk-In Booking</h1>
           <p className="text-white/50 text-xs">
             Register a walk-in guest at <strong className="text-white/80 font-bold">{hubName}</strong>. Fill customer details and expect pickup date/time to calculate fee.

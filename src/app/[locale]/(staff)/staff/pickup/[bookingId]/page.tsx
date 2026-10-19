@@ -49,13 +49,14 @@ type Incident = {
   users: { name: string } | null
 }
 
-export default async function StaffPickupPage({
-  params,
-  searchParams,
-}: {
-  params: { bookingId: string }
-  searchParams?: { error?: string }
-}) {
+export default async function StaffPickupPage(
+  props: {
+    params: Promise<{ bookingId: string }>
+    searchParams?: Promise<{ error?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/staff/login')
@@ -184,7 +185,7 @@ export default async function StaffPickupPage({
 
         {/* Customer Profile */}
         <div className="bg-white/10 rounded-2xl p-4 space-y-2">
-          <p className="text-white/50 text-[10px] font-black uppercase tracking-widest">Customer Details</p>
+          <p className="text-white/50 text-[11px] font-black uppercase tracking-widest">Customer Details</p>
           <p className="font-bold">{customerName}</p>
           <p className="text-white/50 text-xs">{customerPhone}</p>
           {booking.walk_in_nic_passport_ref && (
@@ -202,11 +203,11 @@ export default async function StaffPickupPage({
                 <MapPin size={18} className="stroke-[2.5]" />
               </div>
               <div>
-                <p className="text-[10px] text-amber-400 font-black uppercase tracking-widest">Retrieve Location</p>
+                <p className="text-[11px] text-amber-400 font-black uppercase tracking-widest">Retrieve Location</p>
                 <p className="text-sm font-extrabold text-white">Storage Slot #{booking.slot_number}</p>
               </div>
             </div>
-            <span className="text-[10px] font-black uppercase tracking-widest bg-amber-400/20 text-amber-300 px-3 py-1 rounded-full border border-amber-400/20">
+            <span className="text-[11px] font-black uppercase tracking-widest bg-amber-400/20 text-amber-300 px-3 py-1 rounded-full border border-amber-400/20">
               Assigned Shelf
             </span>
           </div>
@@ -227,11 +228,11 @@ export default async function StaffPickupPage({
               {incidents.map((inc) => (
                 <div key={inc.id} className="bg-black/20 p-3.5 rounded-xl border border-red-500/10 space-y-3 text-xs">
                   <div>
-                    <span className="font-black text-red-400 uppercase text-[10px] tracking-wider bg-red-400/10 px-2 py-0.5 rounded">
+                    <span className="font-black text-red-400 uppercase text-[11px] tracking-wider bg-red-400/10 px-2 py-0.5 rounded">
                       {inc.incident_type.replace('_', ' ')}
                     </span>
                     <p className="text-white/80 mt-2 font-medium">{inc.description}</p>
-                    <p className="text-white/40 text-[9px] mt-1 font-bold">Reported by: {inc.users?.name ?? 'Hub Staff'}</p>
+                    <p className="text-white/40 text-[11px] mt-1 font-bold">Reported by: {inc.users?.name ?? 'Hub Staff'}</p>
                   </div>
 
                   {isSupervisor ? (

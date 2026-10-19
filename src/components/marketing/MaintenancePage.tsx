@@ -17,7 +17,7 @@ export default function MaintenancePage() {
       <header className="w-full max-w-6xl mx-auto px-6 py-6 flex items-center justify-between z-10">
         <Logo variant="white" size="md" />
         <div className="flex items-center gap-4">
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-brand-accent border border-brand-accent/30 animate-pulse-glow">
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-500/20 text-brand-accent border border-brand-accent/30 animate-pulse-glow">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-accent inline-block" />
             Maintenance Mode
           </span>
@@ -82,7 +82,7 @@ export default function MaintenancePage() {
               <p className="font-semibold text-white/90">
                 Luggo සේවාව මේ වන විට වැඩිදියුණු වෙමින් පවතී.
               </p>
-              <p className="text-xs md:text-sm text-gray-400 mt-1">
+              <p className="text-xs md:text-sm text-gray-500 mt-1">
                 ශ්‍රී ලංකාව පුරා වඩාත් පහසු සහ ආරක්ෂිත ගමන් මලු තැන්පත් කිරීමේ සේවාවක් සැපයීම සඳහා අපගේ තාක්ෂණික පද්ධති මේ වන විට යාවත්කාලීන වෙමින් පවතී.
               </p>
             </div>
@@ -92,7 +92,7 @@ export default function MaintenancePage() {
               <p className="font-semibold text-white/90">
                 Luggo தற்பொழுது மேம்படுத்தப்பட்டு வருகின்றது.
               </p>
-              <p className="text-xs md:text-sm text-gray-400 mt-1">
+              <p className="text-xs md:text-sm text-gray-500 mt-1">
                 இலங்கை முழுவதும் இன்னும் விரைவான மற்றும் பாதுகாப்பான முறையில் உங்களது பயணப் பொதிகளை பாதுகாக்கும் வகையில் எங்களது தொழில்நுட்ப அமைப்புகளை மேம்படுத்தி வருகிறோம்.
               </p>
             </div>
@@ -107,7 +107,7 @@ export default function MaintenancePage() {
                 <ShieldAlert className="w-4 h-4 text-brand-accent" />
                 Existing Booking Pickups
               </h3>
-              <p className="text-xs text-gray-400 mt-0.5 max-w-sm">
+              <p className="text-xs text-gray-500 mt-0.5 max-w-sm">
                 Need to retrieve your luggage at a hub? Staff remain active on-site to handle your bag check-outs.
               </p>
             </div>
