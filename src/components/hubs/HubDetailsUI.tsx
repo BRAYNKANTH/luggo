@@ -13,6 +13,7 @@ import {
 import { type BagRates } from '@/lib/utils/pricing'
 import { type BagType } from '@/types/database'
 import { getConfig } from '@/lib/utils/ui'
+import { BOOKINGS_PAUSED } from '@/lib/booking-pause'
 
 type Hub = {
   id: string
@@ -55,6 +56,7 @@ export function HubDetailsUI({
 }: HubDetailsUIProps) {
   const t = useTranslations('Hub')
   const tBags = useTranslations('Bags')
+  const tPaused = useTranslations('BookingPaused')
   const [showAllNearby, setShowAllNearby] = useState(false)
   const categoryLabel = (cat: string) => (t.has(`categories.${cat}`) ? t(`categories.${cat}`) : cat)
 
@@ -69,7 +71,9 @@ export function HubDetailsUI({
   const bookHref = `/book/${hub.id}`
 
   const ctaClass = 'flex min-h-14 items-center justify-center text-center rounded-2xl px-5 py-3 text-base font-bold bg-ocean-600 text-white shadow-lg hover:bg-ocean-700'
-  const BookCTA = availability > 0
+  const BookCTA = BOOKINGS_PAUSED
+    ? <span aria-disabled="true" className={`${ctaClass} opacity-60`}>{tPaused('cta')}</span>
+    : availability > 0
     ? <Link href={bookHref} className={ctaClass}>{t('reserve')}</Link>
     : <span aria-disabled="true" className={`${ctaClass} opacity-60`}>{t('hubFull')}</span>
 
@@ -309,7 +313,8 @@ export function HubDetailsUI({
               {t('perHour', { amount: Math.min(...Object.values(rates).map(r => r.hourlyRate)).toLocaleString() })}
             </p>
           </div>
-          {availability > 0 ? <Link href={bookHref} className={`${ctaClass} shrink-0 text-sm`}>{t('reserve')}</Link>
+          {BOOKINGS_PAUSED ? <span aria-disabled="true" className={`${ctaClass} shrink-0 text-sm opacity-60`}>{tPaused('cta')}</span>
+            : availability > 0 ? <Link href={bookHref} className={`${ctaClass} shrink-0 text-sm`}>{t('reserve')}</Link>
             : <span aria-disabled="true" className={`${ctaClass} shrink-0 text-sm opacity-60`}>{t('hubFull')}</span>}
         </div>
       </div>

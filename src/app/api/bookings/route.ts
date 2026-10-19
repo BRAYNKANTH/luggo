@@ -4,9 +4,13 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { createBookingSchema } from '@/lib/validators/booking'
 import { calculateBookingPrice } from '@/lib/utils/pricing'
 import { getHubBagRates } from '@/lib/utils/hubPricing'
+import { BOOKINGS_PAUSED, BOOKINGS_PAUSED_MESSAGE } from '@/lib/booking-pause'
 import { generatePayhereHash, PAYHERE_ENDPOINT, type PayhereFormData } from '@/lib/utils/payhere'
 
 export async function POST(req: NextRequest) {
+  if (BOOKINGS_PAUSED) {
+    return NextResponse.json({ error: BOOKINGS_PAUSED_MESSAGE }, { status: 503 })
+  }
   try {
     const supabase = await createClient()
 

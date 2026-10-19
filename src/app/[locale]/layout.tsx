@@ -4,6 +4,7 @@ import { MotionConfig } from '@/components/shared/MotionProvider'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { siteUrl } from '@/lib/site-url'
+import { BookingPausedBanner } from '@/components/shared/BookingPausedBanner'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -90,6 +91,7 @@ export default async function RootLayout(
 
       <body suppressHydrationWarning>
         <NextIntlClientProvider locale={locale} messages={messages} timeZone="Asia/Colombo">
+          <BookingPausedBanner />
           <MotionConfig>{children}</MotionConfig>
         </NextIntlClientProvider>
       </body>

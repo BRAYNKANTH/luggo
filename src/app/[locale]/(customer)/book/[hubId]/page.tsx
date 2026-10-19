@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/server'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { BookingForm } from './BookingForm'
 import { getHubBagRates } from '@/lib/utils/hubPricing'
+import { BOOKINGS_PAUSED } from '@/lib/booking-pause'
+import { Link } from '@/navigation'
 
 type Hub = {
   id: string
@@ -32,6 +34,20 @@ export async function generateMetadata(props: { params: Promise<{ hubId: string;
 export default async function BookPage(props: { params: Promise<{ hubId: string }> }) {
   const params = await props.params;
   const t = await getTranslations('Booking')
+
+  if (BOOKINGS_PAUSED) {
+    const tPaused = await getTranslations('BookingPaused')
+    return (
+      <div className="max-w-xl mx-auto px-4 py-16 text-center">
+        <h1 className="text-2xl font-bold text-ocean-900">{tPaused('title')}</h1>
+        <p className="mt-3 text-gray-600">{tPaused('body')}</p>
+        <Link href="/hubs" className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-ocean-600 px-6 py-3 font-bold text-white">
+          {tPaused('browseHubs')}
+        </Link>
+      </div>
+    )
+  }
+
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()

@@ -19,6 +19,13 @@
     },
     "ctaTitle": "Explore Sri Lanka Hands-Free"
   },
+  "BookingPaused": {
+    "banner": "Bookings are temporarily paused. Please check back soon.",
+    "title": "Bookings are temporarily paused",
+    "body": "We are not accepting new bookings right now. Existing bookings are not affected. Please check back soon.",
+    "cta": "Booking paused",
+    "browseHubs": "Browse hubs"
+  },
   "Common": {
     "protection": "LKR {amount} Protection",
     "vettedHub": "Vetted Hub",

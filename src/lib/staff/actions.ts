@@ -9,6 +9,7 @@ import { bookingReferenceRange } from '@/lib/utils/bookingReference'
 import { type BagType } from '@/types/database'
 import { calculateLateFee, calculateEarlyCheckinDecision, calculateBookingPrice } from '@/lib/utils/pricing'
 import { getHubBagRates } from '@/lib/utils/hubPricing'
+import { BOOKINGS_PAUSED, BOOKINGS_PAUSED_MESSAGE } from '@/lib/booking-pause'
 
 
 // ─────────────────────────────────────────────
@@ -705,6 +706,7 @@ export async function createWalkInBooking(input: {
   paymentMethod: 'pay_online' | 'pay_at_hub'
   hubId: string
 }): Promise<{ bookingId?: string; error?: string }> {
+  if (BOOKINGS_PAUSED) return { error: BOOKINGS_PAUSED_MESSAGE }
   const { svc, userId } = await requireStaff()
 
   // Calculate pricing
