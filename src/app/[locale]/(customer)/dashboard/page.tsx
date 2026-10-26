@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { DashboardClient, type HubCard, type ActiveBooking } from './DashboardClient'
 import { BAG_RATES } from '@/lib/utils/pricing'
 import { titleMetadata } from '@/lib/i18n/metadata'
+import { LISTINGS_HIDDEN } from '@/lib/booking-pause'
 
 export const generateMetadata = titleMetadata('dashboard')
 
@@ -67,11 +68,13 @@ export default async function DashboardPage() {
   }
 
   // Hubs are always public — fetch for everyone
-  const { data: rawHubs } = await supabase
-    .from('hubs')
-    .select('id, name, alias, address, open_time, close_time, capacity, image_url, latitude, longitude')
-    .eq('active', true)
-    .order('name') as { data: RawHub[] | null }
+  const { data: rawHubs } = (LISTINGS_HIDDEN
+    ? { data: [] }
+    : await supabase
+        .from('hubs')
+        .select('id, name, alias, address, open_time, close_time, capacity, image_url, latitude, longitude')
+        .eq('active', true)
+        .order('name')) as { data: RawHub[] | null }
 
   // Bag-based availability: count total bags across all active/storing bookings
   const { data: hubBagRows } = await supabase

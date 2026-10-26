@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { BookingForm } from './BookingForm'
 import { getHubBagRates } from '@/lib/utils/hubPricing'
-import { BOOKINGS_PAUSED } from '@/lib/booking-pause'
+import { BOOKINGS_PAUSED, LISTINGS_HIDDEN } from '@/lib/booking-pause'
 import { Link } from '@/navigation'
 
 type Hub = {
@@ -22,6 +22,7 @@ type Hub = {
 export async function generateMetadata(props: { params: Promise<{ hubId: string; locale: string }> }): Promise<Metadata> {
   const params = await props.params
   const t = await getTranslations({ locale: params.locale, namespace: 'Meta' })
+  if (LISTINGS_HIDDEN) return { title: t('book') }
   const supabase = await createClient()
   const { data: hub } = await supabase
     .from('hubs')

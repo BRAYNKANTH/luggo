@@ -8,7 +8,7 @@ ALTER TABLE hubs ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE hubs ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION;
 ALTER TABLE hubs ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
 
--- Step 2: Insert 10 sample hubs
+-- Step 2: Insert sample hubs
 INSERT INTO hubs (name, alias, location, address, capacity, open_time, close_time, active, image_url, latitude, longitude)
 VALUES
 
@@ -34,18 +34,6 @@ VALUES
     true,
     'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80',
     7.1803, 79.8841
-  ),
-
-  (
-    'One Galle Face Hub',
-    'OGF',
-    'Colombo 03',
-    'One Galle Face Mall, Galle Rd, Colombo 03',
-    35,
-    '09:00', '22:00',
-    true,
-    'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=800&q=80',
-    6.9102, 79.8477
   ),
 
   (
