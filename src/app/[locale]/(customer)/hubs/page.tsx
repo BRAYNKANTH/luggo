@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { HubList } from '@/components/hubs/HubList'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { LISTINGS_HIDDEN } from '@/lib/booking-pause'
 
 export async function generateMetadata(
   props: {
@@ -52,6 +53,14 @@ export default async function HubsPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   let hubs: Hub[] = []
+  if (LISTINGS_HIDDEN) {
+    return (
+      <div className="max-w-5xl mx-auto">
+        <PageHeader title={t('title')} subtitle={t('count', { count: 0 })} />
+        <HubList hubs={hubs} isLoggedIn={!!user} />
+      </div>
+    )
+  }
   const { data, error } = await supabase
     .from('hubs')
     .select('id, name, alias, location, address, open_time, close_time, latitude, longitude, image_url')

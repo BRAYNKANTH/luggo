@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { HubDetailsUI } from '@/components/hubs/HubDetailsUI'
 import { siteUrl } from '@/lib/site-url'
 import { getHubBagRates } from '@/lib/utils/hubPricing'
+import { LISTINGS_HIDDEN } from '@/lib/booking-pause'
 
 type Hub = {
   id: string
@@ -36,6 +37,7 @@ export async function generateMetadata(
   }
 ): Promise<Metadata> {
   const params = await props.params;
+  if (LISTINGS_HIDDEN) return {}
   const supabase = await createClient()
   const { data: hub } = await supabase
     .from('hubs')
@@ -69,6 +71,7 @@ export default async function HubDetailPage(
   }
 ) {
   const params = await props.params;
+  if (LISTINGS_HIDDEN) notFound()
   const supabase = await createClient()
 
   const [userResult, hubResult] = await Promise.all([

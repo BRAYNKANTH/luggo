@@ -310,6 +310,7 @@ function ActiveBookingBanner({ booking }: { booking: ActiveBooking }) {
 export function DashboardClient({ hubs, activeBookings, firstName, userId, notifications }: DashboardClientProps) {
   const router = useRouter()
   const t = useTranslations('Dashboard')
+  const tHubs = useTranslations('Hubs')
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'available' | 'open'>('all')
   const [userPos, setUserPos] = useState<{ lat: number; lon: number } | null>(null)
@@ -397,7 +398,9 @@ export function DashboardClient({ hubs, activeBookings, firstName, userId, notif
           </section>
         )}
 
-        {isSearching ? (
+        {hubs.length === 0 ? (
+          <p className="py-16 text-center text-sm font-medium text-gray-500">{tHubs('none')}</p>
+        ) : isSearching ? (
           <section>
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-bold text-gray-900">{t('hubsFound', { count: filtered.length })}</p>

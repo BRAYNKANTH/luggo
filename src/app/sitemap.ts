@@ -2,6 +2,7 @@ import { MetadataRoute } from 'next'
 import { locales, defaultLocale, type Locale } from '@/i18n-config'
 import { createClient } from '@/lib/supabase/server'
 import { siteUrl } from '@/lib/site-url'
+import { LISTINGS_HIDDEN } from '@/lib/booking-pause'
 
 type SitemapEntryInput = {
   path: string
@@ -57,11 +58,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: '/privacy', changeFrequency: 'yearly', priority: 0.3, lastModified: now },
   ]
 
-  const { data: hubs } = await supabase
-    .from('hubs')
-    .select('id, updated_at')
-    .eq('active', true)
-    .order('name') as {
+  const { data: hubs } = (LISTINGS_HIDDEN
+    ? { data: [] }
+    : await supabase
+        .from('hubs')
+        .select('id, updated_at')
+        .eq('active', true)
+        .order('name')) as {
       data: { id: string; updated_at: string | null }[] | null
       error: unknown
     }
