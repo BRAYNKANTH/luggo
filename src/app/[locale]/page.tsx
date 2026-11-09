@@ -7,6 +7,8 @@ import { type UserRole, type BagType } from '@/types/database'
 import { CONTACT_EMAIL, SOCIAL_LINKS } from '@/lib/public-company'
 import { siteUrl } from '@/lib/site-url'
 import { DEFAULT_BAG_RATES, type BagRates } from '@/lib/utils/pricing'
+import { liveCitiesFromHubs } from '@/lib/utils/live-cities'
+import { LISTINGS_HIDDEN } from '@/lib/booking-pause'
 
 export async function generateMetadata(
   props: {
@@ -65,6 +67,17 @@ export default async function RootPage(
       }
     }
 
+    // Cities with a live partner hub. Hubs are hidden publicly while LISTINGS_HIDDEN is on,
+    // so no city is shown as live then.
+    let liveCities: ReturnType<typeof liveCitiesFromHubs> = []
+    if (!LISTINGS_HIDDEN) {
+      const { data: liveHubs } = await supabase
+        .from('hubs')
+        .select('name, alias, location, address')
+        .eq('active', true)
+      liveCities = liveCitiesFromHubs(liveHubs ?? [])
+    }
+
     const jsonLdWebsite = {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
@@ -97,7 +110,7 @@ export default async function RootPage(
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }}
         />
-        <LandingPage rates={fromRates} />
+        <LandingPage rates={fromRates} liveCities={liveCities} />
       </>
     )
   }

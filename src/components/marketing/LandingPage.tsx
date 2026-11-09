@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import type { Variants } from 'framer-motion'
 import { DEFAULT_BAG_RATES, type BagRates } from '@/lib/utils/pricing'
+import type { MarketingCity } from '@/lib/utils/live-cities'
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 16 },
@@ -27,6 +28,7 @@ const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
+// Only cities with a live partner hub are linked; the rest show "Coming soon" (see liveCities prop).
 const CITY_LOCATIONS = [
   { city: 'colombo', img: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80' },
   { city: 'kandy',   img: 'https://images.unsplash.com/photo-1569384370146-66a8f9734e1e?w=600&q=80' },
@@ -126,6 +128,10 @@ function AppPreviewCard() {
     <div className="relative">
       <div className="absolute inset-0 bg-brand/20 rounded-3xl blur-2xl scale-110" />
       <div className="relative bg-white/10 border border-white/20 backdrop-blur-sm rounded-3xl p-4 shadow-2xl">
+        {/* Illustration only: not a real booking. */}
+        <span className="absolute -top-3 right-4 z-10 bg-amber-400 text-ocean-900 text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-lg">
+          {t('example')}
+        </span>
         <div className="bg-white rounded-2xl p-4 shadow-lg mb-3">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-7 h-7 bg-brand rounded-full flex items-center justify-center">
@@ -168,13 +174,16 @@ function AppPreviewCard() {
 
 // ── Hero ──────────────────────────────────────────────────────────────────────
 
-function HeroSection() {
+function HeroSection({ liveCities }: { liveCities: MarketingCity[] }) {
   const t = useTranslations('Index')
   const tc = useTranslations('Cities')
-  const cities = ['colombo', 'kandy', 'galle', 'ella', 'mirissa', 'negombo'].map(city => tc(`${city}.name`))
+  // Only rotate through cities with a live hub; otherwise fall back to the country name.
+  const liveNames = liveCities.filter(c => c !== 'airport').map(city => tc(`${city}.name`))
+  const cities = liveNames.length ? liveNames : [t('country')]
   const [index, setIndex] = useState(0)
 
   useEffect(() => {
+    if (cities.length < 2) return
     const timer = setInterval(() => {
       setIndex((prev) => (prev + 1) % cities.length)
     }, 3000)
@@ -272,20 +281,8 @@ function HeroSection() {
           </motion.div>
         </div>
 
-        <motion.div
-          initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.6, duration:0.5 }}
-          className="mt-12 sm:mt-20 grid grid-cols-3 gap-3 sm:gap-6 max-w-lg mx-auto lg:mx-0">
-          {[
-            ['10+', t('stats.hubs')],
-            ['5,000+', t('stats.travellers')],
-            ['0', t('stats.bagsLost')]
-          ].map(([v,l]) => (
-            <div key={l} className="bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 text-center backdrop-blur-sm">
-              <p className="text-2xl sm:text-3xl font-black text-white mb-1">{v}</p>
-              <p className="text-[11px] sm:text-xs font-bold text-white/70 uppercase tracking-widest">{l}</p>
-            </div>
-          ))}
-        </motion.div>
+        {/* TODO: if hero stats return, compute them from the database (count of active hubs and
+            completed bookings). Never hardcode counts or "bags lost" style claims. */}
       </div>
     </section>
   )
@@ -477,7 +474,7 @@ function PricingSection({ rates }: { rates: BagRates }) {
 
 // ── Locations ─────────────────────────────────────────────────────────────────
 
-function LocationsSection() {
+function LocationsSection({ liveCities }: { liveCities: MarketingCity[] }) {
   const nt = useTranslations('Nav')
   const tc = useTranslations('Cities')
   return (
@@ -487,17 +484,28 @@ function LocationsSection() {
         <h2 className="text-3xl sm:text-4xl font-black text-ocean-900">{nt('locations')}</h2>
       </div>
       <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {CITY_LOCATIONS.map((c, i) => (
-          <Link key={i} href="/hubs" className="group block text-center">
-            <div className="relative aspect-square rounded-full overflow-hidden mb-4 border-2 border-gray-100 p-1 group-hover:border-brand transition-colors">
-              <div className="relative w-full h-full rounded-full overflow-hidden">
-                <Image src={c.img} alt="" fill sizes="(max-width: 768px) 50vw, 16vw" className="object-cover group-hover:scale-110 transition-transform duration-500" />
+        {CITY_LOCATIONS.map((c) => {
+          const live = liveCities.includes(c.city)
+          const body = (
+            <>
+              <div className={`relative aspect-square rounded-full overflow-hidden mb-4 border-2 border-gray-100 p-1 transition-colors ${live ? 'group-hover:border-brand' : ''}`}>
+                <div className="relative w-full h-full rounded-full overflow-hidden">
+                  <Image src={c.img} alt="" fill sizes="(max-width: 768px) 50vw, 16vw" className={`object-cover transition-transform duration-500 ${live ? 'group-hover:scale-110' : 'grayscale opacity-60'}`} />
+                </div>
               </div>
-            </div>
-            <p className="font-bold text-ocean-900 text-sm">{tc(`${c.city}.name`)}</p>
-            <p className="text-gray-600 text-xs mt-1">{tc(`${c.city}.desc`)}</p>
-          </Link>
-        ))}
+              <p className="font-bold text-ocean-900 text-sm">{tc(`${c.city}.name`)}</p>
+              <p className="text-gray-600 text-xs mt-1">{tc(`${c.city}.desc`)}</p>
+              {!live && (
+                <span className="inline-block mt-2 text-[11px] font-bold uppercase tracking-wider text-gray-600 bg-gray-100 px-2.5 py-1 rounded-full">
+                  {tc('comingSoon')}
+                </span>
+              )}
+            </>
+          )
+          return live
+            ? <Link key={c.city} href="/hubs" className="group block text-center">{body}</Link>
+            : <div key={c.city} className="block text-center">{body}</div>
+        })}
       </div>
     </section>
   )
@@ -588,7 +596,7 @@ function Footer() {
 
 const SPLASH_SEEN_KEY = 'luggo_splash_seen'
 
-export default function LandingPage({ rates = DEFAULT_BAG_RATES }: { rates?: BagRates }) {
+export default function LandingPage({ rates = DEFAULT_BAG_RATES, liveCities = [] }: { rates?: BagRates; liveCities?: MarketingCity[] }) {
   const tShell = useTranslations('Shell')
   const [showSplash, setShowSplash] = useState(true)
   const hideSplash = useCallback(() => {
@@ -610,12 +618,12 @@ export default function LandingPage({ rates = DEFAULT_BAG_RATES }: { rates?: Bag
         {showSplash && <SplashScreen onComplete={hideSplash} skipLabel={tShell('skip')} />}
       </AnimatePresence>
       <NavBar />
-      <HeroSection />
+      <HeroSection liveCities={liveCities} />
       <SocialProofBand />
       <HowItWorksSection />
       <FeaturesSection />
       <PricingSection rates={rates} />
-      <LocationsSection />
+      <LocationsSection liveCities={liveCities} />
       <FaqSection />
       <FooterCta />
       <Footer />

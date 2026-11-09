@@ -3,21 +3,17 @@
     "title": "Store Bags Safely. Explore Sri Lanka.",
     "titleBefore": "Luggage Storage in",
     "titleAfter": "— Explore Sri Lanka Hands-Free.",
-    "subtitle": "Verified hubs in Colombo, Kandy, Galle, Ella & more. Pay by the hour. Pick up whenever you're ready.",
+    "subtitle": "Store your bags with partner hubs in Sri Lanka. Pay by the hour. Pick up whenever you're ready.",
     "findStorage": "Find Storage Near Me",
     "howItWorks": "How It Works",
-    "vettedNetwork": "Sri Lanka's Trusted Luggage Storage Network",
-    "stats": {
-      "hubs": "Hubs",
-      "travellers": "Travellers",
-      "bagsLost": "Bags Lost"
-    },
+    "vettedNetwork": "Luggage Storage Network in Sri Lanka",
     "chips": {
       "noAccount": "No account needed",
       "seals": "Tamper-proof seals",
       "protection": "{amount} protection"
     },
-    "ctaTitle": "Explore Sri Lanka Hands-Free"
+    "ctaTitle": "Explore Sri Lanka Hands-Free",
+    "country": "Sri Lanka"
   },
   "BookingPaused": {
     "banner": "Bookings are temporarily paused. Please check back soon.",
@@ -111,7 +107,7 @@
       "tag": "How It Works",
       "title": "Four simple steps to freedom",
       "step1": "Find a Hub",
-      "step1Desc": "Locate a verified storage partner near you in Colombo, Galle, or Ella.",
+      "step1Desc": "Locate a verified storage partner near you.",
       "step2": "Book Online",
       "step2Desc": "Reserve your space in seconds with a few taps on your phone.",
       "step3": "Drop & Secure",
@@ -136,10 +132,6 @@
       "feature5Desc": "Our team is always ready to help you with your storage needs.",
       "feature6": "Local Insights",
       "feature6Desc": "Our hub partners are locals who can give you the best travel tips."
-    },
-    "reviews": {
-      "tag": "Testimonials",
-      "title": "Loved by travellers worldwide"
     }
   },
   "Shell": {
@@ -245,7 +237,7 @@
   },
   "Meta": {
     "hubsTitle": "Luggage Storage Locations in Sri Lanka",
-    "hubsDescription": "Find trusted luggage storage hubs across Sri Lanka. Secure storage in Colombo, Kandy, Galle, Ella, Negombo, and Bandaranaike International Airport (BIA).",
+    "hubsDescription": "Find luggage storage hubs in Sri Lanka. Check availability, opening hours and prices before you book.",
     "hubTitle": "Luggage Storage at {name}, {location}",
     "hubDescription": "Store your bags securely at {name} in {location} ({address}). Verified, secure luggage storage in Sri Lanka.",
     "aboutTitle": "About Luggo",
@@ -490,7 +482,7 @@
   },
   "Preview": {
     "confirmed": "Booking confirmed!",
-    "hub": "Colombo Fort Hub",
+    "hub": "Example Hub",
     "active": "Active",
     "dropOff": "Drop-off",
     "dropOffTime": "Today, 2:00 PM",
@@ -498,7 +490,8 @@
     "pickUpTime": "Tomorrow, 9:00 AM",
     "showAtCounter": "Show at the hub counter",
     "sealed": "Bags sealed & secured",
-    "photoProof": "Photo proof uploaded"
+    "photoProof": "Photo proof uploaded",
+    "example": "Example booking"
   },
   "Cities": {
     "tag": "Coverage",
@@ -529,7 +522,8 @@
     "airport": {
       "name": "Airport / BIA",
       "desc": "Store bags when arriving early or leaving late."
-    }
+    },
+    "comingSoon": "Coming soon"
   },
   "Pricing": {
     "tag": "Pricing",
