@@ -67,7 +67,7 @@ function NavBar() {
   }, [])
 
   return (
-    <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-md' : 'bg-white/90 backdrop-blur-md border-b border-gray-100'}`}>
+    <nav style={{ top: 'var(--banner-h, 0px)' }} className={`fixed inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-md' : 'bg-white/90 backdrop-blur-md border-b border-gray-100'}`}>
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         <Logo size="md" />
         <div className="hidden md:flex items-center gap-6 text-sm font-semibold text-ocean-900">
@@ -618,14 +618,16 @@ export default function LandingPage({ rates = DEFAULT_BAG_RATES, liveCities = []
         {showSplash && <SplashScreen onComplete={hideSplash} skipLabel={tShell('skip')} />}
       </AnimatePresence>
       <NavBar />
-      <HeroSection liveCities={liveCities} />
-      <SocialProofBand />
-      <HowItWorksSection />
-      <FeaturesSection />
-      <PricingSection rates={rates} />
-      <LocationsSection liveCities={liveCities} />
-      <FaqSection />
-      <FooterCta />
+      <main id="main-content">
+        <HeroSection liveCities={liveCities} />
+        <SocialProofBand />
+        <HowItWorksSection />
+        <FeaturesSection />
+        <PricingSection rates={rates} />
+        <LocationsSection liveCities={liveCities} />
+        <FaqSection />
+        <FooterCta />
+      </main>
       <Footer />
     </div>
   )

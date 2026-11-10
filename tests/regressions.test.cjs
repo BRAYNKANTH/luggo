@@ -91,6 +91,7 @@ test('webhook asks the gateway to retry when the database transaction fails', as
   }
 })
 test('concurrently consumed OTP cannot establish another session', async () => {
+  process.env.OTP_HASH_SECRET = 'test-otp-secret'
   const original = serviceModule.createServiceClient
   let calls = 0
   serviceModule.createServiceClient = () => ({ from: () => {

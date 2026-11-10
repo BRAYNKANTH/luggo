@@ -2,17 +2,20 @@ import type { Metadata, Viewport } from 'next'
 import '../globals.css'
 import { MotionConfig } from '@/components/shared/MotionProvider'
 import { NextIntlClientProvider } from 'next-intl'
-import { getMessages } from 'next-intl/server'
+import { getMessages, getTranslations } from 'next-intl/server'
 import { siteUrl } from '@/lib/site-url'
 import { BookingPausedBanner } from '@/components/shared/BookingPausedBanner'
 
-export const metadata: Metadata = {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await props.params
+  const t = await getTranslations({ locale, namespace: 'Meta' })
+  return {
   metadataBase: new URL(siteUrl),
   title: {
     template: '%s | Luggo',
-    default: 'Luggo | Luggage Storage Network in Sri Lanka',
+    default: t('siteTitle'),
   },
-  description: 'Luggo connects travellers with partner luggage storage hubs in Sri Lanka. Book online and pay by the hour.',
+  description: t('siteDescription'),
   keywords: [
     'luggage storage Sri Lanka',
     'left luggage Sri Lanka',
@@ -31,16 +34,17 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     siteName: 'Luggo',
-    title: 'Luggo — Luggage Storage Network in Sri Lanka',
-    description: 'Hourly luggage storage with partner hubs in Sri Lanka. Book online.',
+    title: t('ogTitle'),
+    description: t('ogDescription'),
     images: [{ url: '/images/hubs/bia.png', width: 1200, height: 630, alt: 'Luggo luggage storage' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Luggo — Luggage Storage Network in Sri Lanka',
-    description: 'Hourly luggage storage with partner hubs in Sri Lanka.',
+    title: t('ogTitle'),
+    description: t('ogDescription'),
     images: ['/images/hubs/bia.png'],
   },
+  }
 }
 
 export const viewport: Viewport = {

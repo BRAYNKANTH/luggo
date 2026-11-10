@@ -1,11 +1,31 @@
+'use client'
+
+import { useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { BOOKINGS_PAUSED } from '@/lib/booking-pause'
 
+// Sticky so it stays visible; publishes its height as --banner-h so fixed navs can sit below it.
 export function BookingPausedBanner() {
   const t = useTranslations('BookingPaused')
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const root = document.documentElement
+    const update = () => root.style.setProperty('--banner-h', `${el.offsetHeight}px`)
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(el)
+    return () => {
+      observer.disconnect()
+      root.style.removeProperty('--banner-h')
+    }
+  }, [])
+
   if (!BOOKINGS_PAUSED) return null
   return (
-    <div role="status" className="bg-amber-500 px-4 py-2 text-center text-sm font-bold text-ocean-900">
+    <div ref={ref} role="status" className="sticky top-0 z-[60] bg-amber-500 px-4 py-2 text-center text-sm font-bold text-ocean-900">
       {t('banner')}
     </div>
   )

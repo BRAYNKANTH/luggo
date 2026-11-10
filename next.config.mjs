@@ -26,8 +26,8 @@ const withPWA = withPWAInit({
   },
 })
 
-// Report-only first: watch the browser console / reports for violations, then
-// switch the key to 'Content-Security-Policy' to enforce it.
+// Enforced. Inline scripts/styles are still allowed ('unsafe-inline') because Next.js injects
+// inline bootstrap scripts; tighten with nonces later.
 const contentSecurityPolicy = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
@@ -48,7 +48,7 @@ const securityHeaders = [
   // Camera is needed by the staff QR / seal scanners; location by the hub map.
   { key: 'Permissions-Policy', value: 'camera=(self), geolocation=(self), microphone=(), payment=()' },
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
-  { key: 'Content-Security-Policy-Report-Only', value: contentSecurityPolicy },
+  { key: 'Content-Security-Policy', value: contentSecurityPolicy },
 ]
 
 /** @type {import('next').NextConfig} */

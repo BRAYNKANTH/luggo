@@ -5,6 +5,7 @@ import { createBookingSchema } from '@/lib/validators/booking'
 import { calculateBookingPrice } from '@/lib/utils/pricing'
 import { getHubBagRates } from '@/lib/utils/hubPricing'
 import { BOOKINGS_PAUSED, BOOKINGS_PAUSED_MESSAGE } from '@/lib/booking-pause'
+import { hitRateLimit } from '@/lib/security/rateLimit'
 import { generatePayhereHash, PAYHERE_ENDPOINT, type PayhereFormData } from '@/lib/utils/payhere'
 
 export async function POST(req: NextRequest) {
@@ -18,6 +19,11 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Throttle booking creation per account.
+    if (!(await hitRateLimit(`booking-create:${user.id}`, 10, 10 * 60_000)).allowed) {
+      return NextResponse.json({ error: 'Too many booking attempts. Please try again shortly.' }, { status: 429 })
     }
 
     // Validate body
@@ -81,6 +87,26 @@ export async function POST(req: NextRequest) {
     // The service-only RPC serializes capacity checks per hub and rolls back
     // the entire booking if any bag or payment insert fails.
     const serviceClient = createServiceClient()
+
+    // Unpaid bookings must not hold space: release this hub's abandoned ones now (the
+    // daily cron alone would leave them blocking capacity for up to a day), and cap how
+    // many unpaid bookings one account can have open at once.
+    const staleCutoff = new Date(Date.now() - 30 * 60_000).toISOString()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (serviceClient.from('bookings') as any)
+      .update({ status: 'expired' })
+      .eq('hub_id', hub_id)
+      .eq('status', 'pending_payment')
+      .lt('created_at', staleCutoff)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { count: openUnpaid } = await (serviceClient.from('bookings') as any)
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('status', 'pending_payment') as { count: number | null }
+    if ((openUnpaid ?? 0) >= 3) {
+      return NextResponse.json({ error: 'You have unpaid bookings in progress. Complete or wait for them to expire before booking again.' }, { status: 429 })
+    }
+
     const { data: booking, error: bookingError } = await serviceClient.rpc('create_booking_with_payment', {
       p_booking: {
         user_id: user.id, hub_id, start_time, end_time,

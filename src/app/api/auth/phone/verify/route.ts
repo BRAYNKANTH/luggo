@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createHash } from 'crypto'
+import { createHmac } from 'crypto'
 import { clearRateLimit, hitRateLimit } from '@/lib/security/rateLimit'
 import { createServiceClient } from '@/lib/supabase/service'
 import { createServerClient } from '@supabase/ssr'
 import { verifyPhoneCodeSchema, phoneAliases } from '@/lib/validators/phone'
 
+// Keyed hash so a leaked phone_otps table can't be reversed by brute-forcing 6 digits.
+function otpSecret() {
+  const secret = process.env.OTP_HASH_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!secret) throw new Error('OTP hashing secret is not configured')
+  return secret
+}
+
 function hashOtp(otp: string) {
-  return createHash('sha256').update(otp).digest('hex')
+  return createHmac('sha256', otpSecret()).update(otp).digest('hex')
 }
 
 type ServiceClient = ReturnType<typeof createServiceClient>

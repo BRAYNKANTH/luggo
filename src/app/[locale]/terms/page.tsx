@@ -71,7 +71,7 @@ export default function TermsPage() {
         </div>
       </nav>
 
-      <div className="max-w-3xl mx-auto px-6 py-12">
+      <div id="main-content" role="main" className="max-w-3xl mx-auto px-6 py-12">
         {/* Header */}
         <h1 className="text-3xl font-extrabold text-ocean-900 mb-1">Terms of Service</h1>
         <p className="text-gray-500 text-sm mb-2">Last Updated: October 9, 2026</p>
@@ -103,7 +103,7 @@ export default function TermsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
             {TOC_ITEMS.map(({ id, label }) => (
               <a key={id} href={`#${id}`}
-                className="text-sm text-brand font-medium hover:underline py-0.5">
+                className="inline-flex min-h-11 items-center text-sm text-brand font-medium hover:underline">
                 {label}
               </a>
             ))}
@@ -174,7 +174,7 @@ export default function TermsPage() {
         {/* Section 3 */}
         <SectionHeading id="prohibited">3. Prohibited Items</SectionHeading>
         <div className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-4">
-          <p className="text-xs font-extrabold uppercase tracking-wider text-red-500 mb-2">The following items may NOT be stored:</p>
+          <p className="text-xs font-extrabold uppercase tracking-wider text-red-700 mb-2">The following items may NOT be stored:</p>
           <BulletList items={[
             'Items whose possession or storage is illegal under the laws of Sri Lanka, including under the Poisons, Opium and Dangerous Drugs Ordinance and the Firearms Ordinance.',
             'Weapons, firearms, ammunition, explosives, and flammable or toxic materials.',

@@ -1,6 +1,13 @@
 import { useTranslations } from 'next-intl'
+import { getTranslations } from 'next-intl/server'
+import type { Metadata } from 'next'
 import { Link } from '@/navigation'
 import { PackageOpen, Home } from 'lucide-react'
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('NotFound')
+  return { title: t('metaTitle') }
+}
 
 export default function NotFound() {
   const t = useTranslations('NotFound')

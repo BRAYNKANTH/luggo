@@ -43,6 +43,11 @@ export async function signUpCustomer(
     return { error: parsed.error.issues[0].message }
   }
 
+  // Reserved for accounts created by phone verification; never allow it via email signup.
+  if (/@phone\.luggo\.lk$/i.test(parsed.data.email)) {
+    return { error: 'Enter a valid email address' }
+  }
+
   const supabase = await createClient()
   const { error } = await supabase.auth.signUp({
     email: parsed.data.email,

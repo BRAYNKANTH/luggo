@@ -183,7 +183,7 @@
   "Hubs": {
     "title": "Find a Hub",
     "count": "{count, plural, one {# location available} other {# locations available}}",
-    "none": "No active hubs found.",
+    "none": "No hubs are available yet. New partner hubs will appear here soon.",
     "list": "List",
     "map": "Map",
     "locating": "Locating…",
@@ -194,7 +194,8 @@
     "book": "Book",
     "viewHub": "View hub",
     "mapUnavailable": "Map unavailable",
-    "mapUnavailableDesc": "Use the list view to browse hubs."
+    "mapUnavailableDesc": "Use the list view to browse hubs.",
+    "noneAction": "About Luggo"
   },
   "Hub": {
     "available": "Available",
@@ -257,7 +258,11 @@
     "staffLogin": "Staff sign in",
     "adminLogin": "Admin sign in",
     "staffScan": "Scan booking",
-    "offline": "You're offline"
+    "offline": "You're offline",
+    "siteTitle": "Luggo | Luggage Storage Network in Sri Lanka",
+    "siteDescription": "Luggo connects travellers with partner luggage storage hubs in Sri Lanka. Book online and pay by the hour.",
+    "ogTitle": "Luggo — Luggage Storage Network in Sri Lanka",
+    "ogDescription": "Hourly luggage storage with partner hubs in Sri Lanka. Book online."
   },
   "Booking": {
     "pageTitle": "Book at {name}",
@@ -463,7 +468,8 @@
   "NotFound": {
     "title": "Page or booking not found",
     "body": "We couldn't find the page or booking you were looking for. It may have been removed, or you may not have permission to view it.",
-    "cta": "Go to dashboard"
+    "cta": "Go to dashboard",
+    "metaTitle": "Page not found"
   },
   "Offline": {
     "title": "You're offline",

@@ -31,8 +31,6 @@ export async function POST(req: NextRequest) {
     const merchant_secret = process.env.PAYHERE_MERCHANT_SECRET!
     const expectedMerchantId = process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID!
 
-    console.log('[PayHere IPN] Received:', { order_id, status_code, payhere_amount })
-
     if (!merchant_secret || !expectedMerchantId) throw new Error('Payment gateway is not configured')
     if (!payment_id || !Number.isFinite(Number(payhere_amount)) || Number(payhere_amount) <= 0) return NextResponse.json({ received: true })
 

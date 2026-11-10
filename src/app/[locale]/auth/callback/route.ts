@@ -14,20 +14,17 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      console.log('[Auth Callback] Code exchange success')
+    if (!error) {
       return NextResponse.redirect(`${origin}${next}`)
     } else {
       console.error('[Auth Callback] Code exchange error:', error.message)
     }
-  } else if (token_hash && type) {
-    console.log('[Auth Callback] Verifying token_hash...', { type })
+  } else if (token_hash && type) {
     const { error } = await supabase.auth.verifyOtp({ 
       token_hash, 
       type: type as EmailOtpType
     })
-    if (!error) {
-      console.log('[Auth Callback] Token verification success')
+    if (!error) {
       return NextResponse.redirect(`${origin}${next}`)
     } else {
       console.error('[Auth Callback] Token verification error:', error.message)
@@ -35,8 +32,7 @@ export async function GET(request: NextRequest) {
   } else {
     // If no code/token, check if we already have a session (magic link might have already set it)
     const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      console.log('[Auth Callback] Existing session found, redirecting to', next)
+    if (user) {
       return NextResponse.redirect(`${origin}${next}`)
     }
     console.warn('[Auth Callback] No code, no token, and no existing session found')
