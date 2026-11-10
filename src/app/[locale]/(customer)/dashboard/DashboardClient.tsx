@@ -373,7 +373,7 @@ export function DashboardClient({ hubs, activeBookings, firstName, userId, notif
           <div className="relative group">
             <Search size={16} aria-hidden="true" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-brand transition-colors" />
             <input type="search" aria-label={t('searchLabel')} value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('searchPlaceholder')}
-              className="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl pl-9.5 pr-9.5 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-brand/50 focus:ring-4 focus:ring-brand/5 transition-all duration-300" />
+              className="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl pl-10 pr-10 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-brand/50 focus:ring-4 focus:ring-brand/5 transition-all duration-300" />
             {search && <button type="button" aria-label={t('clearSearch')} onClick={() => setSearch('')} className="absolute right-1.5 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors"><X size={15} /></button>}
           </div>
         </div>

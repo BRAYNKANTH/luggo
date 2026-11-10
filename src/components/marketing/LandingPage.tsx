@@ -177,9 +177,8 @@ function AppPreviewCard() {
 function HeroSection({ liveCities }: { liveCities: MarketingCity[] }) {
   const t = useTranslations('Index')
   const tc = useTranslations('Cities')
-  // Only rotate through cities with a live hub; otherwise fall back to the country name.
-  const liveNames = liveCities.filter(c => c !== 'airport').map(city => tc(`${city}.name`))
-  const cities = liveNames.length ? liveNames : [t('country')]
+  // Only rotate through cities with a live hub. With none live, the headline is the plain title.
+  const cities = liveCities.filter(c => c !== 'airport').map(city => tc(`${city}.name`))
   const [index, setIndex] = useState(0)
 
   useEffect(() => {
@@ -214,6 +213,7 @@ function HeroSection({ liveCities }: { liveCities: MarketingCity[] }) {
             </motion.div>
 
             <h1 className="text-[2.25rem] sm:text-6xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-5 min-h-[140px] sm:min-h-0">
+              {cities.length === 0 ? t('title') : <>
               {t('titleBefore')}
               <span className="relative inline-block mx-2">
                 <AnimatePresence mode="wait">
@@ -232,7 +232,7 @@ function HeroSection({ liveCities }: { liveCities: MarketingCity[] }) {
                 <div className="absolute -bottom-2 left-0 right-0 h-1 sm:h-2 bg-brand/30 blur-sm rounded-full" />
               </span>
               <br className="hidden sm:block" />
-              {t('titleAfter')}
+              {t('titleAfter')}</>}
             </h1>
 
             <motion.p variants={fadeUp} className="text-white/80 text-base sm:text-lg max-w-lg mx-auto lg:mx-0 mb-8 leading-relaxed">
