@@ -5,6 +5,11 @@ import { useTranslations } from 'next-intl'
 import { BOOKINGS_PAUSED } from '@/lib/booking-pause'
 
 // Sticky so it stays visible; publishes its height as --banner-h so fixed navs can sit below it.
+// Rendered by the staff and admin layouts: the customer-facing notice is not for them.
+export function HidePausedBanner() {
+  return <style>{'[data-paused-banner]{display:none}'}</style>
+}
+
 export function BookingPausedBanner() {
   const t = useTranslations('BookingPaused')
   const ref = useRef<HTMLDivElement>(null)
@@ -25,7 +30,7 @@ export function BookingPausedBanner() {
 
   if (!BOOKINGS_PAUSED) return null
   return (
-    <div ref={ref} role="status" className="sticky top-0 z-[60] bg-amber-500 px-4 py-2 text-center text-sm font-bold text-ocean-900">
+    <div ref={ref} role="status" data-paused-banner className="sticky top-0 z-[60] bg-amber-500 px-4 py-2 text-center text-sm font-bold text-ocean-900">
       {t('banner')}
     </div>
   )

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { DashboardClient, type HubCard, type ActiveBooking } from './DashboardClient'
 import { BAG_RATES } from '@/lib/utils/pricing'
 import { titleMetadata } from '@/lib/i18n/metadata'
@@ -77,7 +78,9 @@ export default async function DashboardPage() {
         .order('name')) as { data: RawHub[] | null }
 
   // Bag-based availability: count total bags across all active/storing bookings
-  const { data: hubBagRows } = await supabase
+  // Service client: RLS only lets a customer read their own bags, which would make every
+  // hub look empty to everyone else. Only hub IDs are read here, and only counts leave the server.
+  const { data: hubBagRows } = LISTINGS_HIDDEN ? { data: [] } : await createServiceClient()
     .from('booking_bags')
     .select('id, bookings!inner(hub_id)')
     .not('bookings.status', 'in', '("completed","cancelled","expired","pending_payment")') as { data: { id: string; bookings: { hub_id: string } }[] | null }

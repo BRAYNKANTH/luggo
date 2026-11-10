@@ -39,10 +39,11 @@ export async function updateSession(request: NextRequest, response?: NextRespons
     }
   }
 
-  const loginRedirect = (path: string) => {
+  const loginRedirect = (path: string, returnTo?: string) => {
     const target = request.nextUrl.clone()
     target.pathname = path
     target.search = ''
+    if (returnTo) target.searchParams.set('returnTo', returnTo)
     const redirectResponse = NextResponse.redirect(target)
     supabaseResponse.cookies.getAll().forEach(cookie => redirectResponse.cookies.set(cookie))
     return redirectResponse
@@ -54,7 +55,7 @@ export async function updateSession(request: NextRequest, response?: NextRespons
   if (customerProtected.some(p => checkPathname === p || checkPathname.startsWith(`${p}/`))) {
     if (!user) {
       const locale = localeMatch ? localeMatch[1] : 'en'
-      return loginRedirect(`/${locale}/login`)
+      return loginRedirect(`/${locale}/login`, `${pathname}${request.nextUrl.search}`)
     }
   }
 

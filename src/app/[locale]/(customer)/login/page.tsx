@@ -65,7 +65,9 @@ export default function LoginPage() {
 function LoginContent() {
   const t = useTranslations('Login')
   const searchParams = useSearchParams()
-  const returnTo = searchParams.get('returnTo') || '/'
+  // Only same-site paths: an unchecked value allows open redirects and javascript: URLs.
+  const requestedReturn = searchParams.get('returnTo') || '/'
+  const returnTo = requestedReturn.startsWith('/') && !requestedReturn.startsWith('//') && !requestedReturn.includes('\\') ? requestedReturn : '/'
   const supabase = createClient()
   const [tab, setTab] = useState<Tab>('signin')
 

@@ -11,7 +11,7 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-white">
       <nav className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-10">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-1 text-gray-500 hover:text-ocean-900 text-sm font-bold transition-colors">
+          <Link href="/" className="flex min-h-11 items-center gap-1 text-gray-500 hover:text-ocean-900 text-sm font-bold transition-colors">
             <ChevronLeft size={18} /> Back
           </Link>
           <Logo size="sm" />
@@ -49,7 +49,7 @@ export default function PrivacyPage() {
           },
           {
             title: 'Your Rights',
-            body: <>You have the right to access, correct, or delete your personal data. To exercise these rights, email <a href={`mailto:${CONTACT_EMAIL}`} className="text-ocean-600 font-semibold underline">{CONTACT_EMAIL}</a>.</>,
+            body: <>You have the right to access, correct, or delete your personal data. To exercise these rights, email <a href={`mailto:${CONTACT_EMAIL}`} className="inline-block py-3 -my-3 text-ocean-600 font-semibold underline">{CONTACT_EMAIL}</a>.</>,
           },
           {
             title: 'Cookies',
@@ -57,7 +57,7 @@ export default function PrivacyPage() {
           },
           {
             title: 'Contact',
-            body: <>For privacy-related questions, contact us at <a href={`mailto:${CONTACT_EMAIL}`} className="text-ocean-600 font-semibold underline">{CONTACT_EMAIL}</a>.</>,
+            body: <>For privacy-related questions, contact us at <a href={`mailto:${CONTACT_EMAIL}`} className="inline-block py-3 -my-3 text-ocean-600 font-semibold underline">{CONTACT_EMAIL}</a>.</>,
           },
         ].map((section) => (
           <div key={section.title} className="mb-8">

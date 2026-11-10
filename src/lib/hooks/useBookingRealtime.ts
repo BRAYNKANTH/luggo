@@ -18,6 +18,8 @@ export function useBookingRealtime(
     setStatus(initialStatus)
 
     const poll = async () => {
+      // Hidden tabs don't need live status; they catch up when shown again.
+      if (document.hidden) return
       try {
         const res = await fetch(`/api/bookings/${bookingId}/status`, { cache: 'no-store' })
         if (!res.ok) return
@@ -31,11 +33,13 @@ export function useBookingRealtime(
     }
 
     void poll()
-    const interval = window.setInterval(poll, 5000)
+    const interval = window.setInterval(poll, 10000)
+    document.addEventListener('visibilitychange', poll)
 
     return () => {
       cancelled = true
       window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', poll)
     }
   }, [bookingId, initialStatus])
 

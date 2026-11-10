@@ -7,7 +7,7 @@ import { GUARANTEE_LIMIT_LKR, GUARANTEE_LIMIT_LABEL } from '@/lib/utils/guarante
 import { CONTACT_EMAIL } from '@/lib/public-company'
 import { Logo } from '@/components/ui/Logo'
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher'
-import { SplashScreen } from '@/components/marketing/SplashScreen'
+import { SplashScreen, SPLASH_SEEN_KEY } from '@/components/marketing/SplashScreen'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
 import Image from 'next/image'
@@ -31,8 +31,8 @@ const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
 // Only cities with a live partner hub are linked; the rest show "Coming soon" (see liveCities prop).
 const CITY_LOCATIONS = [
   { city: 'colombo', img: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80' },
-  { city: 'kandy',   img: 'https://images.unsplash.com/photo-1569384370146-66a8f9734e1e?w=600&q=80' },
-  { city: 'galle',   img: 'https://images.unsplash.com/photo-1588598198321-9735fd5f2aad?w=600&q=80' },
+  { city: 'kandy',   img: '/images/hubs/kdy.png' },
+  { city: 'galle',   img: '/images/hubs/gal.png' },
   { city: 'ella',    img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80' },
   { city: 'airport', img: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&q=80' },
   { city: 'negombo', img: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=600&q=80' },
@@ -593,8 +593,6 @@ function Footer() {
 }
 
 // ── Export ────────────────────────────────────────────────────────────────────
-
-const SPLASH_SEEN_KEY = 'luggo_splash_seen'
 
 export default function LandingPage({ rates = DEFAULT_BAG_RATES, liveCities = [] }: { rates?: BagRates; liveCities?: MarketingCity[] }) {
   const tShell = useTranslations('Shell')
