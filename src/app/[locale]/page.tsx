@@ -9,6 +9,8 @@ import { siteUrl } from '@/lib/site-url'
 import { DEFAULT_BAG_RATES, type BagRates } from '@/lib/utils/pricing'
 import { liveCitiesFromHubs } from '@/lib/utils/live-cities'
 import { LISTINGS_HIDDEN } from '@/lib/booking-pause'
+import { getTranslations } from 'next-intl/server'
+import { GUARANTEE_LIMIT_LABEL } from '@/lib/utils/guarantee'
 
 export async function generateMetadata(
   props: {
@@ -78,38 +80,71 @@ export default async function RootPage(
       liveCities = liveCitiesFromHubs(liveHubs ?? [])
     }
 
+    const tFaq = await getTranslations({ locale, namespace: 'Faq' })
+    const tMeta = await getTranslations({ locale, namespace: 'Meta' })
+    const langPrefix = locale === 'en' ? '' : `/${locale}`
+    const pageUrl = `${siteUrl}${langPrefix}`
+
     const jsonLdWebsite = {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
+      '@id': `${siteUrl}/#website`,
       name: 'Luggo',
       url: siteUrl,
-      potentialAction: {
-        '@type': 'SearchAction',
-        target: `${siteUrl}/${locale}/dashboard?q={search_term_string}`,
-        'query-input': 'required name=search_term_string',
-      },
+      inLanguage: locale,
+      publisher: { '@id': `${siteUrl}/#organization` },
     }
 
     const jsonLdOrg = {
       '@context': 'https://schema.org',
       '@type': 'Organization',
+      '@id': `${siteUrl}/#organization`,
       name: 'Luggo',
       url: siteUrl,
-      logo: `${siteUrl}/images/logo.png`,
+      logo: `${siteUrl}/logo.png`,
+      description: tMeta('siteDescription'),
       email: CONTACT_EMAIL,
+      areaServed: { '@type': 'Country', name: 'Sri Lanka' },
       sameAs: SOCIAL_LINKS.map(({ href }) => href),
     }
 
+    const jsonLdService = {
+      '@context': 'https://schema.org',
+      '@type': 'Service',
+      '@id': `${pageUrl}#service`,
+      serviceType: 'Luggage storage',
+      name: tMeta('siteTitle'),
+      description: tMeta('siteDescription'),
+      provider: { '@id': `${siteUrl}/#organization` },
+      areaServed: { '@type': 'Country', name: 'Sri Lanka' },
+      url: pageUrl,
+    }
+
+    const jsonLdFaq = {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      inLanguage: locale,
+      mainEntity: (['how', 'late', 'covered', 'account'] as const).map((key) => ({
+        '@type': 'Question',
+        name: tFaq(`${key}.q`),
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: tFaq(`${key}.a`, { amount: GUARANTEE_LIMIT_LABEL }),
+        },
+      })),
+    }
+
+    const jsonLd = [jsonLdWebsite, jsonLdOrg, jsonLdService, jsonLdFaq]
+
     return (
       <>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebsite) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }}
-        />
+        {jsonLd.map((data, i) => (
+          <script
+            key={i}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, '\\u003c') }}
+          />
+        ))}
         <LandingPage rates={fromRates} liveCities={liveCities} />
       </>
     )

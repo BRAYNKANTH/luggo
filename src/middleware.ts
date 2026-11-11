@@ -89,6 +89,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|sw\\.js|workbox-.*\\.js|swe-worker-.*\\.js|zohoverify|googleceb893e01d277b28\\.html|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|llms.txt|sitemap.xml|manifest.webmanifest|sw\\.js|workbox-.*\\.js|swe-worker-.*\\.js|zohoverify|googleceb893e01d277b28\\.html|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm)$).*)',
   ],
 }
